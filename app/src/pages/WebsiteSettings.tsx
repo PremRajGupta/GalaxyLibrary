@@ -1,0 +1,540 @@
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import TopHeader from '../components/layout/TopHeader';
+import { Globe, Save, ExternalLink, Plus, Trash2 } from 'lucide-react';
+import {
+  DEFAULT_GALLERY_IMAGE_URL,
+  DEFAULT_SITE_CONTENT,
+  NAV_SECTION_OPTIONS,
+  nextItemId,
+  type NavMenuItem,
+  type PageText,
+  type SiteContent,
+} from '../data/landingContent';
+import {
+  loadSiteContent,
+  saveSiteContent,
+  resetSiteContentToDefaults,
+} from '../lib/siteContentService';
+
+const inputClass =
+  'w-full px-4 py-2.5 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/20 text-sm';
+const labelClass = 'block text-sm font-medium text-[#1e293b] mb-1.5';
+
+const TABS = [
+  { id: 'general', label: 'General & Contact' },
+  { id: 'navbar', label: 'Navbar & Footer' },
+  { id: 'hero', label: 'Hero Slider' },
+  { id: 'about', label: 'About' },
+  { id: 'gallery', label: 'Gallery' },
+] as const;
+
+type TabId = (typeof TABS)[number]['id'];
+
+export default function WebsiteSettings() {
+  const [content, setContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
+  const [activeTab, setActiveTab] = useState<TabId>('general');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [notification, setNotification] = useState('');
+
+  useEffect(() => {
+    loadSiteContent()
+      .then(({ content }) => setContent(content))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const showNotification = (msg: string) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(''), 3500);
+  };
+
+  const updateLibraryInfo = (field: keyof SiteContent['libraryInfo'], value: string) => {
+    setContent((prev) => ({
+      ...prev,
+      libraryInfo: { ...prev.libraryInfo, [field]: value },
+    }));
+  };
+
+  const updatePageText = (field: keyof PageText, value: string) => {
+    setContent((prev) => ({
+      ...prev,
+      pageText: { ...prev.pageText, [field]: value },
+    }));
+  };
+
+  const updateNavMenuItem = (index: number, patch: Partial<NavMenuItem>) => {
+    setContent((prev) => {
+      const navMenuItems = [...prev.navMenuItems];
+      navMenuItems[index] = { ...navMenuItems[index], ...patch };
+      return { ...prev, navMenuItems };
+    });
+  };
+
+  const addNavMenuItem = () => {
+    setContent((prev) => ({
+      ...prev,
+      navMenuItems: [
+        ...prev.navMenuItems,
+        {
+          id: nextItemId(prev.navMenuItems),
+          label: 'New Link',
+          sectionId: 'about',
+        },
+      ],
+    }));
+  };
+
+  const removeNavMenuItem = (id: number) => {
+    setContent((prev) => ({
+      ...prev,
+      navMenuItems: prev.navMenuItems.filter((item) => item.id !== id),
+    }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await saveSiteContent(content);
+      const { content: saved } = await loadSiteContent();
+      setContent(saved);
+      showNotification('Saved! Home page will show updated content for all visitors.');
+    } catch (error) {
+      console.error(error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      showNotification(`Save failed: ${message}. Is backend running on port 5000?`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!window.confirm('Reset entire index page to default content?')) return;
+    setSaving(true);
+    try {
+      const defaults = await resetSiteContentToDefaults();
+      setContent(defaults);
+      showNotification('Reset to default content.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="py-20 text-center text-[#64748b]">Loading website editor...</div>;
+  }
+
+  return (
+    <div>
+      <TopHeader />
+
+      <AnimatePresence>
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-4 left-4 right-4 sm:left-auto sm:right-6 sm:top-6 z-50 px-4 py-3 bg-[#22c55e] text-white text-sm font-medium rounded-lg shadow-lg"
+          >
+            {notification}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="page-card mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#dbeafe] rounded-lg flex items-center justify-center">
+              <Globe className="text-[#3b82f6]" size={20} />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-[#1e293b]">Edit Index Page</h2>
+              <p className="text-sm text-[#64748b]">Full control over home page — navbar, hero, about, gallery, contact, footer</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={handleReset} disabled={saving} className="px-4 py-2.5 border border-[#fecaca] rounded-lg text-sm font-medium text-[#dc2626] hover:bg-[#fef2f2] disabled:opacity-50">
+              Reset
+            </button>
+            <a href="/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 border border-[#e2e8f0] rounded-lg text-sm font-medium hover:bg-[#f8fafc]">
+              <ExternalLink size={16} /> Preview
+            </a>
+            <button type="button" onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#3b82f6] text-white rounded-lg text-sm font-semibold hover:bg-[#2563eb] disabled:opacity-50">
+              <Save size={16} /> {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-6">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === tab.id
+                ? 'bg-[#3b82f6] text-white'
+                : 'bg-white text-[#64748b] border border-[#e2e8f0] hover:bg-[#f8fafc]'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-6 pb-10">
+        {activeTab === 'general' && (
+          <>
+            <section className="page-card">
+              <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Library Info</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><label className={labelClass}>Library Name</label><input className={inputClass} value={content.libraryInfo.name} onChange={(e) => updateLibraryInfo('name', e.target.value)} /></div>
+                <div><label className={labelClass}>Tagline</label><input className={inputClass} value={content.libraryInfo.tagline} onChange={(e) => updateLibraryInfo('tagline', e.target.value)} /></div>
+                <div><label className={labelClass}>Owner Name</label><input className={inputClass} value={content.libraryInfo.ownerName} onChange={(e) => updateLibraryInfo('ownerName', e.target.value)} /></div>
+                <div><label className={labelClass}>Phone (display)</label><input className={inputClass} value={content.libraryInfo.phone} onChange={(e) => updateLibraryInfo('phone', e.target.value)} /></div>
+                <div><label className={labelClass}>WhatsApp Number (digits only)</label><input className={inputClass} value={content.libraryInfo.phoneRaw} onChange={(e) => updateLibraryInfo('phoneRaw', e.target.value.replace(/\D/g, ''))} /></div>
+                <div><label className={labelClass}>Email</label><input type="email" className={inputClass} value={content.libraryInfo.email} onChange={(e) => updateLibraryInfo('email', e.target.value)} /></div>
+                <div className="md:col-span-2"><label className={labelClass}>Address</label><input className={inputClass} value={content.libraryInfo.address} onChange={(e) => updateLibraryInfo('address', e.target.value)} /></div>
+                <div className="md:col-span-2"><label className={labelClass}>WhatsApp Message</label><input className={inputClass} value={content.libraryInfo.whatsappMessage} onChange={(e) => updateLibraryInfo('whatsappMessage', e.target.value)} /></div>
+              </div>
+            </section>
+            <section className="page-card">
+              <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Contact Section Headings</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><label className={labelClass}>Section Title</label><input className={inputClass} value={content.pageText.contactTitle} onChange={(e) => updatePageText('contactTitle', e.target.value)} /></div>
+                <div><label className={labelClass}>Section Subtitle</label><input className={inputClass} value={content.pageText.contactSubtitle} onChange={(e) => updatePageText('contactSubtitle', e.target.value)} /></div>
+                <div><label className={labelClass}>Phone Label</label><input className={inputClass} value={content.pageText.contactPhoneLabel} onChange={(e) => updatePageText('contactPhoneLabel', e.target.value)} /></div>
+                <div><label className={labelClass}>Email Label</label><input className={inputClass} value={content.pageText.contactEmailLabel} onChange={(e) => updatePageText('contactEmailLabel', e.target.value)} /></div>
+                <div><label className={labelClass}>Address Label</label><input className={inputClass} value={content.pageText.contactAddressLabel} onChange={(e) => updatePageText('contactAddressLabel', e.target.value)} /></div>
+                <div><label className={labelClass}>WhatsApp Button Text</label><input className={inputClass} value={content.pageText.whatsappButton} onChange={(e) => updatePageText('whatsappButton', e.target.value)} /></div>
+              </div>
+            </section>
+          </>
+        )}
+
+        {activeTab === 'navbar' && (
+          <section className="page-card space-y-6">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-[#1e293b]">Navbar Menu</h3>
+                  <p className="text-sm text-[#64748b] mt-1">Add, remove, or reorder links shown in the top menu and footer quick links.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addNavMenuItem}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-[#3b82f6] bg-[#dbeafe] rounded-lg hover:bg-[#bfdbfe]"
+                >
+                  <Plus size={16} /> Add Menu Item
+                </button>
+              </div>
+              <div className="space-y-3">
+                {content.navMenuItems.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-col sm:flex-row sm:items-end gap-3 p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]"
+                  >
+                    <div className="flex-1">
+                      <label className={labelClass}>Link label</label>
+                      <input
+                        className={inputClass}
+                        value={item.label}
+                        onChange={(e) => updateNavMenuItem(index, { label: e.target.value })}
+                        placeholder="e.g. Gallery"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className={labelClass}>Scroll to section</label>
+                      <select
+                        className={inputClass}
+                        value={item.sectionId}
+                        onChange={(e) => updateNavMenuItem(index, { sectionId: e.target.value })}
+                      >
+                        {NAV_SECTION_OPTIONS.map((opt) => (
+                          <option key={opt.id} value={opt.id}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeNavMenuItem(item.id)}
+                      disabled={content.navMenuItems.length <= 1}
+                      className="p-2.5 text-[#ef4444] hover:bg-[#fee2e2] rounded-lg disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                      title={content.navMenuItems.length <= 1 ? 'At least one menu item required' : 'Remove'}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 max-w-xs">
+                <label className={labelClass}>Login Button (always shown)</label>
+                <input
+                  className={inputClass}
+                  value={content.pageText.navLogin}
+                  onChange={(e) => updatePageText('navLogin', e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Hero Buttons</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><label className={labelClass}>Visit Button</label><input className={inputClass} value={content.pageText.heroVisitButton} onChange={(e) => updatePageText('heroVisitButton', e.target.value)} /></div>
+                <div><label className={labelClass}>Contact Button</label><input className={inputClass} value={content.pageText.heroContactButton} onChange={(e) => updatePageText('heroContactButton', e.target.value)} /></div>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Stats Section</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div className="sm:col-span-2"><label className={labelClass}>Section Title</label><input className={inputClass} value={content.pageText.statsTitle} onChange={(e) => updatePageText('statsTitle', e.target.value)} /></div>
+                <div className="sm:col-span-2"><label className={labelClass}>Section Subtitle</label><input className={inputClass} value={content.pageText.statsSubtitle} onChange={(e) => updatePageText('statsSubtitle', e.target.value)} /></div>
+                <div><label className={labelClass}>Admissions Label</label><input className={inputClass} value={content.pageText.statsAdmissionsLabel} onChange={(e) => updatePageText('statsAdmissionsLabel', e.target.value)} /></div>
+                <div><label className={labelClass}>Visitors Label</label><input className={inputClass} value={content.pageText.statsVisitorsLabel} onChange={(e) => updatePageText('statsVisitorsLabel', e.target.value)} /></div>
+                <div><label className={labelClass}>Study Shifts Label</label><input className={inputClass} value={content.pageText.statsStudyShiftsLabel} onChange={(e) => updatePageText('statsStudyShiftsLabel', e.target.value)} /></div>
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>Footnote (below stats cards)</label>
+                  <textarea
+                    className={`${inputClass} min-h-[88px]`}
+                    value={content.pageText.statsFootnote}
+                    onChange={(e) => updatePageText('statsFootnote', e.target.value)}
+                    placeholder="Small note shown under the stats section"
+                  />
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Footer</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><label className={labelClass}>Quick Links Title</label><input className={inputClass} value={content.pageText.footerQuickLinksTitle} onChange={(e) => updatePageText('footerQuickLinksTitle', e.target.value)} /></div>
+                <div><label className={labelClass}>Get Started Title</label><input className={inputClass} value={content.pageText.footerGetStartedTitle} onChange={(e) => updatePageText('footerGetStartedTitle', e.target.value)} /></div>
+                <div className="sm:col-span-2"><label className={labelClass}>Get Started Text</label><input className={inputClass} value={content.pageText.footerGetStartedText} onChange={(e) => updatePageText('footerGetStartedText', e.target.value)} /></div>
+                <div><label className={labelClass}>Footer Login Button</label><input className={inputClass} value={content.pageText.footerLoginButton} onChange={(e) => updatePageText('footerLoginButton', e.target.value)} /></div>
+                <div><label className={labelClass}>Copyright Text</label><input className={inputClass} value={content.pageText.footerCopyright} onChange={(e) => updatePageText('footerCopyright', e.target.value)} /></div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'hero' && (
+          <section className="page-card">
+            <p className="text-sm text-[#64748b] mb-4">
+              Use image URLs from Google Images / Unsplash (right-click image → copy image address). Paste the full https:// link.
+            </p>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-[#1e293b]">Hero Slider</h3>
+              <button
+                type="button"
+                onClick={() => setContent((prev) => ({
+                  ...prev,
+                  heroSlides: [...prev.heroSlides, { id: nextItemId(prev.heroSlides), image: '', title: 'New Slide', subtitle: '' }],
+                }))}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-[#3b82f6] bg-[#dbeafe] rounded-lg hover:bg-[#bfdbfe]"
+              >
+                <Plus size={16} /> Add Slide
+              </button>
+            </div>
+            <div className="space-y-6">
+              {content.heroSlides.map((slide, index) => (
+                <div key={slide.id} className="p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold text-[#3b82f6]">Slide {index + 1}</p>
+                    {content.heroSlides.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setContent((prev) => ({ ...prev, heroSlides: prev.heroSlides.filter((s) => s.id !== slide.id) }))}
+                        className="p-1.5 text-[#ef4444] hover:bg-[#fee2e2] rounded-md"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div><label className={labelClass}>Heading</label><input className={inputClass} value={slide.title} onChange={(e) => setContent((prev) => { const heroSlides = [...prev.heroSlides]; heroSlides[index] = { ...slide, title: e.target.value }; return { ...prev, heroSlides }; })} /></div>
+                      <div><label className={labelClass}>Subtitle</label><textarea className={`${inputClass} min-h-[80px]`} value={slide.subtitle} onChange={(e) => setContent((prev) => { const heroSlides = [...prev.heroSlides]; heroSlides[index] = { ...slide, subtitle: e.target.value }; return { ...prev, heroSlides }; })} /></div>
+                      <div><label className={labelClass}>Image URL</label><input className={inputClass} value={slide.image} onChange={(e) => setContent((prev) => { const heroSlides = [...prev.heroSlides]; heroSlides[index] = { ...slide, image: e.target.value }; return { ...prev, heroSlides }; })} placeholder="https://..." /></div>
+                    </div>
+                    {slide.image && <img src={slide.image} alt={slide.title} className="w-full h-40 lg:h-full min-h-[160px] object-cover rounded-lg border" />}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'about' && (
+          <section className="page-card">
+            <h3 className="text-lg font-semibold text-[#1e293b] mb-4">About Section</h3>
+            <div className="space-y-4 mb-6">
+              <div><label className={labelClass}>Title</label><input className={inputClass} value={content.aboutContent.title} onChange={(e) => setContent((prev) => ({ ...prev, aboutContent: { ...prev.aboutContent, title: e.target.value } }))} /></div>
+              <div>
+                <label className={labelClass}>Description (blank line = new paragraph)</label>
+                <textarea className={`${inputClass} min-h-[140px]`} value={content.aboutContent.paragraphs.join('\n\n')} onChange={(e) => setContent((prev) => ({ ...prev, aboutContent: { ...prev.aboutContent, paragraphs: e.target.value.split(/\n\n+/).map((p) => p.trim()).filter(Boolean) } }))} />
+              </div>
+            </div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="font-medium text-[#1e293b]">Highlights</p>
+              <button type="button" onClick={() => setContent((prev) => ({ ...prev, aboutContent: { ...prev.aboutContent, highlights: [...prev.aboutContent.highlights, { label: 'Label', value: 'Value' }] } }))} className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-[#3b82f6] bg-[#dbeafe] rounded-lg"><Plus size={16} /> Add</button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {content.aboutContent.highlights.map((item, index) => (
+                <div key={`${item.label}-${index}`} className="p-4 bg-[#f8fafc] rounded-lg border relative">
+                  {content.aboutContent.highlights.length > 1 && (
+                    <button type="button" onClick={() => setContent((prev) => ({ ...prev, aboutContent: { ...prev.aboutContent, highlights: prev.aboutContent.highlights.filter((_, i) => i !== index) } }))} className="absolute top-2 right-2 p-1 text-[#ef4444]"><Trash2 size={14} /></button>
+                  )}
+                  <input className={`${inputClass} mb-2`} value={item.value} onChange={(e) => setContent((prev) => { const highlights = [...prev.aboutContent.highlights]; highlights[index] = { ...item, value: e.target.value }; return { ...prev, aboutContent: { ...prev.aboutContent, highlights } }; })} placeholder="Value" />
+                  <input className={inputClass} value={item.label} onChange={(e) => setContent((prev) => { const highlights = [...prev.aboutContent.highlights]; highlights[index] = { ...item, label: e.target.value }; return { ...prev, aboutContent: { ...prev.aboutContent, highlights } }; })} placeholder="Label" />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'gallery' && (
+          <section className="page-card">
+            <p className="text-sm text-[#64748b] mb-4">
+              Add your library photos using a direct image URL (https://). Only images with a valid URL appear on the home page. Use Unsplash or uploaded image links.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div><label className={labelClass}>Gallery Title</label><input className={inputClass} value={content.pageText.galleryTitle} onChange={(e) => updatePageText('galleryTitle', e.target.value)} /></div>
+              <div><label className={labelClass}>Gallery Subtitle</label><input className={inputClass} value={content.pageText.gallerySubtitle} onChange={(e) => updatePageText('gallerySubtitle', e.target.value)} /></div>
+            </div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-[#1e293b]">Gallery Images</h3>
+              <button
+                type="button"
+                onClick={() =>
+                  setContent((prev) => ({
+                    ...prev,
+                    galleryImages: [
+                      ...prev.galleryImages,
+                      {
+                        id: nextItemId(prev.galleryImages),
+                        src: DEFAULT_GALLERY_IMAGE_URL,
+                        title: 'New Photo',
+                        alt: 'New Photo',
+                      },
+                    ],
+                  }))
+                }
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-[#3b82f6] bg-[#dbeafe] rounded-lg"
+              >
+                <Plus size={16} /> Add Image
+              </button>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {content.galleryImages.map((image, index) => (
+                <div key={image.id} className="p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold text-[#3b82f6]">Image {index + 1}</p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setContent((prev) => ({
+                          ...prev,
+                          galleryImages: prev.galleryImages.filter((img) => img.id !== image.id),
+                        }))
+                      }
+                      disabled={content.galleryImages.length <= 1}
+                      className="p-1.5 text-[#ef4444] hover:bg-[#fee2e2] rounded-md disabled:opacity-40"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <div className="mb-3 rounded-lg border border-[#e2e8f0] bg-[#e2e8f0] overflow-hidden min-h-[140px] flex items-center justify-center">
+                    {image.src?.trim() ? (
+                      <img
+                        src={image.src}
+                        alt={image.alt || image.title}
+                        className="w-full h-40 object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <span className="text-xs text-[#64748b] p-4 text-center">Enter image URL to preview</span>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className={labelClass}>Image URL</label>
+                      <input
+                        className={inputClass}
+                        value={image.src}
+                        onChange={(e) => {
+                          const src = e.target.value;
+                          setContent((prev) => {
+                            const galleryImages = [...prev.galleryImages];
+                            galleryImages[index] = { ...image, src };
+                            return { ...prev, galleryImages };
+                          });
+                        }}
+                        placeholder="https://images.unsplash.com/..."
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass}>Caption / Title</label>
+                      <input
+                        className={inputClass}
+                        value={image.title}
+                        onChange={(e) => {
+                          const title = e.target.value;
+                          setContent((prev) => {
+                            const galleryImages = [...prev.galleryImages];
+                            galleryImages[index] = {
+                              ...image,
+                              title,
+                              alt: image.alt || title,
+                            };
+                            return { ...prev, galleryImages };
+                          });
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass}>Alt text (accessibility)</label>
+                      <input
+                        className={inputClass}
+                        value={image.alt}
+                        onChange={(e) => {
+                          setContent((prev) => {
+                            const galleryImages = [...prev.galleryImages];
+                            galleryImages[index] = { ...image, alt: e.target.value };
+                            return { ...prev, galleryImages };
+                          });
+                        }}
+                        placeholder="Describe the image"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="text-xs text-[#3b82f6] hover:underline"
+                      onClick={() =>
+                        setContent((prev) => {
+                          const galleryImages = [...prev.galleryImages];
+                          galleryImages[index] = { ...image, alt: image.title };
+                          return { ...prev, galleryImages };
+                        })
+                      }
+                    >
+                      Copy title → alt text
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <div className="flex justify-end">
+          <button type="button" onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 px-6 py-3 bg-[#3b82f6] text-white font-semibold rounded-lg hover:bg-[#2563eb] disabled:opacity-50">
+            <Save size={18} /> {saving ? 'Saving...' : 'Save All Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

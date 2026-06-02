@@ -1,0 +1,439 @@
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import TopHeader from '../components/layout/TopHeader';
+import { generateReceiptPDF, generatePaginatedReceiptsPDF, getDefaultReceiptLogo } from '../sections/fees/receiptService';
+import type { PaymentReceipt } from '../sections/fees/receiptService';
+import S from '../lib/strings';
+import { getStoredPayments } from '../sections/fees/collectionService';
+import { Download, Search, Eye, X, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
+import { feeApi } from '../lib/apiService';
+
+interface ReceiptGroup {
+  studentId: string;
+  studentName: string;
+  payments: PaymentReceipt[];
+  totalAmount: number;
+  lastPaymentDate: string;
+}
+
+interface Notification {
+  msg: string;
+  type: 'success' | 'error';
+}
+
+export default function PdfGenerator() {
+  const [payments, setPayments] = useState<PaymentReceipt[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [notification, setNotification] = useState<Notification | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const RECORDS_PER_PAGE = 7;
+
+  useEffect(() => {
+    const fetchPayments = async () => {
+      try {
+        const data = await getStoredPayments();
+        setPayments(data);
+      } catch (error) {
+        console.error('Error fetching fees:', error);
+      }
+    };
+    fetchPayments();
+  }, []);
+
+  const filteredPayments = useMemo(
+    () => payments.filter((payment) => {
+      const normalized = searchTerm.trim().toLowerCase();
+      if (!normalized) return true;
+      return (
+        payment.studentName.toLowerCase().includes(normalized) ||
+        payment.studentId.toLowerCase().includes(normalized) ||
+        payment.month.toLowerCase().includes(normalized)
+      );
+    }),
+    [payments, searchTerm]
+  );
+
+  const groupedPayments = useMemo((): ReceiptGroup[] => {
+    const groups: Record<string, ReceiptGroup> = {};
+    filteredPayments.forEach((payment) => {
+      const key = payment.studentId || payment.studentName || 'unknown';
+      if (!groups[key]) {
+        groups[key] = {
+          studentId: payment.studentId,
+          studentName: payment.studentName,
+          payments: [],
+          totalAmount: 0,
+          lastPaymentDate: '',
+        };
+      }
+      groups[key].payments.push(payment);
+      groups[key].totalAmount += payment.amount;
+      const dateStr = payment.date || '';
+      const dateTs = dateStr ? new Date(dateStr).getTime() : 0;
+      const currentTs = groups[key].lastPaymentDate ? new Date(groups[key].lastPaymentDate).getTime() : 0;
+      if (dateTs > currentTs) {
+        groups[key].lastPaymentDate = dateStr;
+      }
+    });
+
+    // Sort payments within each group newest-first, and then sort groups by newest payment
+    const result = Object.values(groups).map((g) => {
+      g.payments = g.payments.sort((x, y) => (new Date(y.date || '').getTime() - new Date(x.date || '').getTime()));
+      return g;
+    });
+
+    result.sort((a, b) => (new Date(b.lastPaymentDate || '').getTime() - new Date(a.lastPaymentDate || '').getTime()));
+    return result;
+  }, [filteredPayments]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(groupedPayments.length / RECORDS_PER_PAGE);
+  const paginatedPayments = useMemo(() => {
+    const startIdx = (currentPage - 1) * RECORDS_PER_PAGE;
+    const endIdx = startIdx + RECORDS_PER_PAGE;
+    return groupedPayments.slice(startIdx, endIdx);
+  }, [groupedPayments, currentPage]);
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const [selectedGroup, setSelectedGroup] = useState<ReceiptGroup | null>(null);
+  const [editPayment, setEditPayment] = useState<PaymentReceipt | null>(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+
+  const openGroupView = (group: ReceiptGroup) => setSelectedGroup(group);
+  const closeGroupView = () => setSelectedGroup(null);
+
+  const showNotification = (msg: string, type: 'success' | 'error' = 'success') => {
+    setNotification({ msg, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const handleDownload = async (payment: PaymentReceipt) => {
+    try {
+      await generateReceiptPDF(payment, getDefaultReceiptLogo());
+      showNotification(S.receiptDownloadSuccess, 'success');
+    } catch (error) {
+      console.error('Receipt generation failed:', error);
+      showNotification(S.receiptDownloadFailed, 'error');
+    }
+  };
+
+  return (
+    <div>
+      <TopHeader />
+
+      <AnimatePresence>
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: -20, x: '-50%' }}
+            className={`fixed top-6 left-1/2 z-50 px-6 py-3 text-white text-sm font-medium rounded-lg shadow-lg ${
+              notification.type === 'success' ? 'bg-[#22c55e]' : 'bg-[#ef4444]'
+            }`}
+          >
+            {notification.msg}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+      >
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+              <p className="text-sm text-[#64748b]">{S.pdfPageSubtitle}</p>
+              <h1 className="text-xl sm:text-2xl font-semibold text-slate-900">{S.pdfPageTitle}</h1>
+            </div>
+          <div className="flex flex-col md:flex-row gap-3 items-center">
+            <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm w-full md:w-auto">
+              <Search size={16} className="text-slate-500" />
+              <input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder={S.searchPlaceholder}
+                className="w-full bg-transparent text-sm outline-none"
+              />
+            </div>
+            {filteredPayments.length > 0 && (
+              <button
+                onClick={async () => {
+                  try {
+                    await generatePaginatedReceiptsPDF(filteredPayments, getDefaultReceiptLogo());
+                    showNotification('All receipts downloaded successfully!', 'success');
+                  } catch (error) {
+                    console.error('Paginated receipt generation failed:', error);
+                    showNotification('Failed to download receipts', 'error');
+                  }
+                }}
+                className="inline-flex items-center gap-2 rounded-full bg-[#22c55e] px-4 py-2 text-sm font-semibold text-white hover:bg-[#16a34a] transition whitespace-nowrap"
+              >
+                <Download size={16} />
+                Download All
+              </button>
+            )}
+          </div>
+        </div>
+        <AnimatePresence>
+          {selectedGroup && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+              onClick={closeGroupView}
+            >
+              <motion.div
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.98, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-3xl rounded-2xl bg-white shadow-xl overflow-y-auto max-h-[80vh]"
+              >
+                <div className="flex items-center justify-between px-6 py-4 border-b">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">Payment History — {selectedGroup.studentName}</h3>
+                    <p className="text-sm text-slate-500">{selectedGroup.studentId} — {selectedGroup.payments.length} receipts</p>
+                  </div>
+                  <button onClick={closeGroupView} className="p-2 rounded-md text-slate-600 hover:bg-slate-100">
+                    <X size={20} />
+                  </button>
+                </div>
+                <div className="p-6 space-y-4">
+                  {selectedGroup.payments.map((payment) => (
+                    <div key={payment.id} className="flex items-center justify-between gap-4 rounded-lg border p-4">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{payment.month}</p>
+                        <p className="text-xs text-slate-500">{payment.date} • {payment.paymentMode || 'Cash'}</p>
+                        {payment.notes && <p className="mt-2 text-xs text-slate-600">{payment.notes}</p>}
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="text-sm font-bold text-slate-900">₹{payment.amount.toFixed(2)}</div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleDownload(payment)}
+                            className="inline-flex items-center gap-2 rounded-full bg-[#2563eb] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1d4ed8] transition"
+                          >
+                            <Download size={14} />
+                            Download
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditPayment(payment);
+                              setEditAmount(String(payment.amount));
+                              // prepare date input value (YYYY-MM-DD) if possible
+                              try {
+                                setEditDate(new Date(payment.date || '').toISOString().slice(0, 10));
+                              } catch {
+                                setEditDate('');
+                              }
+                              setEditNotes(payment.notes || '');
+                            }}
+                            className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition"
+                          >
+                            <Pencil size={14} />
+                            Edit
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Edit Payment Modal (inside group view) */}
+                <AnimatePresence>
+                  {editPayment && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/40"
+                      onClick={() => setEditPayment(null)}
+                    >
+                      <motion.div
+                        initial={{ scale: 0.98, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.98, opacity: 0 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full max-w-lg rounded-2xl bg-white shadow-xl overflow-hidden"
+                      >
+                        <div className="flex items-center justify-between px-6 py-4 border-b">
+                          <div>
+                            <h3 className="text-lg font-bold">Edit Payment</h3>
+                            <p className="text-sm text-slate-500">Modify amount, date or notes</p>
+                          </div>
+                          <button onClick={() => setEditPayment(null)} className="p-2 rounded-md text-slate-600 hover:bg-slate-100">
+                            <X size={20} />
+                          </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Amount</label>
+                            <input
+                              type="number"
+                              inputMode="decimal"
+                              min="0"
+                              value={editAmount}
+                              onChange={(e) => setEditAmount(e.target.value)}
+                              className="w-full px-4 py-2 border rounded-md"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Payment Date</label>
+                            <input
+                              type="date"
+                              value={editDate}
+                              onChange={(e) => setEditDate(e.target.value)}
+                              className="w-full px-4 py-2 border rounded-md"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+                            <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} className="w-full px-4 py-2 border rounded-md" rows={3} />
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <button
+                              onClick={async () => {
+                                if (!editPayment) return;
+                                const amt = parseFloat(editAmount);
+                                if (Number.isNaN(amt) || amt < 0) {
+                                  showNotification('Enter a valid amount', 'error');
+                                  return;
+                                }
+                                try {
+                                  await feeApi.updateFee(editPayment.rawId || editPayment.id, {
+                                    amount: amt,
+                                    notes: editNotes.trim() || undefined,
+                                    date: editDate || undefined,
+                                  });
+                                  const data = await getStoredPayments();
+                                  setPayments(data);
+                                  // refresh group view to reflect changes
+                                  const updatedGroup = groupedPayments.find(g => g.studentId === selectedGroup?.studentId) || null;
+                                  setSelectedGroup(updatedGroup);
+                                  setEditPayment(null);
+                                  showNotification('Payment updated', 'success');
+                                } catch (err) {
+                                  console.error('Failed to update payment:', err);
+                                  showNotification('Unable to update payment', 'error');
+                                }
+                              }}
+                              className="px-4 py-2 bg-[#2563eb] text-white rounded-md"
+                            >
+                              Save
+                            </button>
+                            <button onClick={() => setEditPayment(null)} className="px-4 py-2 border rounded-md">Cancel</button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="table-scroll overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.16em] text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Student</th>
+                <th className="px-4 py-3">Student ID</th>
+                <th className="px-4 py-3">Receipts</th>
+                <th className="px-4 py-3">Total Paid</th>
+                <th className="px-4 py-3">Last Payment</th>
+                <th className="px-4 py-3">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 bg-white">
+              {paginatedPayments.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
+                    {S.pdfEmpty}
+                  </td>
+                </tr>
+              ) : (
+                paginatedPayments.map((group) => (
+                  <Fragment key={`group-${group.studentId}`}>
+                    <tr className="bg-slate-50">
+                      <td className="px-4 py-4 text-slate-900 font-medium">{group.studentName}</td>
+                      <td className="px-4 py-4 text-slate-600">{group.studentId}</td>
+                      <td className="px-4 py-4 text-slate-600">{group.payments.length} receipt{group.payments.length > 1 ? 's' : ''}</td>
+                      <td className="px-4 py-4 text-slate-900">₹{group.totalAmount.toFixed(2)}</td>
+                      <td className="px-4 py-4 text-slate-600">{group.lastPaymentDate}</td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => openGroupView(group)}
+                            className="inline-flex items-center gap-2 rounded-full bg-[#2563eb] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1d4ed8] transition"
+                          >
+                            <Eye size={14} />
+                            View
+                          </button>
+                          <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">
+                            {group.payments.length} history items
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                    {/* History hidden here; open via View button (modal) */}
+                  </Fragment>
+                ))
+              )}
+            </tbody>
+          </table>
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4 border-t border-slate-200 bg-slate-50">
+              <div className="text-sm text-slate-600">
+                Page {currentPage} of {totalPages} • Showing {paginatedPayments.length} of {groupedPayments.length} records
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                      page === currentPage
+                        ? 'bg-[#2563eb] text-white'
+                        : 'border border-slate-200 text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
