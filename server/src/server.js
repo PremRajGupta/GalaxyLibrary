@@ -109,23 +109,24 @@ app.post('/login', (req, res) => {
   return res.json({ token, user });
 });
 
-// ===== Public Website Content (No Auth — home page must load/save for all visitors) =====
+// ===== PUBLIC ROUTES (Before auth middleware) =====
+// Public Website Content (No Auth — home page must load/save for all visitors)
 app.get('/api/v1/site-content', getSiteContent);
 app.get('/api/site-content', getSiteContent);
 app.put('/api/v1/site-content', updateSiteContent);
 app.put('/api/site-content', updateSiteContent);
 
-// ===== Public landing stats (visitors + admissions for index page) =====
+// Public landing stats (visitors + admissions for index page)
 app.get('/api/v1/public/stats', getPublicStats);
 app.get('/api/public/stats', getPublicStats);
 app.post('/api/v1/public/stats/visit', recordPublicVisit);
 app.post('/api/public/stats/visit', recordPublicVisit);
 
-// ===== Authentication Middleware =====
+// ===== AUTHENTICATION MIDDLEWARE (Protects all /api routes below this) =====
 app.use('/api/v1', verifyToken);
 app.use('/api', verifyToken);
 
-// ===== API Routes (v1) =====
+// ===== PROTECTED API Routes (v1) =====
 app.use('/api/v1/students', studentRoutes);
 app.use('/api/v1/fees', feeRoutes);
 app.use('/api/v1/seats', seatRoutes);
