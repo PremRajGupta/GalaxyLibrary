@@ -1,6 +1,7 @@
 {
-  "buildCommand": "cd app && npm run build",
-  "outputDirectory": "app/dist",
+  "root": "app",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "routes": [
     {
       "src": "^/(?!api).*",
