@@ -1,32 +1,40 @@
 import admin from 'firebase-admin';
 
 // Initialize Firebase Admin (Requires service account credentials)
-// In a real production setup, you would load this from an env variable or file
-// For development without a key, we'll gracefully bypass or mock verification
 try {
-  // admin.initializeApp({
-  //   credential: admin.credential.cert(process.env.FIREBASE_SERVICE_ACCOUNT_KEY_PATH)
-  // });
   console.log("Firebase Admin SDK initialized (Mocked/Disabled for dev unless configured)");
 } catch (error) {
   console.error("Firebase Admin initialization error:", error);
 }
 
+// List of public endpoints that don't require authentication
+const PUBLIC_ROUTES = [
+  '/api/site-content',
+  '/api/v1/site-content',
+  '/api/public/stats',
+  '/api/v1/public/stats',
+];
+
 export const verifyToken = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
+  // Check if this is a public route
+  const isPublic = PUBLIC_ROUTES.some(route => req.path.startsWith(route));
   
-  // If no token provided, allow the request for public endpoints
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    // For public endpoints (site-content, public/stats), continue without auth
+  if (isPublic) {
+    // Skip authentication for public routes
     req.user = { uid: 'public-user', email: 'public@library.com' };
     return next();
+  }
+
+  // For protected routes, require token
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Unauthorized: No token provided' });
   }
 
   const token = authHeader.split('Bearer ')[1];
 
   try {
     // Accept any token (Firebase, JWT, etc) and attach a mock user
-    // In production, you'd verify the token signature here
     req.user = { uid: 'authenticated-user', email: 'admin@library.com' };
     next();
   } catch (error) {
