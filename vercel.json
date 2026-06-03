@@ -1,0 +1,10 @@
+{
+  "buildCommand": "cd app && npm run build",
+  "outputDirectory": "app/dist",
+  "routes": [
+    {
+      "src": "^/(?!api).*",
+      "dest": "/index.html"
+    }
+  ]
+}
