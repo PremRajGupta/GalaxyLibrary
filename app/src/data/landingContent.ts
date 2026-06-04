@@ -11,6 +11,17 @@ export type LibraryInfo = {
   email: string;
   address: string;
   location?: string;
+  mapUrl: string;
+  whatsappMessage: string;
+};
+
+export type ContactCardInfo = {
+  title: string;
+  phone: string;
+  phoneRaw: string;
+  email: string;
+  address: string;
+  mapUrl: string;
   whatsappMessage: string;
 };
 
@@ -31,6 +42,10 @@ export type PageText = {
   contactPhoneLabel: string;
   contactEmailLabel: string;
   contactAddressLabel: string;
+  contactSecondTitle: string;
+  contactSecondPhoneLabel: string;
+  contactSecondEmailLabel: string;
+  contactSecondAddressLabel: string;
   whatsappButton: string;
   footerQuickLinksTitle: string;
   footerGetStartedTitle: string;
@@ -99,6 +114,7 @@ export const NAV_SECTION_OPTIONS: { id: string; label: string }[] = [
 
 export type SiteContent = {
   libraryInfo: LibraryInfo;
+  admissionContact: ContactCardInfo;
   pageText: PageText;
   navMenuItems: NavMenuItem[];
   heroSlides: HeroSlide[];
@@ -139,6 +155,10 @@ export const DEFAULT_PAGE_TEXT: PageText = {
   contactPhoneLabel: 'Phone',
   contactEmailLabel: 'Email',
   contactAddressLabel: 'Address',
+  contactSecondTitle: 'Admission & Visit Help',
+  contactSecondPhoneLabel: 'Support',
+  contactSecondEmailLabel: 'Hours',
+  contactSecondAddressLabel: 'Location',
   whatsappButton: 'Chat on WhatsApp',
   footerQuickLinksTitle: 'Quick Links',
   footerGetStartedTitle: 'Get Started',
@@ -165,7 +185,17 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     phoneRaw: '917488252019',
     email: 'galaxy.library@gmail.com',
     address: 'DhiraBigha, Sugaon Road, Tehta, Jehanabad, Bihar 804427',
+    mapUrl: '',
     whatsappMessage: 'Hello! I would like to know more about Galaxy Library.',
+  },
+  admissionContact: {
+    title: 'Admission & Visit Help',
+    phone: '+91 74882 52019',
+    phoneRaw: '917488252019',
+    email: 'galaxy.library@gmail.com',
+    address: 'DhiraBigha, Sugaon Road, Tehta, Jehanabad, Bihar 804427',
+    mapUrl: '',
+    whatsappMessage: 'Hello! I would like to know about admission and visit details.',
   },
   pageText: DEFAULT_PAGE_TEXT,
   navMenuItems: DEFAULT_NAV_MENU_ITEMS,

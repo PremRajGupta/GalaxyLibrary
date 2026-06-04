@@ -59,6 +59,13 @@ export default function WebsiteSettings() {
     }));
   };
 
+  const updateAdmissionContact = (field: keyof SiteContent['admissionContact'], value: string) => {
+    setContent((prev) => ({
+      ...prev,
+      admissionContact: { ...prev.admissionContact, [field]: value },
+    }));
+  };
+
   const updatePageText = (field: keyof PageText, value: string) => {
     setContent((prev) => ({
       ...prev,
@@ -190,16 +197,29 @@ export default function WebsiteSettings() {
         {activeTab === 'general' && (
           <>
             <section className="page-card">
-              <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Library Info</h3>
+              <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Library / Owner Contact</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div><label className={labelClass}>Library Name</label><input className={inputClass} value={content.libraryInfo.name} onChange={(e) => updateLibraryInfo('name', e.target.value)} /></div>
                 <div><label className={labelClass}>Tagline</label><input className={inputClass} value={content.libraryInfo.tagline} onChange={(e) => updateLibraryInfo('tagline', e.target.value)} /></div>
-                <div><label className={labelClass}>Owner Name</label><input className={inputClass} value={content.libraryInfo.ownerName} onChange={(e) => updateLibraryInfo('ownerName', e.target.value)} /></div>
+                <div><label className={labelClass}>Left Card Title / Owner Name</label><input className={inputClass} value={content.libraryInfo.ownerName} onChange={(e) => updateLibraryInfo('ownerName', e.target.value)} /></div>
                 <div><label className={labelClass}>Phone (display)</label><input className={inputClass} value={content.libraryInfo.phone} onChange={(e) => updateLibraryInfo('phone', e.target.value)} /></div>
                 <div><label className={labelClass}>WhatsApp Number (digits only)</label><input className={inputClass} value={content.libraryInfo.phoneRaw} onChange={(e) => updateLibraryInfo('phoneRaw', e.target.value.replace(/\D/g, ''))} /></div>
                 <div><label className={labelClass}>Email</label><input type="email" className={inputClass} value={content.libraryInfo.email} onChange={(e) => updateLibraryInfo('email', e.target.value)} /></div>
                 <div className="md:col-span-2"><label className={labelClass}>Address</label><input className={inputClass} value={content.libraryInfo.address} onChange={(e) => updateLibraryInfo('address', e.target.value)} /></div>
+                <div className="md:col-span-2"><label className={labelClass}>Google Maps URL (optional)</label><input className={inputClass} value={content.libraryInfo.mapUrl} onChange={(e) => updateLibraryInfo('mapUrl', e.target.value)} placeholder="Paste Google Maps share link, or leave blank to search address" /></div>
                 <div className="md:col-span-2"><label className={labelClass}>WhatsApp Message</label><textarea className={`${inputClass} resize-none h-20`} value={content.libraryInfo.whatsappMessage} onChange={(e) => updateLibraryInfo('whatsappMessage', e.target.value)} /></div>
+              </div>
+            </section>
+            <section className="page-card">
+              <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Admission & Visit Help Contact</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><label className={labelClass}>Right Card Title</label><input className={inputClass} value={content.admissionContact.title} onChange={(e) => updateAdmissionContact('title', e.target.value)} /></div>
+                <div><label className={labelClass}>Phone (display)</label><input className={inputClass} value={content.admissionContact.phone} onChange={(e) => updateAdmissionContact('phone', e.target.value)} /></div>
+                <div><label className={labelClass}>WhatsApp Number (digits only)</label><input className={inputClass} value={content.admissionContact.phoneRaw} onChange={(e) => updateAdmissionContact('phoneRaw', e.target.value.replace(/\D/g, ''))} /></div>
+                <div><label className={labelClass}>Email</label><input type="email" className={inputClass} value={content.admissionContact.email} onChange={(e) => updateAdmissionContact('email', e.target.value)} /></div>
+                <div className="md:col-span-2"><label className={labelClass}>Address</label><input className={inputClass} value={content.admissionContact.address} onChange={(e) => updateAdmissionContact('address', e.target.value)} /></div>
+                <div className="md:col-span-2"><label className={labelClass}>Google Maps URL (optional)</label><input className={inputClass} value={content.admissionContact.mapUrl} onChange={(e) => updateAdmissionContact('mapUrl', e.target.value)} placeholder="Paste Google Maps share link, or leave blank to search address" /></div>
+                <div className="md:col-span-2"><label className={labelClass}>WhatsApp Message</label><textarea className={`${inputClass} resize-none h-20`} value={content.admissionContact.whatsappMessage} onChange={(e) => updateAdmissionContact('whatsappMessage', e.target.value)} /></div>
               </div>
             </section>
             <section className="page-card">
@@ -211,6 +231,9 @@ export default function WebsiteSettings() {
                 <div><label className={labelClass}>Email Label</label><input className={inputClass} value={content.pageText.contactEmailLabel} onChange={(e) => updatePageText('contactEmailLabel', e.target.value)} /></div>
                 <div><label className={labelClass}>Address Label</label><input className={inputClass} value={content.pageText.contactAddressLabel} onChange={(e) => updatePageText('contactAddressLabel', e.target.value)} /></div>
                 <div><label className={labelClass}>WhatsApp Button Text</label><input className={inputClass} value={content.pageText.whatsappButton} onChange={(e) => updatePageText('whatsappButton', e.target.value)} /></div>
+                <div><label className={labelClass}>Right Card Phone Label</label><input className={inputClass} value={content.pageText.contactSecondPhoneLabel} onChange={(e) => updatePageText('contactSecondPhoneLabel', e.target.value)} /></div>
+                <div><label className={labelClass}>Right Card Email Label</label><input className={inputClass} value={content.pageText.contactSecondEmailLabel} onChange={(e) => updatePageText('contactSecondEmailLabel', e.target.value)} /></div>
+                <div><label className={labelClass}>Right Card Address Label</label><input className={inputClass} value={content.pageText.contactSecondAddressLabel} onChange={(e) => updatePageText('contactSecondAddressLabel', e.target.value)} /></div>
               </div>
             </section>
 
@@ -235,6 +258,7 @@ export default function WebsiteSettings() {
                         phoneRaw: content.libraryInfo.phoneRaw,
                         email: content.libraryInfo.email,
                         address: content.libraryInfo.address,
+                        mapUrl: content.libraryInfo.mapUrl,
                         whatsappMessage: content.libraryInfo.whatsappMessage,
                       }}
                       title={content.libraryInfo.ownerName}
@@ -246,16 +270,17 @@ export default function WebsiteSettings() {
 
                     <ContactDisplay
                       contact={{
-                        phone: content.libraryInfo.phone,
-                        phoneRaw: content.libraryInfo.phoneRaw,
-                        email: content.libraryInfo.email,
-                        address: content.libraryInfo.address,
-                        whatsappMessage: content.libraryInfo.whatsappMessage,
+                        phone: content.admissionContact.phone,
+                        phoneRaw: content.admissionContact.phoneRaw,
+                        email: content.admissionContact.email,
+                        address: content.admissionContact.address,
+                        mapUrl: content.admissionContact.mapUrl,
+                        whatsappMessage: content.admissionContact.whatsappMessage,
                       }}
-                      title="Admission & Visit Help"
-                      phoneLabel="Support"
-                      emailLabel="Hours"
-                      addressLabel="Location"
+                      title={content.admissionContact.title}
+                      phoneLabel={content.pageText.contactSecondPhoneLabel}
+                      emailLabel={content.pageText.contactSecondEmailLabel}
+                      addressLabel={content.pageText.contactSecondAddressLabel}
                       whatsappButtonText={content.pageText.whatsappButton}
                     />
                   </div>

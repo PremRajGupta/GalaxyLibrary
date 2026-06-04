@@ -60,7 +60,7 @@ export default function Index() {
     );
   }
 
-  const { libraryInfo, pageText, navMenuItems, heroSlides, aboutContent, galleryImages, facultyMembers } = content;
+  const { libraryInfo, admissionContact, pageText, navMenuItems, heroSlides, aboutContent, galleryImages, facultyMembers } = content;
 
   return (
     <div className="min-h-screen bg-white">
@@ -111,7 +111,7 @@ export default function Index() {
       <StatsSection pageText={pageText} />
       <GallerySection images={galleryImages} pageText={pageText} />
       <FacultySection members={facultyMembers} pageText={pageText} />
-      <ContactSection libraryInfo={libraryInfo} pageText={pageText} />
+      <ContactSection libraryInfo={libraryInfo} admissionContact={admissionContact} pageText={pageText} />
       <LandingFooter
         libraryInfo={libraryInfo}
         pageText={pageText}

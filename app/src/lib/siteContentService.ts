@@ -50,10 +50,25 @@ function resolveNavMenuItems(saved: Partial<SiteContent>): NavMenuItem[] {
 }
 
 export function mergeSiteContent(saved: Partial<SiteContent>): SiteContent {
+  const libraryInfo = mergeStringFields(
+    DEFAULT_SITE_CONTENT.libraryInfo,
+    saved.libraryInfo
+  );
+
   return {
-    libraryInfo: mergeStringFields(
-      DEFAULT_SITE_CONTENT.libraryInfo,
-      saved.libraryInfo
+    libraryInfo,
+    admissionContact: mergeStringFields(
+      DEFAULT_SITE_CONTENT.admissionContact,
+      saved.admissionContact,
+      saved.admissionContact ? undefined : {
+        title: saved.pageText?.contactSecondTitle ?? DEFAULT_SITE_CONTENT.admissionContact.title,
+        phone: libraryInfo.phone,
+        phoneRaw: libraryInfo.phoneRaw,
+        email: libraryInfo.email,
+        address: libraryInfo.address,
+        mapUrl: libraryInfo.mapUrl,
+        whatsappMessage: libraryInfo.whatsappMessage,
+      }
     ),
     pageText: mergeStringFields(DEFAULT_SITE_CONTENT.pageText, saved.pageText),
     navMenuItems: resolveNavMenuItems(saved),
@@ -109,6 +124,8 @@ export function clearStoredSiteContent() {
 
 export function prepareSiteContentForSave(content: SiteContent): SiteContent {
   const phoneRaw = content.libraryInfo.phoneRaw || normalizePhoneRaw(content.libraryInfo.phone);
+  const admissionPhoneRaw =
+    content.admissionContact.phoneRaw || normalizePhoneRaw(content.admissionContact.phone);
 
   const galleryImages = content.galleryImages.map((img) => {
     const title = img.title.trim();
@@ -136,7 +153,17 @@ export function prepareSiteContentForSave(content: SiteContent): SiteContent {
 
   return {
     ...content,
-    libraryInfo: { ...content.libraryInfo, phoneRaw },
+    libraryInfo: {
+      ...content.libraryInfo,
+      phoneRaw,
+      mapUrl: content.libraryInfo.mapUrl.trim(),
+    },
+    admissionContact: {
+      ...content.admissionContact,
+      title: content.admissionContact.title.trim() || DEFAULT_SITE_CONTENT.admissionContact.title,
+      phoneRaw: admissionPhoneRaw,
+      mapUrl: content.admissionContact.mapUrl.trim(),
+    },
     navMenuItems,
     galleryImages,
     facultyMembers,

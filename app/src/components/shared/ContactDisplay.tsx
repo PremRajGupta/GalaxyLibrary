@@ -5,6 +5,7 @@ type ContactInfo = {
   phoneRaw: string;
   email: string;
   address: string;
+  mapUrl?: string;
   whatsappMessage: string;
 };
 
@@ -29,6 +30,11 @@ export default function ContactDisplay({
   variant = 'default',
 }: ContactDisplayProps) {
   const whatsappUrl = `https://wa.me/${contact.phoneRaw}?text=${encodeURIComponent(contact.whatsappMessage)}`;
+  const phoneUrl = `tel:${contact.phoneRaw}`;
+  const emailUrl = `mailto:${contact.email}`;
+  const mapUrl =
+    contact.mapUrl?.trim() ||
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contact.address)}`;
 
   return (
     <div className={variant === 'admin' ? 'bg-[#f8fafc] rounded-xl p-6 border border-[#e2e8f0]' : 'bg-[#f8fafc] rounded-2xl p-6 sm:p-8 shadow-sm border border-[#e2e8f0]'}>
@@ -36,13 +42,17 @@ export default function ContactDisplay({
 
       <div className="space-y-5">
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 bg-[#dbeafe] rounded-lg flex items-center justify-center flex-shrink-0">
+          <a
+            href={phoneUrl}
+            aria-label={`Call ${contact.phone}`}
+            className="w-10 h-10 bg-[#dbeafe] rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-[#bfdbfe] transition-colors"
+          >
             <Phone className="text-[#3b82f6]" size={20} />
-          </div>
+          </a>
           <div>
             <p className="text-sm text-[#64748b]">{phoneLabel}</p>
             <a
-              href={`tel:${contact.phoneRaw}`}
+              href={phoneUrl}
               className="text-[#1e293b] font-medium hover:text-[#3b82f6] transition-colors"
             >
               {contact.phone}
@@ -51,13 +61,17 @@ export default function ContactDisplay({
         </div>
 
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 bg-[#dcfce7] rounded-lg flex items-center justify-center flex-shrink-0">
+          <a
+            href={emailUrl}
+            aria-label={`Email ${contact.email}`}
+            className="w-10 h-10 bg-[#dcfce7] rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-[#bbf7d0] transition-colors"
+          >
             <Mail className="text-[#22c55e]" size={20} />
-          </div>
+          </a>
           <div>
             <p className="text-sm text-[#64748b]">{emailLabel}</p>
             <a
-              href={`mailto:${contact.email}`}
+              href={emailUrl}
               className="text-[#1e293b] font-medium hover:text-[#3b82f6] transition-colors break-all"
             >
               {contact.email}
@@ -66,12 +80,25 @@ export default function ContactDisplay({
         </div>
 
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 bg-[#fef9c3] rounded-lg flex items-center justify-center flex-shrink-0">
+          <a
+            href={mapUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Open ${contact.address} on Google Maps`}
+            className="w-10 h-10 bg-[#fef9c3] rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-[#fde68a] transition-colors"
+          >
             <MapPin className="text-[#eab308]" size={20} />
-          </div>
+          </a>
           <div>
             <p className="text-sm text-[#64748b]">{addressLabel}</p>
-            <p className="text-[#1e293b] font-medium">{contact.address}</p>
+            <a
+              href={mapUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#1e293b] font-medium hover:text-[#3b82f6] transition-colors"
+            >
+              {contact.address}
+            </a>
           </div>
         </div>
       </div>

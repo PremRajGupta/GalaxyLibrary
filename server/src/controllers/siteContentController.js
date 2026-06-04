@@ -3,6 +3,7 @@ import { defaultSiteContent } from '../data/defaultSiteContent.js';
 
 const toResponse = (doc) => ({
   libraryInfo: doc.libraryInfo,
+  admissionContact: doc.admissionContact,
   pageText: doc.pageText,
   navMenuItems: doc.navMenuItems,
   heroSlides: doc.heroSlides,
@@ -36,6 +37,11 @@ const mergeSiteContent = (existing, incoming) => {
       ...defaultSiteContent.libraryInfo,
       ...base.libraryInfo,
       ...(incoming.libraryInfo ?? {}),
+    },
+    admissionContact: {
+      ...defaultSiteContent.admissionContact,
+      ...base.admissionContact,
+      ...(incoming.admissionContact ?? {}),
     },
     pageText: {
       ...defaultSiteContent.pageText,
