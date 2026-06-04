@@ -441,11 +441,12 @@ export function FeeCollection() {
       };
 
       // If marked as advance, call the API to mark it
-      if (markAsAdvanceDuringCollection && serverResponse?.rawId) {
+      if (markAsAdvanceDuringCollection && (serverResponse?._id || serverResponse?.id)) {
         try {
           const advanceAmount = Math.max(0, collectedAmount - selectedStudent.feeDue);
+          const feeId = serverResponse._id || serverResponse.id;
           await feeApi.markAdvancePayment(
-            serverResponse.rawId,
+            feeId,
             selectedStudent.monthlyFee,
             joiningDateValue || toDateInputValue(new Date()),  // Use joining date, fallback to today
             true,
@@ -453,6 +454,8 @@ export function FeeCollection() {
           );
           // Reset checkbox after successful advance marking
           setMarkAsAdvanceDuringCollection(false);
+          // Refresh data to show updated advance payment status
+          await loadData();
         } catch (advanceErr) {
           console.error('Failed to mark as advance:', advanceErr);
           showNotification('Advance payment marking failed. Please try again.', 'error');
