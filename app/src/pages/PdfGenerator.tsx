@@ -140,8 +140,20 @@ export default function PdfGenerator() {
     return result;
   }, [filteredPayments]);
 
-  const advancePaymentCount = useMemo(() => {
-    return Object.values(validityData).filter(v => v.hasAdvancePayment && v.paymentStatus !== 'expired').length;
+  const advancePaymentStats = useMemo(() => {
+    const stats = {
+      total: 0,
+      expiringoon: 0,
+      expired: 0,
+    };
+    Object.values(validityData).forEach(v => {
+      if (v.hasAdvancePayment) {
+        stats.total += 1;
+        if (v.paymentStatus === 'expiring-soon') stats.expiringoon += 1;
+        else if (v.paymentStatus === 'expired') stats.expired += 1;
+      }
+    });
+    return stats;
   }, [validityData]);
 
   // Pagination calculations
@@ -269,7 +281,7 @@ export default function PdfGenerator() {
               <p className="text-sm text-[#64748b]">{S.pdfPageSubtitle}</p>
               <h1 className="text-xl sm:text-2xl font-semibold text-slate-900">{S.pdfPageTitle}</h1>
               <p className="text-xs text-yellow-600 mt-1 font-semibold">
-                ⚡ {advancePaymentCount} student{advancePaymentCount !== 1 ? 's have' : ' has'} active advance payments
+                ⚡ {advancePaymentStats.total} student{advancePaymentStats.total !== 1 ? 's have' : ' has'} active advance payments
               </p>
             </div>
           <div className="flex flex-col md:flex-row gap-3 items-center">
@@ -303,6 +315,41 @@ export default function PdfGenerator() {
             </div>
           </div>
         </div>
+
+        {/* Advance Payment Stats Cards */}
+        {advancePaymentStats.total > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4"
+          >
+            <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-4 border border-yellow-200">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap size={18} className="text-yellow-600" />
+                <p className="text-xs font-semibold text-yellow-700 uppercase">Total Advance</p>
+              </div>
+              <p className="text-2xl font-bold text-yellow-900">{advancePaymentStats.total}</p>
+              <p className="text-xs text-yellow-600 mt-1">Students with advance payments</p>
+            </div>
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-200">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle size={18} className="text-orange-600" />
+                <p className="text-xs font-semibold text-orange-700 uppercase">Expiring Soon</p>
+              </div>
+              <p className="text-2xl font-bold text-orange-900">{advancePaymentStats.expiringoon}</p>
+              <p className="text-xs text-orange-600 mt-1">Payments expiring within 15 days</p>
+            </div>
+            <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 border border-red-200">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle size={18} className="text-red-600" />
+                <p className="text-xs font-semibold text-red-700 uppercase">Expired</p>
+              </div>
+              <p className="text-2xl font-bold text-red-900">{advancePaymentStats.expired}</p>
+              <p className="text-xs text-red-600 mt-1">Payments needing renewal</p>
+            </div>
+          </motion.div>
+        )}
+
         <AnimatePresence>
           {selectedGroup && (
             <motion.div
