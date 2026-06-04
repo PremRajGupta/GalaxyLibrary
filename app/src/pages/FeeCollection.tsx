@@ -92,8 +92,6 @@ export function FeeCollection() {
   const navigate = useNavigate();
   const [students, setStudents] = useState<StudentFee[]>([]);
   const [payments, setPayments] = useState<PaymentReceipt[]>([]);
-  const [selectedBranch, setSelectedBranch] = useState<string>('');
-  const [branches, setBranches] = useState<Array<{id: string; name: string}>>([]);
   
   const loadData = async () => {
     try {
