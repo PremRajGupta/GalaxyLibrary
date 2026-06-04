@@ -5,7 +5,7 @@ import { generateReceiptPDF, generatePaginatedReceiptsPDF, getDefaultReceiptLogo
 import type { PaymentReceipt } from '../sections/fees/receiptService';
 import S from '../lib/strings';
 import { getStoredPayments } from '../sections/fees/collectionService';
-import { Download, Search, Eye, X, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Download, Search, Eye, X, Pencil, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { feeApi } from '../lib/apiService';
 
 interface ReceiptGroup {
@@ -14,6 +14,15 @@ interface ReceiptGroup {
   payments: PaymentReceipt[];
   totalAmount: number;
   lastPaymentDate: string;
+}
+
+interface PaymentValidity {
+  hasAdvancePayment: boolean;
+  monthsCovered?: number;
+  validUntilDate?: string;
+  advanceStartDate?: string;
+  daysRemaining?: number;
+  paymentStatus?: 'valid' | 'expiring-soon' | 'expired';
 }
 
 interface Notification {
@@ -26,19 +35,57 @@ export default function PdfGenerator() {
   const [searchTerm, setSearchTerm] = useState('');
   const [notification, setNotification] = useState<Notification | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [validityData, setValidityData] = useState<Record<string, PaymentValidity>>({});
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const RECORDS_PER_PAGE = 7;
+
+  const fetchValidityData = async (paymentsList: PaymentReceipt[]) => {
+    try {
+      const uniqueStudents = [...new Set(paymentsList.map(p => p.studentId))];
+      const validity: Record<string, PaymentValidity> = {};
+
+      for (const studentId of uniqueStudents) {
+        try {
+          const response = await feeApi.getStudentPaymentValidity(studentId);
+          validity[studentId] = response;
+        } catch (err) {
+          console.error(`Error fetching validity for ${studentId}:`, err);
+          validity[studentId] = { hasAdvancePayment: false };
+        }
+      }
+      setValidityData(validity);
+    } catch (error) {
+      console.error('Error fetching validity data:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchPayments = async () => {
       try {
         const data = await getStoredPayments();
         setPayments(data);
+        await fetchValidityData(data);
       } catch (error) {
         console.error('Error fetching fees:', error);
       }
     };
     fetchPayments();
   }, []);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const data = await getStoredPayments();
+      setPayments(data);
+      await fetchValidityData(data);
+      showNotification('Data refreshed successfully!', 'success');
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      showNotification('Failed to refresh data', 'error');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const filteredPayments = useMemo(
     () => payments.filter((payment) => {
@@ -113,6 +160,65 @@ export default function PdfGenerator() {
     setTimeout(() => setNotification(null), 3000);
   };
 
+  const getValidityBadge = (studentId: string) => {
+    const validity = validityData[studentId];
+
+    if (!validity || !validity.hasAdvancePayment) {
+      return (
+        <div className="text-xs text-slate-500 font-medium">
+          No advance payment
+        </div>
+      );
+    }
+
+    const status = validity.paymentStatus;
+    const validUntil = validity.validUntilDate ? new Date(validity.validUntilDate).toLocaleDateString('en-IN') : '-';
+    const validFrom = validity.advanceStartDate ? new Date(validity.advanceStartDate).toLocaleDateString('en-IN') : '-';
+    const days = validity.daysRemaining ?? 0;
+    const months = validity.monthsCovered ?? 0;
+
+    if (status === 'expired') {
+      return (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={14} className="text-red-600 flex-shrink-0" />
+            <span className="text-xs font-bold text-red-700">Expired on: {validUntil}</span>
+          </div>
+          <div className="text-xs text-red-600 ml-6">Needs renewal</div>
+          {validFrom !== '-' && (
+            <div className="text-xs text-slate-600 ml-6">Advance paid: {validFrom} - {validUntil}</div>
+          )}
+        </div>
+      );
+    } else if (status === 'expiring-soon') {
+      return (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={14} className="text-yellow-600 flex-shrink-0" />
+            <span className="text-xs font-bold text-yellow-700">Expiring: {validUntil}</span>
+          </div>
+          <div className="text-xs text-yellow-600 ml-6">{days} days left • {months} months advance</div>
+          {validFrom !== '-' && (
+            <div className="text-xs text-slate-600 ml-6">Valid from: {validFrom}</div>
+          )}
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={14} className="text-green-600 flex-shrink-0" />
+            <span className="text-xs font-bold text-green-700">Valid Until: {validUntil}</span>
+          </div>
+          <div className="text-xs text-green-600 ml-6">{days} days remaining • {months} months advance</div>
+          {validFrom !== '-' && (
+            <div className="text-xs text-slate-600 ml-6">Advance paid: {validFrom} - {validUntil}</div>
+          )}
+        </div>
+      );
+    }
+  };
+
   const handleDownload = async (payment: PaymentReceipt) => {
     try {
       await generateReceiptPDF(payment, getDefaultReceiptLogo());
@@ -153,6 +259,14 @@ export default function PdfGenerator() {
               <h1 className="text-xl sm:text-2xl font-semibold text-slate-900">{S.pdfPageTitle}</h1>
             </div>
           <div className="flex flex-col md:flex-row gap-3 items-center">
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
             <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm w-full md:w-auto">
               <Search size={16} className="text-slate-500" />
               <input
@@ -162,23 +276,6 @@ export default function PdfGenerator() {
                 className="w-full bg-transparent text-sm outline-none"
               />
             </div>
-            {filteredPayments.length > 0 && (
-              <button
-                onClick={async () => {
-                  try {
-                    await generatePaginatedReceiptsPDF(filteredPayments, getDefaultReceiptLogo());
-                    showNotification('All receipts downloaded successfully!', 'success');
-                  } catch (error) {
-                    console.error('Paginated receipt generation failed:', error);
-                    showNotification('Failed to download receipts', 'error');
-                  }
-                }}
-                className="inline-flex items-center gap-2 rounded-full bg-[#22c55e] px-4 py-2 text-sm font-semibold text-white hover:bg-[#16a34a] transition whitespace-nowrap"
-              >
-                <Download size={16} />
-                Download All
-              </button>
-            )}
           </div>
         </div>
         <AnimatePresence>
@@ -352,6 +449,7 @@ export default function PdfGenerator() {
                 <th className="px-4 py-3">Receipts</th>
                 <th className="px-4 py-3">Total Paid</th>
                 <th className="px-4 py-3">Last Payment</th>
+                <th className="px-4 py-3">Payment Validity</th>
                 <th className="px-4 py-3">Action</th>
               </tr>
             </thead>
@@ -371,6 +469,9 @@ export default function PdfGenerator() {
                       <td className="px-4 py-4 text-slate-600">{group.payments.length} receipt{group.payments.length > 1 ? 's' : ''}</td>
                       <td className="px-4 py-4 text-slate-900">₹{group.totalAmount.toFixed(2)}</td>
                       <td className="px-4 py-4 text-slate-600">{group.lastPaymentDate}</td>
+                      <td className="px-4 py-4">
+                        {getValidityBadge(group.studentId)}
+                      </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-2">
                           <button

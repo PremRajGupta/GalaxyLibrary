@@ -13,6 +13,8 @@ import Reports from './pages/Reports';
 import PdfGenerator from './pages/PdfGenerator';
 import WebsiteSettings from './pages/WebsiteSettings';
 import Index from './pages/Index';
+import About from './pages/About';
+import Services from './pages/Services';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -54,6 +56,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/services" element={<Services />} />
       <Route path="/login" element={<PublicLoginRoute />} />
 
       <Route

@@ -52,6 +52,19 @@ export const feeApi = {
   updateFee: async (id: string, data: any) => {
     const response = await api.put(`/fees/${id}`, data);
     return response.data;
+  },
+  markAdvancePayment: async (id: string, monthlyFee: number, advanceStartDate: string, isAdvance: boolean, advanceAmount?: number) => {
+    const response = await api.post(`/fees/${id}/mark-advance`, {
+      monthlyFee,
+      advanceStartDate,
+      isAdvance,
+      advanceAmount
+    });
+    return response.data;
+  },
+  getStudentPaymentValidity: async (studentDisplayId: string) => {
+    const response = await api.get(`/fees/student/${studentDisplayId}/validity`);
+    return response.data;
   }
 };
 

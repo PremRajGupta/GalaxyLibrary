@@ -11,7 +11,13 @@ const feeSchema = new mongoose.Schema({
   month: { type: String, required: true },
   paymentMode: { type: String, enum: ['cash', 'upi', 'card'], default: 'cash' },
   notes: { type: String },
-  paymentDate: { type: Date, default: Date.now }
+  paymentDate: { type: Date, default: Date.now },
+  // Advance payment tracking
+  isAdvancePayment: { type: Boolean, default: false }, // Is this an advance payment?
+  monthlyFee: { type: Number }, // Monthly fee amount for calculating validity
+  monthsCovered: { type: Number }, // How many months this advance covers
+  validUntilDate: { type: Date }, // Date until payment is valid
+  advanceStartDate: { type: Date }, // When does the advance validity start?
 }, {
   timestamps: true
 });
