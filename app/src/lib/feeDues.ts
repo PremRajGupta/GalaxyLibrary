@@ -1,9 +1,5 @@
 import { parseDateInputValue } from './formatDate';
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const BILLING_DAYS = 30;
-const BILLING_MS = BILLING_DAYS * MS_PER_DAY;
-
 export type FeePaymentLike = {
   month: string;
   amount: number;
@@ -19,10 +15,20 @@ export type FeeDueBreakdown = {
 };
 
 export const getGracePeriodEnd = (joinDate: Date): Date => {
-  const end = new Date(joinDate);
-  end.setDate(end.getDate() + 30);
-  return end;
+  return addBillingMonths(joinDate, 1);
 };
+
+export function addBillingMonths(startDate: Date, months: number): Date {
+  const wholeMonths = Math.max(0, Math.floor(months));
+  const originalDay = startDate.getDate();
+  const endDate = new Date(startDate);
+  endDate.setHours(0, 0, 0, 0);
+  endDate.setDate(1);
+  endDate.setMonth(endDate.getMonth() + wholeMonths);
+  const lastDayOfTargetMonth = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0).getDate();
+  endDate.setDate(Math.min(originalDay, lastDayOfTargetMonth));
+  return endDate;
+}
 
 function formatPeriodLabel(index: number, billingStart: Date): string {
   const labelDate = new Date(billingStart);
@@ -31,10 +37,13 @@ function formatPeriodLabel(index: number, billingStart: Date): string {
   return labelDate.toLocaleDateString('en-IN', options);
 }
 
-function getBillablePeriodCount(startDate: Date, asOf: Date): number {
+export function getBillablePeriodCount(startDate: Date, asOf: Date): number {
   if (asOf < startDate) return 0;
-  const elapsed = asOf.getTime() - startDate.getTime();
-  return Math.floor(elapsed / BILLING_MS) + 1;
+  let count = 0;
+  while (addBillingMonths(startDate, count) <= asOf) {
+    count += 1;
+  }
+  return count;
 }
 
 export const computeStudentFeeDue = ({
@@ -69,12 +78,12 @@ export const computeStudentFeeDue = ({
 
   let overdueMonths = 0;
   let currentMonthPaid = 0;
-  const currentStart = new Date(billingStart.getTime() + (periodCount - 1) * BILLING_MS);
+  const currentStart = addBillingMonths(billingStart, periodCount - 1);
 
   let remainingPaid = Math.max(0, paidAmount);
 
   for (let i = 0; i < periodCount; i += 1) {
-    const start = new Date(billingStart.getTime() + i * BILLING_MS);
+    const start = addBillingMonths(billingStart, i);
 
     const allocated = Math.min(remainingPaid, monthlyFee);
     remainingPaid -= allocated;

@@ -31,9 +31,11 @@ export const calculateValidityEndDate = (
   const date = new Date(startDate);
   date.setHours(0, 0, 0, 0);
 
-  // Add months to the start date - keep the same day of month
   const endDate = new Date(date);
-  endDate.setMonth(endDate.getMonth() + monthsCovered);
+  endDate.setDate(1);
+  endDate.setMonth(endDate.getMonth() + Math.max(0, Math.floor(monthsCovered)));
+  const lastDayOfTargetMonth = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0).getDate();
+  endDate.setDate(Math.min(date.getDate(), lastDayOfTargetMonth));
 
   const endDateStr = endDate.toISOString().split('T')[0];
   const formattedDate = endDate.toLocaleDateString('en-IN', {

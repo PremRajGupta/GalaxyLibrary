@@ -1,12 +1,13 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import TopHeader from '../components/layout/TopHeader';
-import { generateReceiptPDF, generatePaginatedReceiptsPDF, getDefaultReceiptLogo } from '../sections/fees/receiptService';
+import { generateReceiptPDF, getDefaultReceiptLogo } from '../sections/fees/receiptService';
 import type { PaymentReceipt } from '../sections/fees/receiptService';
 import S from '../lib/strings';
 import { getStoredPayments } from '../sections/fees/collectionService';
 import { Download, Search, Eye, X, Pencil, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, RefreshCw, Zap } from 'lucide-react';
 import { feeApi } from '../lib/apiService';
+import { formatJoiningDate } from '../lib/formatDate';
 
 interface ReceiptGroup {
   studentId: string;
@@ -17,12 +18,17 @@ interface ReceiptGroup {
 }
 
 interface PaymentValidity {
+  hasPaymentHistory?: boolean;
   hasAdvancePayment: boolean;
+  isAdvancePayment?: boolean;
   monthsCovered?: number;
+  advanceMonths?: number;
   validUntilDate?: string;
   advanceStartDate?: string;
+  advanceValidUntilDate?: string;
   daysRemaining?: number;
-  paymentStatus?: 'valid' | 'expiring-soon' | 'expired';
+  rawDaysRemaining?: number;
+  paymentStatus?: 'valid' | 'expiring-soon' | 'expired' | 'no-payment' | 'no-advance';
 }
 
 interface Notification {
@@ -99,7 +105,7 @@ export default function PdfGenerator() {
 
       if (filterAdvanceOnly) {
         const validity = validityData[payment.studentId];
-        return matchesSearch && validity?.hasAdvancePayment;
+        return matchesSearch && (validity?.hasAdvancePayment || validity?.isAdvancePayment);
       }
 
       return matchesSearch;
@@ -142,15 +148,28 @@ export default function PdfGenerator() {
 
   const advancePaymentStats = useMemo(() => {
     const stats = {
-      total: 0,
-      expiringoon: 0,
+      activeAdvance: 0,
+      totalAdvance: 0,
+      validCoverage: 0,
+      expiringSoon: 0,
       expired: 0,
     };
     Object.values(validityData).forEach(v => {
-      if (v.hasAdvancePayment) {
-        stats.total += 1;
-        if (v.paymentStatus === 'expiring-soon') stats.expiringoon += 1;
-        else if (v.paymentStatus === 'expired') stats.expired += 1;
+      if (!v.hasPaymentHistory) return;
+
+      if (v.paymentStatus === 'expired') {
+        stats.expired += 1;
+      } else if (v.paymentStatus === 'expiring-soon') {
+        stats.expiringSoon += 1;
+      } else if (v.paymentStatus === 'valid') {
+        stats.validCoverage += 1;
+      }
+
+      if (v.hasAdvancePayment || v.isAdvancePayment) {
+        stats.totalAdvance += 1;
+        if (v.paymentStatus !== 'expired') {
+          stats.activeAdvance += 1;
+        }
       }
     });
     return stats;
@@ -186,19 +205,23 @@ export default function PdfGenerator() {
   const getValidityBadge = (studentId: string) => {
     const validity = validityData[studentId];
 
-    if (!validity || !validity.hasAdvancePayment) {
+    if (!validity || !validity.hasPaymentHistory || !validity.validUntilDate) {
       return (
         <div className="text-xs text-slate-500 font-medium">
-          No advance payment
+          No payment coverage
         </div>
       );
     }
 
     const status = validity.paymentStatus;
-    const validUntil = validity.validUntilDate ? new Date(validity.validUntilDate).toLocaleDateString('en-IN') : '-';
-    const validFrom = validity.advanceStartDate ? new Date(validity.advanceStartDate).toLocaleDateString('en-IN') : '-';
+    const validUntil = formatJoiningDate(validity.validUntilDate);
+    const validFrom = formatJoiningDate(validity.advanceStartDate);
+    const advanceValidUntil = validity.advanceValidUntilDate ? formatJoiningDate(validity.advanceValidUntilDate) : validUntil;
     const days = validity.daysRemaining ?? 0;
+    const overdueDays = Math.max(1, Math.abs(validity.rawDaysRemaining ?? 0));
     const months = validity.monthsCovered ?? 0;
+    const advanceMonths = validity.advanceMonths ?? 0;
+    const hasAdvance = Boolean(validity.hasAdvancePayment || validity.isAdvancePayment);
 
     if (status === 'expired') {
       return (
@@ -207,9 +230,11 @@ export default function PdfGenerator() {
             <AlertCircle size={14} className="text-red-600 flex-shrink-0" />
             <span className="text-xs font-bold text-red-700">Expired on: {validUntil}</span>
           </div>
-          <div className="text-xs text-red-600 ml-6">Needs renewal</div>
-          {validFrom !== '-' && (
-            <div className="text-xs text-slate-600 ml-6">Advance paid: {validFrom} - {validUntil}</div>
+          <div className="text-xs text-red-600 ml-6">
+            {overdueDays} day{overdueDays !== 1 ? 's' : ''} overdue - collect payment
+          </div>
+          {hasAdvance && validFrom !== '-' && (
+            <div className="text-xs text-slate-600 ml-6">Advance paid: {validFrom} - {advanceValidUntil}</div>
           )}
         </div>
       );
@@ -218,11 +243,11 @@ export default function PdfGenerator() {
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <AlertCircle size={14} className="text-yellow-600 flex-shrink-0" />
-            <span className="text-xs font-bold text-yellow-700">Expiring: {validUntil}</span>
+            <span className="text-xs font-bold text-yellow-700">Expiring soon: {days} days left</span>
           </div>
-          <div className="text-xs text-yellow-600 ml-6">{days} days left • {months} months advance</div>
-          {validFrom !== '-' && (
-            <div className="text-xs text-slate-600 ml-6">Valid from: {validFrom}</div>
+          <div className="text-xs text-yellow-600 ml-6">Valid until: {validUntil}</div>
+          {hasAdvance && validFrom !== '-' && (
+            <div className="text-xs text-slate-600 ml-6">Advance paid: {validFrom} - {advanceValidUntil}</div>
           )}
         </div>
       );
@@ -231,11 +256,14 @@ export default function PdfGenerator() {
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <CheckCircle2 size={14} className="text-green-600 flex-shrink-0" />
-            <span className="text-xs font-bold text-green-700">Valid Until: {validUntil}</span>
+            <span className="text-xs font-bold text-green-700">Valid until: {validUntil}</span>
           </div>
-          <div className="text-xs text-green-600 ml-6">{days} days remaining • {months} months advance</div>
-          {validFrom !== '-' && (
-            <div className="text-xs text-slate-600 ml-6">Advance paid: {validFrom} - {validUntil}</div>
+          <div className="text-xs text-green-600 ml-6">{days} days remaining - {months} month{months !== 1 ? 's' : ''} paid</div>
+          {hasAdvance && validFrom !== '-' && (
+            <div className="text-xs text-slate-600 ml-6">
+              Advance paid: {validFrom} - {advanceValidUntil}
+              {advanceMonths > 0 ? ` (${advanceMonths} month${advanceMonths !== 1 ? 's' : ''})` : ''}
+            </div>
           )}
         </div>
       );
@@ -281,7 +309,7 @@ export default function PdfGenerator() {
               <p className="text-sm text-[#64748b]">{S.pdfPageSubtitle}</p>
               <h1 className="text-xl sm:text-2xl font-semibold text-slate-900">{S.pdfPageTitle}</h1>
               <p className="text-xs text-yellow-600 mt-1 font-semibold">
-                ⚡ {advancePaymentStats.total} student{advancePaymentStats.total !== 1 ? 's have' : ' has'} active advance payments
+                ⚡ {advancePaymentStats.activeAdvance} student{advancePaymentStats.activeAdvance !== 1 ? 's have' : ' has'} active advance payments
               </p>
             </div>
           <div className="flex flex-col md:flex-row gap-3 items-center">
@@ -317,7 +345,7 @@ export default function PdfGenerator() {
         </div>
 
         {/* Advance Payment Stats Cards */}
-        {advancePaymentStats.total > 0 && (
+        {(advancePaymentStats.totalAdvance > 0 || advancePaymentStats.expiringSoon > 0 || advancePaymentStats.expired > 0) && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -326,18 +354,18 @@ export default function PdfGenerator() {
             <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-4 border border-yellow-200">
               <div className="flex items-center gap-2 mb-2">
                 <Zap size={18} className="text-yellow-600" />
-                <p className="text-xs font-semibold text-yellow-700 uppercase">Total Advance</p>
+                <p className="text-xs font-semibold text-yellow-700 uppercase">Active Advance</p>
               </div>
-              <p className="text-2xl font-bold text-yellow-900">{advancePaymentStats.total}</p>
-              <p className="text-xs text-yellow-600 mt-1">Students with advance payments</p>
+              <p className="text-2xl font-bold text-yellow-900">{advancePaymentStats.activeAdvance}</p>
+              <p className="text-xs text-yellow-600 mt-1">Students covered beyond current period</p>
             </div>
             <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-200">
               <div className="flex items-center gap-2 mb-2">
                 <AlertCircle size={18} className="text-orange-600" />
                 <p className="text-xs font-semibold text-orange-700 uppercase">Expiring Soon</p>
               </div>
-              <p className="text-2xl font-bold text-orange-900">{advancePaymentStats.expiringoon}</p>
-              <p className="text-xs text-orange-600 mt-1">Payments expiring within 15 days</p>
+              <p className="text-2xl font-bold text-orange-900">{advancePaymentStats.expiringSoon}</p>
+              <p className="text-xs text-orange-600 mt-1">Students expiring within 15 days</p>
             </div>
             <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 border border-red-200">
               <div className="flex items-center gap-2 mb-2">
@@ -345,7 +373,7 @@ export default function PdfGenerator() {
                 <p className="text-xs font-semibold text-red-700 uppercase">Expired</p>
               </div>
               <p className="text-2xl font-bold text-red-900">{advancePaymentStats.expired}</p>
-              <p className="text-xs text-red-600 mt-1">Payments needing renewal</p>
+              <p className="text-xs text-red-600 mt-1">Students needing renewal</p>
             </div>
           </motion.div>
         )}
@@ -539,7 +567,7 @@ export default function PdfGenerator() {
                       <td className="px-4 py-4 text-slate-900 font-medium">
                         <div className="flex items-center gap-2">
                           <span>{group.studentName}</span>
-                          {validityData[group.studentId]?.hasAdvancePayment && (
+                          {(validityData[group.studentId]?.hasAdvancePayment || validityData[group.studentId]?.isAdvancePayment) && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full border border-yellow-300">
                               <Zap size={12} />
                               Advance

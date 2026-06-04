@@ -12,6 +12,8 @@ export interface PaymentRecordInput {
   fatherName?: string;
   studentMobile?: string;
   amount: number;
+  discountAmount?: number;
+  feeCreditAmount?: number;
   month: string;
   paymentMode?: string;
   joiningDate?: string;
@@ -28,6 +30,8 @@ export const createPaymentRecord = (input: PaymentRecordInput): PaymentReceipt =
   fatherName: input.fatherName,
   studentMobile: input.studentMobile,
   amount: input.amount,
+  discountAmount: input.discountAmount,
+  feeCreditAmount: input.feeCreditAmount,
   month: input.month,
   paymentMode: input.paymentMode,
   date: new Date().toISOString().split('T')[0],
@@ -39,6 +43,8 @@ export const saveFeePayment = async (payment: PaymentReceipt): Promise<any> => {
   return await feeApi.createFee({
     studentDisplayId: payment.studentId,
     amount: payment.amount,
+    discountAmount: payment.discountAmount || 0,
+    feeCreditAmount: payment.feeCreditAmount ?? payment.amount,
     month: payment.month,
     paymentMode: payment.paymentMode || 'cash',
     notes: payment.notes
@@ -77,6 +83,8 @@ export const mapFeeToPaymentReceipt = (fee: any): PaymentReceipt => {
     fatherName: fee.fatherName,
     studentMobile: fee.studentMobile,
     amount: Number(fee.amount) || 0,
+    discountAmount: Number(fee.discountAmount) || 0,
+    feeCreditAmount: Number(fee.feeCreditAmount ?? fee.amount) || 0,
     month: fee.month,
     paymentMode: fee.paymentMode,
     date: paymentDateStr,

@@ -10,6 +10,7 @@ export type LibraryInfo = {
   phoneRaw: string;
   email: string;
   address: string;
+  location?: string;
   whatsappMessage: string;
 };
 
@@ -23,6 +24,8 @@ export type PageText = {
   heroContactButton: string;
   galleryTitle: string;
   gallerySubtitle: string;
+  facultyTitle: string;
+  facultySubtitle: string;
   contactTitle: string;
   contactSubtitle: string;
   contactPhoneLabel: string;
@@ -70,10 +73,18 @@ export type GalleryImage = {
   alt: string;
 };
 
+export type FacultyMember = {
+  id: number;
+  photo: string;
+  name: string;
+  role: string;
+  detail: string;
+};
+
 export type NavMenuItem = {
   id: number;
   label: string;
-  /** Must match a section id on the index page: home, about, stats, gallery, contact */
+  /** Must match a section id on the index page: home, about, stats, gallery, faculty, contact */
   sectionId: string;
 };
 
@@ -82,6 +93,7 @@ export const NAV_SECTION_OPTIONS: { id: string; label: string }[] = [
   { id: 'about', label: 'About' },
   { id: 'stats', label: 'Stats' },
   { id: 'gallery', label: 'Gallery' },
+  { id: 'faculty', label: 'Faculty Library' },
   { id: 'contact', label: 'Contact' },
 ];
 
@@ -92,6 +104,7 @@ export type SiteContent = {
   heroSlides: HeroSlide[];
   aboutContent: AboutContent;
   galleryImages: GalleryImage[];
+  facultyMembers: FacultyMember[];
   updatedAt?: string;
 };
 
@@ -106,6 +119,9 @@ export const DEFAULT_NAV_MENU_ITEMS: NavMenuItem[] = [
 export const DEFAULT_GALLERY_IMAGE_URL =
   'https://images.unsplash.com/photo-1497633762263-9fc17917a379?w=800&q=80';
 
+export const DEFAULT_FACULTY_PHOTO_URL =
+  'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&q=80';
+
 export const DEFAULT_PAGE_TEXT: PageText = {
   navHome: 'Home',
   navAbout: 'About',
@@ -116,6 +132,8 @@ export const DEFAULT_PAGE_TEXT: PageText = {
   heroContactButton: 'Contact',
   galleryTitle: 'Our Library Gallery',
   gallerySubtitle: 'Take a look at our study space, seating arrangement, and peaceful environment.',
+  facultyTitle: 'Faculty Library',
+  facultySubtitle: 'Meet the mentors and support team guiding students at Galaxy Library.',
   contactTitle: 'Contact Us',
   contactSubtitle: 'Reach out to the owner for admission, fees, or any query.',
   contactPhoneLabel: 'Phone',
@@ -220,6 +238,36 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       src: 'https://images.unsplash.com/photo-1434030214721-08960469366f?w=800&q=80',
       title: 'Library Ambience',
       alt: 'Calm library ambience for preparation',
+    },
+  ],
+  facultyMembers: [
+    {
+      id: 1,
+      photo: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&q=80',
+      name: 'Rahul Kumar',
+      role: 'Library Director',
+      detail: 'Manages library operations, discipline, and student support.',
+    },
+    {
+      id: 2,
+      photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&q=80',
+      name: 'Priya Sharma',
+      role: 'Academic Guide',
+      detail: 'Helps students plan study routines and exam preparation goals.',
+    },
+    {
+      id: 3,
+      photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&q=80',
+      name: 'Amit Raj',
+      role: 'Student Coordinator',
+      detail: 'Coordinates seats, attendance, and student communication.',
+    },
+    {
+      id: 4,
+      photo: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=600&q=80',
+      name: 'Neha Singh',
+      role: 'Counsellor',
+      detail: 'Supports admissions, queries, and a focused learning environment.',
     },
   ],
 };

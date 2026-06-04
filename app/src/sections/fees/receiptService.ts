@@ -12,6 +12,8 @@ export interface PaymentReceipt {
   fatherName?: string;
   studentMobile?: string;
   amount: number;
+  discountAmount?: number;
+  feeCreditAmount?: number;
   month: string;
   paymentMode?: string;
   date: string;
@@ -123,7 +125,7 @@ export const generateReceiptPDF = async (payment: PaymentReceipt, logoUrl?: stri
 
   cursorY += 74;
   doc.setFillColor(255, 255, 255);
-  doc.roundedRect(margin, cursorY - 4, bodyWidth, 46, 2, 2, 'F');
+  doc.roundedRect(margin, cursorY - 4, bodyWidth, 62, 2, 2, 'F');
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.text('Payment Summary', margin + 2, cursorY + 2);
@@ -134,6 +136,11 @@ export const generateReceiptPDF = async (payment: PaymentReceipt, logoUrl?: stri
     `Amount Paid: Rs. ${payment.amount.toFixed(2)}`,
     `For Month: ${payment.month}`,
   ];
+
+  if ((payment.discountAmount || 0) > 0) {
+    paymentSummaryLines.push(`Discount: Rs. ${(payment.discountAmount || 0).toFixed(2)}`);
+    paymentSummaryLines.push(`Final Payment: Rs. ${(payment.feeCreditAmount ?? payment.amount).toFixed(2)}`);
+  }
 
   if (payment.paymentMode) {
     paymentSummaryLines.push(`Payment Mode: ${payment.paymentMode}`);
@@ -154,7 +161,7 @@ export const generateReceiptPDF = async (payment: PaymentReceipt, logoUrl?: stri
   doc.setFontSize(14);
   doc.text(`Rs. ${payment.amount.toFixed(2)}`, pageWidth - margin, cursorY + 16, { align: 'right' });
 
-  cursorY += 57;
+  cursorY += 73;
   doc.setTextColor(107, 114, 128);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');

@@ -8,6 +8,8 @@ const feeSchema = new mongoose.Schema({
   studentName: { type: String, required: true },
   receiptNumber: { type: String }, // e.g. GalaxyPR260501
   amount: { type: Number, required: true },
+  discountAmount: { type: Number, default: 0 },
+  feeCreditAmount: { type: Number },
   month: { type: String, required: true },
   paymentMode: { type: String, enum: ['cash', 'upi', 'card'], default: 'cash' },
   notes: { type: String },

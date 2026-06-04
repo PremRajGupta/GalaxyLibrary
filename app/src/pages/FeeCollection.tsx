@@ -16,10 +16,8 @@ import {
 import { getStudentDisplayId } from '../lib/studentId';
 import { studentApi, feeApi } from '../lib/apiService';
 import { getFeeForTimeShift, getTimeShiftLabel } from '../lib/feeRules';
-import { computeStudentFeeDue, getUnpaidMonthOptions } from '../lib/feeDues';
-import { formatJoiningDate, toDateInputString, toDateInputValue } from '../lib/formatDate';
-import { getPaymentValidity } from '../lib/paymentValidity';
-import AdvancePaymentCard from '../components/fees/AdvancePaymentCard';
+import { addBillingMonths, computeStudentFeeDue, getBillablePeriodCount, getUnpaidMonthOptions } from '../lib/feeDues';
+import { formatJoiningDate, parseDateInputValue, toDateInputString, toDateInputValue } from '../lib/formatDate';
 import { Search, Wallet, Check, CreditCard, X, IndianRupee, ArrowRight, RefreshCw, CheckCircle2, Eye, Pencil, Zap } from 'lucide-react';
 
 type FeesLocationState = {
@@ -73,9 +71,13 @@ const getPeriodLabelFromDateValue = (value: string) => {
   const start = new Date(parsed);
   start.setHours(0, 0, 0, 0);
   const endInclusive = new Date(start);
-  endInclusive.setDate(endInclusive.getDate() + 29);
+  endInclusive.setDate(1);
+  endInclusive.setMonth(endInclusive.getMonth() + 1);
+  const lastDayOfTargetMonth = new Date(endInclusive.getFullYear(), endInclusive.getMonth() + 1, 0).getDate();
+  endInclusive.setDate(Math.min(start.getDate(), lastDayOfTargetMonth));
+  endInclusive.setDate(endInclusive.getDate() - 1);
   const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', year: 'numeric' };
-  return `${start.toLocaleDateString('en-IN', options)} – ${endInclusive.toLocaleDateString('en-IN', options)}`;
+  return `${start.toLocaleDateString('en-IN', options)} - ${endInclusive.toLocaleDateString('en-IN', options)}`;
 };
 
 // Removed unused helper getDateValueFromMonthLabel to avoid TS warnings.
@@ -104,7 +106,7 @@ export function FeeCollection() {
         if (!acc[studentId]) acc[studentId] = [];
         acc[studentId].push({
           month: payment.month,
-          amount: Number(payment.amount) || 0,
+          amount: Number(payment.feeCreditAmount ?? payment.amount) || 0,
           paymentDate: payment.date,
         });
         return acc;
@@ -277,7 +279,7 @@ export function FeeCollection() {
       .filter((payment) => payment.studentId === student.studentId)
       .map((payment) => ({
         month: payment.month,
-        amount: payment.amount,
+        amount: payment.feeCreditAmount ?? payment.amount,
         paymentDate: payment.date,
       }));
     const monthOptions = getUnpaidMonthOptions(
@@ -316,7 +318,7 @@ export function FeeCollection() {
     navigate(location.pathname, { replace: true, state: null });
   }, [students, location.state, location.pathname, navigate]);
 
-  // Fetch fee details when receipt is opened (for payment validity display)
+  // Fetch student-level payment validity when receipt is opened.
   useEffect(() => {
     if (!successPayment) {
       setReceiptFeeDetails(null);
@@ -326,16 +328,11 @@ export function FeeCollection() {
     const fetchFeeDetails = async () => {
       try {
         setLoadingFeeDetails(true);
-        // Fetch fee details using the receipt ID
-        const response = await feeApi.getFees();
-        const feeRecord = response.find((fee: any) => 
-          fee.receiptNumber === successPayment.id || fee._id === successPayment.rawId
-        );
-        if (feeRecord) {
-          setReceiptFeeDetails(feeRecord);
-        }
+        const validity = await feeApi.getStudentPaymentValidity(successPayment.studentId);
+        setReceiptFeeDetails(validity);
       } catch (error) {
         console.error('Failed to fetch fee details:', error);
+        setReceiptFeeDetails(null);
       } finally {
         setLoadingFeeDetails(false);
       }
@@ -377,6 +374,11 @@ export function FeeCollection() {
     // If not marking as advance, validate amount doesn't exceed due
     if (!markAsAdvanceDuringCollection && creditAmount > selectedStudent.feeDue) {
       showNotification('Please mark as advance if paying more than the due amount.', 'error');
+      return;
+    }
+
+    if (markAsAdvanceDuringCollection && creditAmount <= selectedStudent.feeDue) {
+      showNotification('Advance payment must be more than the current due amount.', 'error');
       return;
     }
 
@@ -424,6 +426,8 @@ export function FeeCollection() {
       studentMobile: selectedStudent.contact,
       joiningDate: joiningDateValue,
       amount: collectedAmount,
+      discountAmount: discountValue,
+      feeCreditAmount: creditAmount,
       month: selectedMonthLabel,
       paymentMode,
       notes: noteParts.length > 0 ? noteParts.join(' | ') : undefined,
@@ -438,17 +442,22 @@ export function FeeCollection() {
       const confirmedPayment: typeof newPayment = {
         ...newPayment,
         id: serverResponse?.receiptNumber || serverResponse?.receiptNo || newPayment.id,
+        discountAmount: serverResponse?.discountAmount ?? newPayment.discountAmount,
+        feeCreditAmount: serverResponse?.feeCreditAmount ?? newPayment.feeCreditAmount,
       };
 
       // If marked as advance, call the API to mark it
       if (markAsAdvanceDuringCollection && (serverResponse?._id || serverResponse?.id)) {
         try {
-          const advanceAmount = Math.max(0, collectedAmount - selectedStudent.feeDue);
           const feeId = serverResponse._id || serverResponse.id;
+          const billingStart = parseDateInputValue(selectedStudent.joiningDate) || new Date();
+          const paidThroughCurrentPeriodCount = getBillablePeriodCount(billingStart, new Date());
+          const advanceStartDate = toDateInputValue(addBillingMonths(billingStart, paidThroughCurrentPeriodCount));
+          const advanceAmount = Math.max(0, creditAmount - previousDue);
           await feeApi.markAdvancePayment(
             feeId,
             selectedStudent.monthlyFee,
-            joiningDateValue || toDateInputValue(new Date()),  // Use joining date, fallback to today
+            advanceStartDate,
             true,
             advanceAmount
           );
@@ -678,7 +687,7 @@ export function FeeCollection() {
                   <tr className="text-left border-b border-[#e2e8f0]">
                     <th className="pb-3 text-sm font-medium text-[#64748b]">Student</th>
                     <th className="pb-3 text-sm font-medium text-[#64748b]">Amount</th>
-                    <th className="pb-3 text-sm font-medium text-[#64748b]">Due Period (30 days)</th>
+                    <th className="pb-3 text-sm font-medium text-[#64748b]">Due Period</th>
                     <th className="pb-3 text-sm font-medium text-[#64748b]">Mode</th>
                     <th className="pb-3 text-sm font-medium text-[#64748b]">Date</th>
                     <th className="pb-3 text-sm font-medium text-[#64748b]">Action</th>
@@ -720,6 +729,13 @@ export function FeeCollection() {
                           >
                             <Pencil size={13} />
                             Edit
+                          </button>
+                          <button
+                            onClick={() => openMarkAdvanceModal(payment)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#fef3c7] text-[#92400e] text-xs font-medium rounded-md hover:bg-[#fde68a] transition-colors"
+                          >
+                            <Zap size={13} />
+                            Advance
                           </button>
                         </div>
                       </td>
@@ -1116,6 +1132,21 @@ export function FeeCollection() {
                             <span className="text-2xl font-bold text-[#22c55e]">₹{successPayment.amount.toLocaleString()}</span>
                           </div>
 
+                          {(successPayment.discountAmount || 0) > 0 && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div className="flex items-center justify-between p-4 bg-[#fff7ed] rounded-[14px]">
+                                <span className="text-sm font-semibold text-[#9a3412]">Discount</span>
+                                <span className="text-xl font-bold text-[#ea580c]">₹{(successPayment.discountAmount || 0).toLocaleString()}</span>
+                              </div>
+                              <div className="flex items-center justify-between p-4 bg-[#eff6ff] rounded-[14px]">
+                                <span className="text-sm font-semibold text-[#1e3a8a]">Final Payment</span>
+                                <span className="text-xl font-bold text-[#2F4FD7]">
+                                  ₹{(successPayment.feeCreditAmount ?? successPayment.amount).toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
                           {/* Payment Info Grid */}
                           <div className="grid grid-cols-2 gap-3">
                             <div className="p-4 bg-[#f8fafc] rounded-[14px]">
@@ -1154,13 +1185,13 @@ export function FeeCollection() {
                               <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-1.5">Payment Validity</p>
                               <p className="text-sm text-[#64748b]">Loading...</p>
                             </div>
-                          ) : receiptFeeDetails?.isAdvancePayment ? (
+                          ) : receiptFeeDetails?.validUntilDate ? (
                             <div className="p-4 bg-gradient-to-br from-[#fef08a] to-[#fef3c7] rounded-[14px] border-2 border-[#fcd34d]">
-                              <p className="text-xs font-semibold text-[#92400e] uppercase tracking-wide mb-3">Payment Validity (Advance)</p>
+                              <p className="text-xs font-semibold text-[#92400e] uppercase tracking-wide mb-3">Payment Validity</p>
                               <div className="space-y-2.5">
                                 {/* Months Covered */}
                                 <div className="flex items-center justify-between">
-                                  <span className="text-sm font-semibold text-[#1e293b]">Months Covered:</span>
+                                  <span className="text-sm font-semibold text-[#1e293b]">Total Months Covered:</span>
                                   <span className="px-2.5 py-1 bg-[#92400e] text-white text-xs font-bold rounded-md">
                                     {receiptFeeDetails.monthsCovered || 0} months
                                   </span>
@@ -1170,15 +1201,18 @@ export function FeeCollection() {
                                 <div className="flex items-center justify-between">
                                   <span className="text-sm font-semibold text-[#1e293b]">Validity Period:</span>
                                   <span className="text-sm font-bold text-[#1e293b]">
-                                    {receiptFeeDetails.advanceStartDate 
-                                      ? new Date(receiptFeeDetails.advanceStartDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                                      : 'N/A'
-                                    } to {receiptFeeDetails.validUntilDate
-                                      ? new Date(receiptFeeDetails.validUntilDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                                      : 'N/A'
-                                    }
+                                    {formatJoiningDate(successPayment.joiningDate)} to {formatJoiningDate(receiptFeeDetails.validUntilDate)}
                                   </span>
                                 </div>
+
+                                {receiptFeeDetails.advanceMonths > 0 && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm font-semibold text-[#1e293b]">Advance Balance:</span>
+                                    <span className="text-sm font-bold text-[#166534]">
+                                      {receiptFeeDetails.advanceMonths} months paid ahead
+                                    </span>
+                                  </div>
+                                )}
 
                                 {/* Status Badge */}
                                 <div className="flex items-center justify-between pt-2 border-t border-[#fcd34d]">
@@ -1188,12 +1222,12 @@ export function FeeCollection() {
                                     today.setHours(0, 0, 0, 0);
                                     const validUntil = new Date(receiptFeeDetails.validUntilDate);
                                     validUntil.setHours(0, 0, 0, 0);
-                                    const daysRemaining = Math.floor((validUntil.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                                    const daysRemaining = receiptFeeDetails.rawDaysRemaining ?? Math.floor((validUntil.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
                                     if (daysRemaining < 0) {
                                       return (
                                         <span className="px-2.5 py-1 bg-red-100 text-red-800 text-xs font-bold rounded-md border border-red-300">
-                                          Expired on {validUntil.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                          Expired on {formatJoiningDate(receiptFeeDetails.validUntilDate)}
                                         </span>
                                       );
                                     } else if (daysRemaining <= 15) {
@@ -1205,7 +1239,7 @@ export function FeeCollection() {
                                     } else {
                                       return (
                                         <span className="px-2.5 py-1 bg-green-100 text-green-800 text-xs font-bold rounded-md border border-green-300">
-                                          Valid until {validUntil.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                          Valid until {formatJoiningDate(receiptFeeDetails.validUntilDate)}
                                         </span>
                                       );
                                     }
@@ -1473,6 +1507,43 @@ export function FeeCollection() {
                         <p className="text-xs text-[#64748b] mt-2">
                           Fee credit = Pay amount − Discount (reduces pending balance).
                         </p>
+                        {payAmount && (() => {
+                          const payValue = parseFloat(payAmount) || 0;
+                          const discountValue = parseFloat(discount) || 0;
+                          const finalPayment = payValue - discountValue;
+                          const isInvalidDiscount = discountValue > payValue;
+
+                          return (
+                            <div className={`mt-3 rounded-[12px] border px-4 py-3 ${
+                              isInvalidDiscount
+                                ? 'border-[#fecaca] bg-[#fef2f2]'
+                                : 'border-[#bfdbfe] bg-[#eff6ff]'
+                            }`}>
+                              <div className="flex items-center justify-between gap-4">
+                                <span className={`text-sm font-bold ${
+                                  isInvalidDiscount ? 'text-[#b91c1c]' : 'text-[#1e3a8a]'
+                                }`}>
+                                  Final payment
+                                </span>
+                                <span className={`text-lg font-extrabold ${
+                                  isInvalidDiscount ? 'text-[#b91c1c]' : 'text-[#2F4FD7]'
+                                }`}>
+                                  ₹{Math.max(0, finalPayment).toLocaleString('en-IN')}
+                                </span>
+                              </div>
+                              <p className={`mt-1 text-xs ${
+                                isInvalidDiscount ? 'text-[#b91c1c]' : 'text-[#475569]'
+                              }`}>
+                                Pay amount ₹{payValue.toLocaleString('en-IN')} − Discount ₹{discountValue.toLocaleString('en-IN')} = ₹{Math.max(0, finalPayment).toLocaleString('en-IN')} reduces pending balance.
+                              </p>
+                              {isInvalidDiscount && (
+                                <p className="mt-1 text-xs font-semibold text-[#b91c1c]">
+                                  Discount cannot be more than the pay amount.
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Payment Method */}
@@ -1510,39 +1581,49 @@ export function FeeCollection() {
                         </label>
 
                         {/* Advance Preview */}
-                        {markAsAdvanceDuringCollection && payAmount && parseFloat(payAmount) > 0 && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            className="mt-4 p-4 bg-gradient-to-br from-[#fef08a] to-[#fef3c7] rounded-[12px] border-2 border-[#fcd34d]"
-                          >
-                            <p className="text-xs font-bold text-[#92400e] uppercase tracking-wide mb-3">Advance Preview</p>
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-semibold text-[#1e293b]">Total Payment:</span>
-                                <span className="text-sm font-bold text-[#22c55e]">₹{parseFloat(payAmount).toLocaleString()}</span>
+                        {markAsAdvanceDuringCollection && payAmount && parseFloat(payAmount) > 0 && (() => {
+                          const totalPayment = parseFloat(payAmount) || 0;
+                          const discountValue = parseFloat(discount) || 0;
+                          const feeCredit = Math.max(0, totalPayment - discountValue);
+                          const advanceAmount = Math.max(0, feeCredit - selectedStudent.feeDue);
+                          const advanceMonths = selectedStudent.monthlyFee > 0
+                            ? Math.floor(advanceAmount / selectedStudent.monthlyFee)
+                            : 0;
+
+                          return (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              className="mt-4 p-4 bg-gradient-to-br from-[#fef08a] to-[#fef3c7] rounded-[12px] border-2 border-[#fcd34d]"
+                            >
+                              <p className="text-xs font-bold text-[#92400e] uppercase tracking-wide mb-3">Advance Preview</p>
+                              <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-semibold text-[#1e293b]">Total Payment:</span>
+                                  <span className="text-sm font-bold text-[#22c55e]">₹{totalPayment.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-semibold text-[#1e293b]">Current Due:</span>
+                                  <span className="text-sm font-bold text-[#ef4444]">₹{selectedStudent.feeDue.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-semibold text-[#1e293b]">Advance Amount:</span>
+                                  <span className="text-sm font-bold text-[#22c55e]">₹{advanceAmount.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-semibold text-[#1e293b]">Monthly Fee:</span>
+                                  <span className="text-sm font-bold text-[#2F4FD7]">₹{selectedStudent.monthlyFee.toLocaleString()}</span>
+                                </div>
+                                <div className="border-t border-[#fcd34d] pt-2 flex justify-between items-center">
+                                  <span className="text-sm font-bold text-[#1e293b]">Advance Months:</span>
+                                  <span className="px-3 py-1 bg-[#92400e] text-white text-sm font-bold rounded-lg">
+                                    {advanceMonths} month{advanceMonths !== 1 ? 's' : ''}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-semibold text-[#1e293b]">Current Due:</span>
-                                <span className="text-sm font-bold text-[#ef4444]">₹{selectedStudent.feeDue.toLocaleString()}</span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-semibold text-[#1e293b]">Advance Amount:</span>
-                                <span className="text-sm font-bold text-[#22c55e]">₹{Math.max(0, parseFloat(payAmount) - selectedStudent.feeDue).toLocaleString()}</span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-semibold text-[#1e293b]">Monthly Fee:</span>
-                                <span className="text-sm font-bold text-[#2F4FD7]">₹{selectedStudent.monthlyFee.toLocaleString()}</span>
-                              </div>
-                              <div className="border-t border-[#fcd34d] pt-2 flex justify-between items-center">
-                                <span className="text-sm font-bold text-[#1e293b]">Advance Months:</span>
-                                <span className="px-3 py-1 bg-[#92400e] text-white text-sm font-bold rounded-lg">
-                                  {Math.floor(Math.max(0, parseFloat(payAmount) - selectedStudent.feeDue) / selectedStudent.monthlyFee)} months
-                                </span>
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
+                            </motion.div>
+                          );
+                        })()}
                       </div>
 
                       {/* Transaction Note */}

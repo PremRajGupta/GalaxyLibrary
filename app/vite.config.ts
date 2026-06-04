@@ -11,8 +11,8 @@ export default defineConfig({
   base: './',
   plugins: [inspectAttr(), react()],
   server: {
-    port: 3000,
-    strictPort: true,
+    port: 5173,
+    strictPort: false,
     watch: {
       ignored: ['**/favicon.png'],
     },

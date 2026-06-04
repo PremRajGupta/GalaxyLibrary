@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
-import { getPaymentValidity, getPaymentStatusColor, getPaymentStatusLabel, getDaysRemaining, formatAdvancePaymentInfo } from '../../lib/paymentValidity';
+import { getPaymentValidity, getPaymentStatusColor, getPaymentStatusLabel, getDaysRemaining } from '../../lib/paymentValidity';
 
 interface AdvancePaymentProps {
   studentId: string;

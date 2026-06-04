@@ -4,6 +4,7 @@ import LandingNavbar from '../components/landing/LandingNavbar';
 import HeroSlider from '../components/landing/HeroSlider';
 import StatsSection from '../components/landing/StatsSection';
 import GallerySection from '../components/landing/GallerySection';
+import FacultySection from '../components/landing/FacultySection';
 import ContactSection from '../components/landing/ContactSection';
 import LandingFooter from '../components/landing/LandingFooter';
 import { DEFAULT_SITE_CONTENT, type SiteContent } from '../data/landingContent';
@@ -59,7 +60,7 @@ export default function Index() {
     );
   }
 
-  const { libraryInfo, pageText, navMenuItems, heroSlides, aboutContent, galleryImages } = content;
+  const { libraryInfo, pageText, navMenuItems, heroSlides, aboutContent, galleryImages, facultyMembers } = content;
 
   return (
     <div className="min-h-screen bg-white">
@@ -109,6 +110,7 @@ export default function Index() {
 
       <StatsSection pageText={pageText} />
       <GallerySection images={galleryImages} pageText={pageText} />
+      <FacultySection members={facultyMembers} pageText={pageText} />
       <ContactSection libraryInfo={libraryInfo} pageText={pageText} />
       <LandingFooter
         libraryInfo={libraryInfo}

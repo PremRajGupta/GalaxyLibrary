@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TopHeader from '../components/layout/TopHeader';
-import { Globe, Save, ExternalLink, Plus, Trash2 } from 'lucide-react';
+import { Globe, Save, ExternalLink, Plus, Trash2, Eye } from 'lucide-react';
+import ContactDisplay from '../components/shared/ContactDisplay';
 import {
+  DEFAULT_FACULTY_PHOTO_URL,
   DEFAULT_GALLERY_IMAGE_URL,
   DEFAULT_SITE_CONTENT,
   NAV_SECTION_OPTIONS,
@@ -27,6 +29,7 @@ const TABS = [
   { id: 'hero', label: 'Hero Slider' },
   { id: 'about', label: 'About' },
   { id: 'gallery', label: 'Gallery' },
+  { id: 'faculty', label: 'Faculty' },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -196,7 +199,7 @@ export default function WebsiteSettings() {
                 <div><label className={labelClass}>WhatsApp Number (digits only)</label><input className={inputClass} value={content.libraryInfo.phoneRaw} onChange={(e) => updateLibraryInfo('phoneRaw', e.target.value.replace(/\D/g, ''))} /></div>
                 <div><label className={labelClass}>Email</label><input type="email" className={inputClass} value={content.libraryInfo.email} onChange={(e) => updateLibraryInfo('email', e.target.value)} /></div>
                 <div className="md:col-span-2"><label className={labelClass}>Address</label><input className={inputClass} value={content.libraryInfo.address} onChange={(e) => updateLibraryInfo('address', e.target.value)} /></div>
-                <div className="md:col-span-2"><label className={labelClass}>WhatsApp Message</label><input className={inputClass} value={content.libraryInfo.whatsappMessage} onChange={(e) => updateLibraryInfo('whatsappMessage', e.target.value)} /></div>
+                <div className="md:col-span-2"><label className={labelClass}>WhatsApp Message</label><textarea className={`${inputClass} resize-none h-20`} value={content.libraryInfo.whatsappMessage} onChange={(e) => updateLibraryInfo('whatsappMessage', e.target.value)} /></div>
               </div>
             </section>
             <section className="page-card">
@@ -208,6 +211,55 @@ export default function WebsiteSettings() {
                 <div><label className={labelClass}>Email Label</label><input className={inputClass} value={content.pageText.contactEmailLabel} onChange={(e) => updatePageText('contactEmailLabel', e.target.value)} /></div>
                 <div><label className={labelClass}>Address Label</label><input className={inputClass} value={content.pageText.contactAddressLabel} onChange={(e) => updatePageText('contactAddressLabel', e.target.value)} /></div>
                 <div><label className={labelClass}>WhatsApp Button Text</label><input className={inputClass} value={content.pageText.whatsappButton} onChange={(e) => updatePageText('whatsappButton', e.target.value)} /></div>
+              </div>
+            </section>
+
+            <section className="page-card">
+              <div className="flex items-center gap-2 mb-6">
+                <Eye size={20} className="text-[#3b82f6]" />
+                <h3 className="text-lg font-semibold text-[#1e293b]">Contact Section Preview</h3>
+              </div>
+              <p className="text-sm text-[#64748b] mb-6">This is how your contact section will look on the homepage and admin dashboard:</p>
+              
+              <div className="bg-gradient-to-b from-[#f8fafc] to-[#f1f5f9] rounded-xl p-8 space-y-6">
+                <div className="max-w-5xl mx-auto">
+                  <div className="text-center mb-8">
+                    <h2 className="text-2xl font-bold text-[#1e293b] mb-2">{content.pageText.contactTitle}</h2>
+                    <p className="text-[#64748b]">{content.pageText.contactSubtitle}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <ContactDisplay
+                      contact={{
+                        phone: content.libraryInfo.phone,
+                        phoneRaw: content.libraryInfo.phoneRaw,
+                        email: content.libraryInfo.email,
+                        address: content.libraryInfo.address,
+                        whatsappMessage: content.libraryInfo.whatsappMessage,
+                      }}
+                      title={content.libraryInfo.ownerName}
+                      phoneLabel={content.pageText.contactPhoneLabel}
+                      emailLabel={content.pageText.contactEmailLabel}
+                      addressLabel={content.pageText.contactAddressLabel}
+                      whatsappButtonText={content.pageText.whatsappButton}
+                    />
+
+                    <ContactDisplay
+                      contact={{
+                        phone: content.libraryInfo.phone,
+                        phoneRaw: content.libraryInfo.phoneRaw,
+                        email: content.libraryInfo.email,
+                        address: content.libraryInfo.address,
+                        whatsappMessage: content.libraryInfo.whatsappMessage,
+                      }}
+                      title="Admission & Visit Help"
+                      phoneLabel="Support"
+                      emailLabel="Hours"
+                      addressLabel="Location"
+                      whatsappButtonText={content.pageText.whatsappButton}
+                    />
+                  </div>
+                </div>
               </div>
             </section>
           </>
@@ -522,6 +574,158 @@ export default function WebsiteSettings() {
                     >
                       Copy title → alt text
                     </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'faculty' && (
+          <section className="page-card">
+            <p className="text-sm text-[#64748b] mb-4">
+              Add faculty or library team profiles using direct photo URLs. These profiles appear below Our Library Gallery on the home page.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className={labelClass}>Section Title</label>
+                <input
+                  className={inputClass}
+                  value={content.pageText.facultyTitle}
+                  onChange={(e) => updatePageText('facultyTitle', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Section Subtitle</label>
+                <input
+                  className={inputClass}
+                  value={content.pageText.facultySubtitle}
+                  onChange={(e) => updatePageText('facultySubtitle', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-[#1e293b]">Faculty Profiles</h3>
+              <button
+                type="button"
+                onClick={() =>
+                  setContent((prev) => ({
+                    ...prev,
+                    facultyMembers: [
+                      ...prev.facultyMembers,
+                      {
+                        id: nextItemId(prev.facultyMembers),
+                        photo: DEFAULT_FACULTY_PHOTO_URL,
+                        name: 'New Faculty',
+                        role: 'Role / Designation',
+                        detail: 'Short detail about this faculty member.',
+                      },
+                    ],
+                  }))
+                }
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-[#3b82f6] bg-[#dbeafe] rounded-lg"
+              >
+                <Plus size={16} /> Add Profile
+              </button>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {content.facultyMembers.map((member, index) => (
+                <div key={member.id} className="p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold text-[#3b82f6]">Profile {index + 1}</p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setContent((prev) => ({
+                          ...prev,
+                          facultyMembers: prev.facultyMembers.filter((item) => item.id !== member.id),
+                        }))
+                      }
+                      disabled={content.facultyMembers.length <= 1}
+                      className="p-1.5 text-[#ef4444] hover:bg-[#fee2e2] rounded-md disabled:opacity-40"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <div className="mb-3 rounded-lg border border-[#e2e8f0] bg-[#e2e8f0] overflow-hidden min-h-[180px] flex items-center justify-center">
+                    {member.photo?.trim() ? (
+                      <img
+                        src={member.photo}
+                        alt={member.name}
+                        className="w-full h-48 object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <span className="text-xs text-[#64748b] p-4 text-center">Enter photo URL to preview</span>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className={labelClass}>Photo URL</label>
+                      <input
+                        className={inputClass}
+                        value={member.photo}
+                        onChange={(e) => {
+                          const photo = e.target.value;
+                          setContent((prev) => {
+                            const facultyMembers = [...prev.facultyMembers];
+                            facultyMembers[index] = { ...member, photo };
+                            return { ...prev, facultyMembers };
+                          });
+                        }}
+                        placeholder="https://..."
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className={labelClass}>Name</label>
+                        <input
+                          className={inputClass}
+                          value={member.name}
+                          onChange={(e) => {
+                            const name = e.target.value;
+                            setContent((prev) => {
+                              const facultyMembers = [...prev.facultyMembers];
+                              facultyMembers[index] = { ...member, name };
+                              return { ...prev, facultyMembers };
+                            });
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass}>Role / Designation</label>
+                        <input
+                          className={inputClass}
+                          value={member.role}
+                          onChange={(e) => {
+                            const role = e.target.value;
+                            setContent((prev) => {
+                              const facultyMembers = [...prev.facultyMembers];
+                              facultyMembers[index] = { ...member, role };
+                              return { ...prev, facultyMembers };
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelClass}>Detail</label>
+                      <textarea
+                        className={`${inputClass} min-h-[92px]`}
+                        value={member.detail}
+                        onChange={(e) => {
+                          const detail = e.target.value;
+                          setContent((prev) => {
+                            const facultyMembers = [...prev.facultyMembers];
+                            facultyMembers[index] = { ...member, detail };
+                            return { ...prev, facultyMembers };
+                          });
+                        }}
+                        placeholder="Short detail about this faculty member"
+                      />
+                    </div>
                   </div>
                 </div>
               ))}

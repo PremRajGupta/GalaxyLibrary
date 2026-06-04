@@ -8,6 +8,7 @@ const toResponse = (doc) => ({
   heroSlides: doc.heroSlides,
   aboutContent: doc.aboutContent,
   galleryImages: doc.galleryImages,
+  facultyMembers: doc.facultyMembers,
   updatedAt: doc.updatedAt,
 });
 
@@ -76,6 +77,12 @@ const mergeSiteContent = (existing, incoming) => {
         : base.galleryImages?.length > 0
           ? base.galleryImages
           : defaultSiteContent.galleryImages,
+    facultyMembers:
+      incoming.facultyMembers?.length > 0
+        ? incoming.facultyMembers
+        : base.facultyMembers?.length > 0
+          ? base.facultyMembers
+          : defaultSiteContent.facultyMembers,
   };
 };
 

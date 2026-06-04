@@ -80,6 +80,10 @@ export function mergeSiteContent(saved: Partial<SiteContent>): SiteContent {
       saved.galleryImages && saved.galleryImages.length > 0
         ? saved.galleryImages
         : DEFAULT_SITE_CONTENT.galleryImages,
+    facultyMembers:
+      saved.facultyMembers && saved.facultyMembers.length > 0
+        ? saved.facultyMembers
+        : DEFAULT_SITE_CONTENT.facultyMembers,
     updatedAt: saved.updatedAt,
   };
 }
@@ -113,6 +117,14 @@ export function prepareSiteContentForSave(content: SiteContent): SiteContent {
     return { ...img, title, src, alt };
   });
 
+  const facultyMembers = content.facultyMembers.map((member) => ({
+    ...member,
+    photo: member.photo.trim(),
+    name: member.name.trim(),
+    role: member.role.trim(),
+    detail: member.detail.trim(),
+  }));
+
   const navMenuItems =
     content.navMenuItems.length > 0
       ? content.navMenuItems.map((item) => ({
@@ -127,6 +139,7 @@ export function prepareSiteContentForSave(content: SiteContent): SiteContent {
     libraryInfo: { ...content.libraryInfo, phoneRaw },
     navMenuItems,
     galleryImages,
+    facultyMembers,
     aboutContent: {
       ...content.aboutContent,
       paragraphs: content.aboutContent.paragraphs.filter((p) => p.trim()),

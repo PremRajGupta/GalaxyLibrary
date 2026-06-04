@@ -28,6 +28,17 @@ const galleryImageSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const facultyMemberSchema = new mongoose.Schema(
+  {
+    id: { type: Number, required: true },
+    photo: { type: String, default: '' },
+    name: { type: String, default: '' },
+    role: { type: String, default: '' },
+    detail: { type: String, default: '' },
+  },
+  { _id: false }
+);
+
 const navMenuItemSchema = new mongoose.Schema(
   {
     id: { type: Number, required: true },
@@ -57,6 +68,7 @@ const siteContentSchema = new mongoose.Schema(
       highlights: { type: [highlightSchema], default: [] },
     },
     galleryImages: { type: [galleryImageSchema], default: [] },
+    facultyMembers: { type: [facultyMemberSchema], default: [] },
     navMenuItems: { type: [navMenuItemSchema], default: [] },
     pageText: {
       navHome: { type: String, default: 'Home' },
@@ -68,6 +80,8 @@ const siteContentSchema = new mongoose.Schema(
       heroContactButton: { type: String, default: 'Contact' },
       galleryTitle: { type: String, default: 'Our Library Gallery' },
       gallerySubtitle: { type: String, default: '' },
+      facultyTitle: { type: String, default: 'Faculty Library' },
+      facultySubtitle: { type: String, default: '' },
       contactTitle: { type: String, default: 'Contact Us' },
       contactSubtitle: { type: String, default: '' },
       contactPhoneLabel: { type: String, default: 'Phone' },
