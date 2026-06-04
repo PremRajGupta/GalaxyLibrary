@@ -33,6 +33,8 @@ const allowedOrigins = [
   'https://galaxylib.com',
   'https://app.galaxylib.com',
   'https://admin.galaxylib.com',
+  'https://www.galaxyhub.in',
+  'https://galaxyhub.in',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
