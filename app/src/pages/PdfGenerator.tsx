@@ -5,7 +5,7 @@ import { generateReceiptPDF, generatePaginatedReceiptsPDF, getDefaultReceiptLogo
 import type { PaymentReceipt } from '../sections/fees/receiptService';
 import S from '../lib/strings';
 import { getStoredPayments } from '../sections/fees/collectionService';
-import { Download, Search, Eye, X, Pencil, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Download, Search, Eye, X, Pencil, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, RefreshCw, Zap } from 'lucide-react';
 import { feeApi } from '../lib/apiService';
 
 interface ReceiptGroup {
@@ -37,6 +37,7 @@ export default function PdfGenerator() {
   const [currentPage, setCurrentPage] = useState(1);
   const [validityData, setValidityData] = useState<Record<string, PaymentValidity>>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [filterAdvanceOnly, setFilterAdvanceOnly] = useState(false);
   const RECORDS_PER_PAGE = 7;
 
   const fetchValidityData = async (paymentsList: PaymentReceipt[]) => {
@@ -90,14 +91,20 @@ export default function PdfGenerator() {
   const filteredPayments = useMemo(
     () => payments.filter((payment) => {
       const normalized = searchTerm.trim().toLowerCase();
-      if (!normalized) return true;
-      return (
+      const matchesSearch = !normalized || (
         payment.studentName.toLowerCase().includes(normalized) ||
         payment.studentId.toLowerCase().includes(normalized) ||
         payment.month.toLowerCase().includes(normalized)
       );
+
+      if (filterAdvanceOnly) {
+        const validity = validityData[payment.studentId];
+        return matchesSearch && validity?.hasAdvancePayment;
+      }
+
+      return matchesSearch;
     }),
-    [payments, searchTerm]
+    [payments, searchTerm, filterAdvanceOnly, validityData]
   );
 
   const groupedPayments = useMemo((): ReceiptGroup[] => {
@@ -132,6 +139,10 @@ export default function PdfGenerator() {
     result.sort((a, b) => (new Date(b.lastPaymentDate || '').getTime() - new Date(a.lastPaymentDate || '').getTime()));
     return result;
   }, [filteredPayments]);
+
+  const advancePaymentCount = useMemo(() => {
+    return Object.values(validityData).filter(v => v.hasAdvancePayment && v.paymentStatus !== 'expired').length;
+  }, [validityData]);
 
   // Pagination calculations
   const totalPages = Math.ceil(groupedPayments.length / RECORDS_PER_PAGE);
@@ -257,6 +268,9 @@ export default function PdfGenerator() {
           <div>
               <p className="text-sm text-[#64748b]">{S.pdfPageSubtitle}</p>
               <h1 className="text-xl sm:text-2xl font-semibold text-slate-900">{S.pdfPageTitle}</h1>
+              <p className="text-xs text-yellow-600 mt-1 font-semibold">
+                ⚡ {advancePaymentCount} student{advancePaymentCount !== 1 ? 's have' : ' has'} active advance payments
+              </p>
             </div>
           <div className="flex flex-col md:flex-row gap-3 items-center">
             <button
@@ -266,6 +280,17 @@ export default function PdfGenerator() {
             >
               <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
               {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
+            <button
+              onClick={() => setFilterAdvanceOnly(!filterAdvanceOnly)}
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                filterAdvanceOnly
+                  ? 'bg-yellow-100 text-yellow-700 border-2 border-yellow-300'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <Zap size={16} />
+              {filterAdvanceOnly ? 'Advance Payments' : 'Show All'}
             </button>
             <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm w-full md:w-auto">
               <Search size={16} className="text-slate-500" />
@@ -464,7 +489,17 @@ export default function PdfGenerator() {
                 paginatedPayments.map((group) => (
                   <Fragment key={`group-${group.studentId}`}>
                     <tr className="bg-slate-50">
-                      <td className="px-4 py-4 text-slate-900 font-medium">{group.studentName}</td>
+                      <td className="px-4 py-4 text-slate-900 font-medium">
+                        <div className="flex items-center gap-2">
+                          <span>{group.studentName}</span>
+                          {validityData[group.studentId]?.hasAdvancePayment && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full border border-yellow-300">
+                              <Zap size={12} />
+                              Advance
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-4 text-slate-600">{group.studentId}</td>
                       <td className="px-4 py-4 text-slate-600">{group.payments.length} receipt{group.payments.length > 1 ? 's' : ''}</td>
                       <td className="px-4 py-4 text-slate-900">₹{group.totalAmount.toFixed(2)}</td>
