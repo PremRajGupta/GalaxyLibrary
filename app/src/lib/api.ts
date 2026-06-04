@@ -16,6 +16,13 @@ api.interceptors.request.use(
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Add cache-busting parameter to GET requests
+    if (config.method === 'get' || config.method === 'GET') {
+      config.params = config.params || {};
+      config.params._t = Date.now();
+    }
+    
     return config;
   },
   (error) => {

@@ -91,6 +91,7 @@ export const updateSiteContent = async (req, res) => {
       { new: true, upsert: true, setDefaultsOnInsert: true }
     );
 
+    res.set('Cache-Control', 'no-store');
     res.status(200).json({
       message: 'Website content updated successfully',
       ...toResponse(doc),

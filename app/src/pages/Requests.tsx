@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import TopHeader from '../components/layout/TopHeader';
 import { MessageSquare, Check, X } from 'lucide-react';
@@ -33,6 +34,7 @@ const statusConfig: Record<string, any> = {
 };
 
 export default function Requests() {
+  const location = useLocation();
   const [requests, setRequests] = useState<Request[]>([]);
 
   const fetchRequests = async () => {
@@ -52,7 +54,7 @@ export default function Requests() {
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [location]);
 
   const handleApprove = async (id: string) => {
     try {

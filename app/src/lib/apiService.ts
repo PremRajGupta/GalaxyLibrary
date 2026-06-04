@@ -99,15 +99,11 @@ const siteContentUrl = () => apiUrl('/api/site-content');
 
 export const siteContentApi = {
   get: async () => {
-    const response = await axios.get(siteContentUrl(), {
-      timeout: 10000,
-      headers: { 'Cache-Control': 'no-cache' },
-      params: { _t: Date.now() },
-    });
+    const response = await api.get(siteContentUrl());
     return response.data;
   },
   update: async (data: Record<string, unknown>) => {
-    const response = await axios.put(siteContentUrl(), data, { timeout: 10000 });
+    const response = await api.put(siteContentUrl(), data);
     return response.data;
   },
 };

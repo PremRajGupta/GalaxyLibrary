@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import jsPDF from 'jspdf';
 import TopHeader from '../components/layout/TopHeader';
 import { Users, Search, Eye, Pencil, Trash2, X, Download } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getInitials, getAvatarColor } from '../sections/students/students';
 import { studentApi } from '../lib/apiService';
 import { getCourseLabel } from '../lib/courseOptions';
@@ -24,8 +24,9 @@ export default function StudentRecords() {
   const [loading, setLoading] = useState(true);
   const [viewingStudent, setViewingStudent] = useState<any>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Fetch students whenever location changes (e.g., after edit/delete)
   useEffect(() => {
     const fetchStudents = async () => {
       try {
@@ -51,7 +52,7 @@ export default function StudentRecords() {
       }
     };
     fetchStudents();
-  }, []);
+  }, [location]);
 
   const showNotification = (msg: string) => {
     setNotification(msg);

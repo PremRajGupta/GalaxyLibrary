@@ -65,6 +65,19 @@ app.use((req, res, next) => {
   next();
 });
 
+// ===== Cache Control Headers (Prevent stale data) =====
+app.use((req, res, next) => {
+  // Disable caching for API responses
+  if (req.path.startsWith('/api')) {
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0, s-maxage=0',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+  }
+  next();
+});
+
 // ===== Health Check Route (No Auth Required) =====
 app.get('/api/health', (req, res) => {
   res.status(200).json({ 

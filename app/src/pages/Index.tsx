@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import LandingNavbar from '../components/landing/LandingNavbar';
 import HeroSlider from '../components/landing/HeroSlider';
 import StatsSection from '../components/landing/StatsSection';
@@ -9,6 +10,7 @@ import { DEFAULT_SITE_CONTENT, type SiteContent } from '../data/landingContent';
 import { loadSiteContent, SITE_CONTENT_UPDATED_EVENT } from '../lib/siteContentService';
 
 export default function Index() {
+  const location = useLocation();
   const [content, setContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
   const [loading, setLoading] = useState(true);
   const [apiOffline, setApiOffline] = useState(false);
@@ -21,7 +23,7 @@ export default function Index() {
 
   useEffect(() => {
     refreshContent().finally(() => setLoading(false));
-  }, [refreshContent]);
+  }, [location, refreshContent]);
 
   useEffect(() => {
     const onUpdated = () => {

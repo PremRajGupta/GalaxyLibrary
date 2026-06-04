@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import TopHeader from '../components/layout/TopHeader';
 import { Armchair, X } from 'lucide-react';
@@ -37,6 +38,7 @@ const generateBaseSeats = (): Seat[] =>
   }));
 
 export default function SeatMap() {
+  const location = useLocation();
   const [seats, setSeats] = useState<Seat[]>(generateBaseSeats());
   const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
 
@@ -97,7 +99,7 @@ export default function SeatMap() {
       }
     };
     fetchSeats();
-  }, []);
+  }, [location]);
 
   return (
     <div>

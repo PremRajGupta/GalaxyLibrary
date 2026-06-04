@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import TopHeader from '../components/layout/TopHeader';
 import QuickActionCard from '../components/QuickActionCard';
@@ -17,6 +17,7 @@ const quickActions = [
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [statsData, setStatsData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [notification] = useState('');
@@ -34,7 +35,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [location]);
 
   const openFeesPayModal = (studentId: string) => {
     navigate('/fees', { state: { openPayForStudentId: studentId } });

@@ -147,7 +147,7 @@ export function FeeCollection() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [location]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<StudentFee | null>(null);
   const [payAmount, setPayAmount] = useState('');
