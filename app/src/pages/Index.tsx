@@ -7,6 +7,7 @@ import GallerySection from '../components/landing/GallerySection';
 import FacultySection from '../components/landing/FacultySection';
 import ContactSection from '../components/landing/ContactSection';
 import LandingFooter from '../components/landing/LandingFooter';
+import { SEOMeta } from '../components/SEOMeta';
 import { DEFAULT_SITE_CONTENT, type SiteContent } from '../data/landingContent';
 import { loadSiteContent, SITE_CONTENT_UPDATED_EVENT } from '../lib/siteContentService';
 
@@ -64,6 +65,41 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEOMeta
+        title="Galaxy Library - Top Educational Institute in Tehta | Galaxy Education Hub"
+        description="Galaxy Library is the leading educational institute in Tehta providing quality education, comprehensive admission services, transparent fee collection, and advanced student management systems. Join thousands of satisfied students today."
+        keywords="galaxy library, galaxy library tehta, galaxy education, educational institute, quality education, admission portal, fee collection, student management, learning center"
+        ogUrl="https://galaxyhub.in/"
+        canonical="https://galaxyhub.in/"
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "EducationalOrganization",
+          "name": "Galaxy Library",
+          "url": "https://galaxyhub.in",
+          "logo": "https://galaxyhub.in/logo.png",
+          "description": "Galaxy Library is the leading educational institute in Tehta providing quality education, admissions, and comprehensive services.",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Tehta",
+            "addressCountry": "IN"
+          },
+          "telephone": "+91-XXXXXXXXXX",
+          "email": "info@galaxyhub.in",
+          "sameAs": [
+            "https://www.facebook.com/galaxylibrary",
+            "https://twitter.com/galaxylibrary",
+            "https://www.instagram.com/galaxylibrary"
+          ],
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "Customer Service",
+            "availableLanguage": ["en", "hi"]
+          },
+          "potentialAction": {
+            "@type": "EnrollAction"
+          }
+        }}
+      />
       {apiOffline && (
         <div className="bg-[#fef3c7] border-b border-[#f59e0b] text-[#92400e] text-center text-sm px-4 py-2">
           Server offline — showing saved/default content. Start backend on port 5000, then refresh.

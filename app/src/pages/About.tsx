@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import LandingNavbar from '../components/landing/LandingNavbar';
 import LandingFooter from '../components/landing/LandingFooter';
+import { SEOMeta } from '../components/SEOMeta';
 import { DEFAULT_SITE_CONTENT } from '../data/landingContent';
 
 export default function About() {
@@ -16,6 +17,38 @@ export default function About() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEOMeta
+        title="About Galaxy Library - Best Educational Institute in Tehta | Galaxy Education"
+        description="Learn about Galaxy Library, the leading educational institute in Tehta. Discover our mission, vision, expert faculty, modern infrastructure, and comprehensive education programs."
+        keywords="galaxy library, about galaxy library, educational institute tehta, galaxy education, quality education, student support, admission process, learning center"
+        ogUrl="https://galaxyhub.in/about"
+        canonical="https://galaxyhub.in/about"
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "EducationalOrganization",
+          "name": "Galaxy Library",
+          "url": "https://galaxyhub.in",
+          "logo": "https://galaxyhub.in/logo.png",
+          "description": "Galaxy Library is the leading educational institute in Tehta providing quality education, admissions, and comprehensive fee management services.",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Tehta",
+            "addressCountry": "IN"
+          },
+          "sameAs": [
+            "https://maps.app.goo.gl/NzwYiUAujqzYiKKL6",
+        "https://maps.app.goo.gl/ZwQaWJYWwbDfauP56",
+        "https://www.galaxylibrary.in"
+          ],
+          "areaServed": {
+            "@type": "City",
+            "name": "Tehta"
+          },
+          "potentialAction": {
+            "@type": "EnrollAction"
+          }
+        }}
+      />
       <LandingNavbar
         libraryInfo={libraryInfo}
         pageText={pageText}

@@ -1,45 +1,19 @@
 User-agent: *
 Allow: /
-Allow: /components.json
-Allow: /public/
 
-# Disallow admin and server endpoints
-Disallow: /admin/
-Disallow: /server/
+# Private app pages should not be indexed.
+Disallow: /login
+Disallow: /dashboard
+Disallow: /admission
+Disallow: /fees
+Disallow: /pdf-generator
+Disallow: /seat-map
+Disallow: /requests
+Disallow: /students
+Disallow: /reports
+Disallow: /website-settings
 Disallow: /api/
-Disallow: /__tests__/
+Disallow: /server/
 Disallow: /node_modules/
-Disallow: /*.ts
-Disallow: /*.tsx
-Disallow: /*.js.map
 
-# Allow specific files
-Allow: /*.js
-Allow: /*.css
-Allow: /*.png
-Allow: /*.jpg
-Allow: /*.jpeg
-Allow: /*.gif
-Allow: /*.svg
-Allow: /*.webp
-
-# Specific crawl delays
-User-agent: Googlebot
-Crawl-delay: 0
-Request-rate: 30/1s
-
-User-agent: Bingbot
-Crawl-delay: 1
-Request-rate: 15/1s
-
-User-agent: Yandex
-Crawl-delay: 2
-
-# Avoid crawling rate limiters
-User-agent: *
-Disallow: /*?*sort=
-Disallow: /*?*filter=
-
-# Sitemap
 Sitemap: https://galaxyhub.in/sitemap.xml
-Sitemap: https://galaxyhub.in/sitemap-pages.xml

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import LandingNavbar from '../components/landing/LandingNavbar';
 import LandingFooter from '../components/landing/LandingFooter';
+import { SEOMeta } from '../components/SEOMeta';
 import { DEFAULT_SITE_CONTENT } from '../data/landingContent';
 
 export default function Services() {
@@ -97,6 +98,42 @@ export default function Services() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEOMeta
+        title="Our Services - Galaxy Library | Admission, Fee Collection, Student Management"
+        description="Explore Galaxy Library's comprehensive services including student admissions, transparent fee collection, digital student records management, and advanced dashboard for academic tracking."
+        keywords="galaxy library services, admission services, fee collection, student records, educational services tehta, admission portal, fee management system"
+        ogUrl="https://galaxyhub.in/services"
+        canonical="https://galaxyhub.in/services"
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "LocalBusiness",
+          "name": "Galaxy Library",
+          "url": "https://galaxyhub.in",
+          "description": "Leading educational institute providing comprehensive services",
+          "offers": [
+            {
+              "@type": "Service",
+              "name": "Student Admissions",
+              "description": "Comprehensive admission support and guidance for new students"
+            },
+            {
+              "@type": "Service",
+              "name": "Fee Collection",
+              "description": "Transparent and secure digital fee management system"
+            },
+            {
+              "@type": "Service",
+              "name": "Student Records Management",
+              "description": "Digital record keeping and academic tracking"
+            },
+            {
+              "@type": "Service",
+              "name": "Dashboard Portal",
+              "description": "Advanced portal for tracking admissions and academic progress"
+            }
+          ]
+        }}
+      />
       <LandingNavbar
         libraryInfo={libraryInfo}
         pageText={pageText}
