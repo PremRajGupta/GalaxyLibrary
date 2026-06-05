@@ -13,10 +13,11 @@ import {
 } from '../lib/feeRules';
 import { formatJoiningDate, toDateInputValue } from '../lib/formatDate';
 import { COURSE_OPTIONS, getCourseLabel, getCourseValueFromLabel, resolveCourseForStorage } from '../lib/courseOptions';
-import { seatApi, studentApi } from '../lib/apiService';
+import { feeApi, seatApi, studentApi } from '../lib/apiService';
 import { generateAllSeatNumbers, getAvailableSeatsFromStudents } from '../lib/seatLayout';
 import { normalizeIndianMobile, validateIndianMobile } from '../lib/phoneValidation';
 import { normalizeAadharNumber, validateAadharNumber } from '../lib/aadharValidation';
+import { getStudentDisplayId } from '../lib/studentId';
 
 const RUPEE = '\u20B9';
 const formatRupee = (amount: number) => `${RUPEE}${amount.toLocaleString('en-IN')}`;
@@ -61,6 +62,7 @@ export default function EditStudent() {
   const [seatsLoading, setSeatsLoading] = useState(true);
   const [seatSearch, setSeatSearch] = useState('');
   const [seatDropdownOpen, setSeatDropdownOpen] = useState(false);
+  const [studentRecord, setStudentRecord] = useState<any>(null);
   const successRef = useRef<HTMLDivElement>(null);
   const seatDropdownRef = useRef<HTMLDivElement>(null);
   const [initialSeat, setInitialSeat] = useState<string>('');
@@ -96,6 +98,7 @@ export default function EditStudent() {
   useEffect(() => {
     if (id) {
       studentApi.getStudentById(id).then(student => {
+        setStudentRecord(student);
         const { course, customCourse } = getCourseValueFromLabel(student.course);
         setFormData({
           name: student.name || '',
@@ -151,6 +154,13 @@ export default function EditStudent() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (value === '' || /^\d+$/.test(value)) {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -246,13 +256,35 @@ export default function EditStudent() {
     setSuccessMessage('');
 
     try {
+      const monthlyFee = Number(formData.feeAmount) || 0;
+      const paidAmount = Number(formData.paidAmount) || 0;
       const updatePayload = {
         ...formData,
         course: resolveCourseForStorage(formData.course, formData.customCourse),
         seatNumber: formData.seatNumber === 'other' ? String(formData.customSeat || '').trim() : String(formData.seatNumber || '').trim(),
+        customShiftHours: formData.customShiftHours ? Number(formData.customShiftHours) : undefined,
+        feeAmount: monthlyFee,
       };
-      await studentApi.updateStudent(id as string, updatePayload as any);
-      setSuccessMessage('Student updated successfully!');
+      const updatedStudent = await studentApi.updateStudent(id as string, updatePayload as any);
+
+      if (paidAmount > 0) {
+        const paymentMonth = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
+        await feeApi.createFee({
+          studentDisplayId: getStudentDisplayId(updatedStudent || studentRecord),
+          studentName: updatedStudent?.name || formData.name,
+          amount: paidAmount,
+          feeCreditAmount: paidAmount,
+          month: paymentMonth,
+          paymentMode: formData.paymentMode || 'cash',
+          notes: `Payment recorded while editing student record`,
+        });
+      }
+
+      setSuccessMessage(
+        paidAmount > 0
+          ? `Student updated and payment of ${formatRupee(paidAmount)} recorded successfully!`
+          : 'Student updated successfully!'
+      );
       setSubmitted(true);
       await loadAvailableSeats();
       setTimeout(() => {
@@ -301,6 +333,14 @@ export default function EditStudent() {
       }
     }
     if (!formData.joiningDate) e.joiningDate = 'Joining date is required.';
+    const feeAmount = Number(formData.feeAmount);
+    if (!formData.feeAmount || Number.isNaN(feeAmount) || feeAmount <= 0) {
+      e.feeAmount = 'Enter a valid monthly fee.';
+    }
+    const paidAmount = Number(formData.paidAmount);
+    if (formData.paidAmount && (Number.isNaN(paidAmount) || paidAmount < 0)) {
+      e.paidAmount = 'Enter a valid paid amount.';
+    }
     if (!formData.email?.trim()) e.email = 'Email is required.';
     const aadharNumberError = validateAadharNumber(formData.aadharNumber, { required: false });
     if (aadharNumberError) e.aadharNumber = aadharNumberError;
@@ -638,6 +678,73 @@ export default function EditStudent() {
                       {errors.customSeat && <p className="text-xs text-red-600 mt-1">{errors.customSeat}</p>}
                     </div>
                   )}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-4 sm:p-5">
+                <div className="mb-4">
+                  <h3 className="text-base font-semibold text-[#0f172a]">Fee & Payment</h3>
+                  <p className="text-xs text-[#64748b] mt-1">Update monthly fee and record payment from this edit screen.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[#1e293b] mb-2">
+                      Monthly Fee<RequiredMark />
+                    </label>
+                    <input
+                      type="text"
+                      name="feeAmount"
+                      value={formData.feeAmount}
+                      onChange={handleAmountChange}
+                      placeholder="Enter monthly fee"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      className="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/20 transition-all bg-white"
+                      required
+                    />
+                    {isPresetShift && (
+                      <p className="text-xs text-[#64748b] mt-1">
+                        Auto-set from selected shift.
+                      </p>
+                    )}
+                    {errors.feeAmount && <p className="text-xs text-red-600 mt-1">{errors.feeAmount}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[#1e293b] mb-2">
+                      Paid Amount
+                    </label>
+                    <input
+                      type="text"
+                      name="paidAmount"
+                      value={formData.paidAmount}
+                      onChange={handleAmountChange}
+                      placeholder="0"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      className="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/20 transition-all bg-white"
+                    />
+                    <p className="text-xs text-[#64748b] mt-1">
+                      Leave 0 if no new payment is collected.
+                    </p>
+                    {errors.paidAmount && <p className="text-xs text-red-600 mt-1">{errors.paidAmount}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[#1e293b] mb-2">
+                      Payment Mode
+                    </label>
+                    <select
+                      name="paymentMode"
+                      value={formData.paymentMode}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/20 transition-all bg-white"
+                    >
+                      <option value="cash">Cash</option>
+                      <option value="upi">UPI</option>
+                      <option value="card">Card</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
