@@ -94,23 +94,36 @@ export const updateFee = async (req, res) => {
     const { id } = req.params;
     const { amount, month, paymentMode, notes, paymentDate } = req.body;
 
-    const updateFields = {};
-    if (amount !== undefined) updateFields.amount = amount;
-    if (month !== undefined) updateFields.month = month;
-    if (paymentMode !== undefined) updateFields.paymentMode = paymentMode;
-    if (notes !== undefined) updateFields.notes = notes;
-    if (paymentDate !== undefined) updateFields.paymentDate = paymentDate;
-
     const isObjectId = mongoose.Types.ObjectId.isValid(id);
     const query = isObjectId
       ? { $or: [{ _id: id }, { receiptNumber: id }] }
       : { receiptNumber: id };
 
-    const fee = await Fee.findOneAndUpdate(query, { $set: updateFields }, { new: true });
+    const fee = await Fee.findOne(query);
     if (!fee) {
       return res.status(404).json({ message: 'Fee record not found' });
     }
 
+    if (amount !== undefined) {
+      fee.amount = amount;
+      fee.feeCreditAmount = amount; // Sync credit amount with edited amount
+    }
+    if (month !== undefined) fee.month = month;
+    if (paymentMode !== undefined) fee.paymentMode = paymentMode;
+    if (notes !== undefined) fee.notes = notes;
+    if (paymentDate !== undefined) fee.paymentDate = paymentDate;
+
+    // If it's an advance payment, recalculate validity
+    if (fee.isAdvancePayment && fee.monthlyFee > 0 && fee.advanceStartDate) {
+      const startDate = toDateOnly(fee.advanceStartDate);
+      if (startDate) {
+        const { monthsCovered, validUntil } = calculateValidityFromAmount(startDate, fee.amount, fee.monthlyFee);
+        fee.monthsCovered = monthsCovered;
+        fee.validUntilDate = validUntil;
+      }
+    }
+
+    await fee.save();
     res.status(200).json(fee);
   } catch (error) {
     res.status(400).json({ message: 'Error updating fee', error: error.message });

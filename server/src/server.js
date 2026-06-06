@@ -20,6 +20,9 @@ import Student from './models/Student.js';
 import Fee from './models/Fee.js';
 import Seat from './models/Seat.js';
 
+// Utils
+import { computeStudentFeeDue } from './utils/feeDues.js';
+
 // Middleware
 import { verifyToken } from './middleware/auth.js';
 
@@ -234,6 +237,13 @@ app.get(['/api/v1/student/me', '/api/student/me'], async (req, res) => {
     // Fetch fee records
     const fees = await Fee.find({ studentId: student._id }).sort({ paymentDate: -1 });
 
+    // Compute dues
+    const dues = computeStudentFeeDue({
+      monthlyFee: student.feeAmount,
+      joiningDate: student.joiningDate || student.admissionDate,
+      payments: fees
+    });
+
     // Fetch seat details if available
     let seat = null;
     if (student.seatNumber && student.seatNumber !== '--') {
@@ -244,10 +254,134 @@ app.get(['/api/v1/student/me', '/api/student/me'], async (req, res) => {
       });
     }
 
+    // Compute advance payment validity (Matching Admin Dashboard logic)
+    const monthlyFee = Number(student.feeAmount) || 0;
+    const joinDateStr = student.joiningDate || student.admissionDate;
+
+    // Helper functions matching feeController.js
+    const toDateOnly = (value) => {
+      if (!value) return null;
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) return null;
+      parsed.setHours(0, 0, 0, 0);
+      return parsed;
+    };
+
+    const formatDateOnly = (value) => {
+      if (!value) return null;
+      const date = value instanceof Date ? new Date(value) : toDateOnly(value);
+      if (!date) return null;
+      date.setHours(0, 0, 0, 0);
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
+    const addBillingMonths = (startDate, months) => {
+      const wholeMonths = Math.max(0, Math.floor(months));
+      const originalDay = startDate.getDate();
+      const endDate = new Date(startDate);
+      endDate.setHours(0, 0, 0, 0);
+      endDate.setDate(1);
+      endDate.setMonth(endDate.getMonth() + wholeMonths);
+      const lastDayOfTargetMonth = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0).getDate();
+      endDate.setDate(Math.min(originalDay, lastDayOfTargetMonth));
+      return endDate;
+    };
+
+    const getBillablePeriodCount = (startDate, asOf) => {
+      if (asOf < startDate) return 0;
+      let count = 0;
+      while (addBillingMonths(startDate, count) <= asOf) {
+        count += 1;
+      }
+      return count;
+    };
+
+    const calculateValidityFromAmount = (startDate, amount, monthFee) => {
+      const safeAmount = Math.max(0, Number(amount) || 0);
+      const safeMonthlyFee = Math.max(0, Number(monthFee) || 0);
+      if (!safeMonthlyFee) {
+        return { monthsCovered: 0, validUntil: new Date(startDate) };
+      }
+      const fullMonthsCovered = Math.floor(safeAmount / safeMonthlyFee);
+      const validUntil = addBillingMonths(startDate, fullMonthsCovered);
+      return { monthsCovered: fullMonthsCovered, validUntil };
+    };
+
+    let validity = {
+      hasPaymentHistory: false,
+      hasAdvancePayment: false,
+      isAdvancePayment: false,
+      monthsCovered: 0,
+      advanceMonths: 0,
+      validUntilDate: null,
+      advanceStartDate: null,
+      advanceValidUntilDate: null,
+      daysRemaining: 0,
+      rawDaysRemaining: 0,
+      paymentStatus: 'no-payment',
+      monthlyFee,
+      totalPaid: 0,
+    };
+
+    try {
+      const startDate = toDateOnly(joinDateStr);
+      if (monthlyFee > 0 && startDate) {
+        const totalPaid = fees.reduce((sum, fee) => {
+          const feeCredit = fee.feeCreditAmount !== undefined ? fee.feeCreditAmount : fee.amount;
+          return sum + (Number(feeCredit) || 0);
+        }, 0);
+
+        const { monthsCovered, validUntil } = calculateValidityFromAmount(startDate, totalPaid, monthlyFee);
+
+        if (monthsCovered > 0) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const daysRemaining = Math.floor((validUntil.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+          let paymentStatus = 'valid';
+          if (daysRemaining < 0) paymentStatus = 'expired';
+          else if (daysRemaining <= 15) paymentStatus = 'expiring-soon';
+
+          const currentPeriodCount = getBillablePeriodCount(startDate, today);
+          const advanceMonths = Math.max(0, monthsCovered - currentPeriodCount);
+          const hasComputedAdvance = advanceMonths > 0;
+          const advanceStartDate = hasComputedAdvance ? addBillingMonths(startDate, currentPeriodCount) : null;
+
+          validity = {
+            hasPaymentHistory: totalPaid > 0,
+            hasAdvancePayment: hasComputedAdvance,
+            isAdvancePayment: hasComputedAdvance,
+            monthsCovered,
+            advanceMonths,
+            validUntilDate: formatDateOnly(validUntil),
+            advanceStartDate: formatDateOnly(advanceStartDate),
+            advanceValidUntilDate: hasComputedAdvance ? formatDateOnly(validUntil) : null,
+            daysRemaining: Math.max(0, daysRemaining),
+            rawDaysRemaining: daysRemaining,
+            paymentStatus,
+            monthlyFee,
+            totalPaid,
+          };
+        } else {
+          validity.hasPaymentHistory = totalPaid > 0;
+          validity.totalPaid = totalPaid;
+        }
+      }
+    } catch (err) {
+      console.error('Error computing advance payment validity:', err);
+    }
+
+    // Removed duplicate validity variable
+
     return res.json({
       student,
       fees,
-      seat
+      seat,
+      dues,
+      validity
     });
   } catch (error) {
     console.error('Fetch student/me error:', error);

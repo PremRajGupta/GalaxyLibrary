@@ -2,7 +2,7 @@ import Student from '../models/Student.js';
 import Fee from '../models/Fee.js';
 import { getCourseLabel } from '../utils/courseOptions.js';
 import { getFeeForTimeShift } from '../utils/feeRules.js';
-import { computeStudentFeeDue } from '../utils/feeDues.js';
+import { computeStudentFeeDue, parseDateInputValue } from '../utils/feeDues.js';
 
 const PERIOD_LABELS = {
   thisWeek: 'This Week',
@@ -161,19 +161,63 @@ export const getReportsData = async (req, res) => {
     });
 
     const bucketOrder = buildOrderedBuckets(timeRange, startDate, endDate);
-    const feeMap = Object.fromEntries(bucketOrder.map((label) => [label, { collected: 0 }]));
+    const feeMap = Object.fromEntries(bucketOrder.map((label) => [label, { collected: 0, pending: 0 }]));
 
     periodFees.forEach((fee) => {
       const label = getFeeBucketLabel(getPaymentDate(fee), timeRange);
       if (!feeMap[label]) {
-        feeMap[label] = { collected: 0 };
+        feeMap[label] = { collected: 0, pending: 0 };
       }
       feeMap[label].collected += fee.amount || 0;
+    });
+
+    // Compute pending dues by date/bucket
+    activeStudents.forEach((student) => {
+      const monthlyFee = Number(student.feeAmount) || getFeeForTimeShift(student.timeShift) || 0;
+      if (monthlyFee <= 0) return;
+
+      const payments = paymentsByStudent[student.studentId] || [];
+      const joinDate = parseDateInputValue(student.joiningDate || student.admissionDate) || asOfDate;
+
+      // Allocate payments chronologically to billing periods
+      const sortedPayments = [...payments]
+        .map((p) => ({
+          amount: Number(p.amount) || 0,
+          paidOn: p.paymentDate ? new Date(p.paymentDate) : asOfDate,
+        }))
+        .filter((p) => p.amount > 0)
+        .sort((a, b) => a.paidOn.getTime() - b.paidOn.getTime());
+
+      let totalPaidCredit = sortedPayments.reduce((sum, p) => sum + p.amount, 0);
+
+      const BILLING_MS = 30 * 24 * 60 * 60 * 1000;
+      // We calculate billing periods from joiningDate up to asOfDate
+      let periodIndex = 0;
+      while (true) {
+        const periodStart = new Date(joinDate.getTime() + periodIndex * BILLING_MS);
+        if (periodStart > asOfDate) break;
+
+        const periodCharge = monthlyFee;
+        const paidForPeriod = Math.min(totalPaidCredit, periodCharge);
+        totalPaidCredit = Math.max(totalPaidCredit - periodCharge, 0);
+        const pendingForPeriod = periodCharge - paidForPeriod;
+
+        // If the period started within our selected time range, add its pending amount to the bucket
+        if (isWithinRange(periodStart, startDate, endDate) && pendingForPeriod > 0) {
+          const label = getFeeBucketLabel(periodStart, timeRange);
+          if (feeMap[label]) {
+            feeMap[label].pending += pendingForPeriod;
+          }
+        }
+
+        periodIndex += 1;
+      }
     });
 
     const feeData = bucketOrder.map((label) => ({
       month: label,
       collected: feeMap[label]?.collected || 0,
+      pending: feeMap[label]?.pending || 0,
     }));
 
     const courseMap = {};

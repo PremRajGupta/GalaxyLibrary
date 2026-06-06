@@ -20,8 +20,8 @@ import {
 } from '../lib/siteContentService';
 
 const inputClass =
-  'w-full px-4 py-2.5 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/20 text-sm';
-const labelClass = 'block text-sm font-medium text-[#1e293b] mb-1.5';
+  'w-full px-3 py-1.5 border border-[#e2e8f0] rounded-md focus:outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/20 text-xs';
+const labelClass = 'block text-xs font-semibold text-[#475569] mb-1';
 
 const TABS = [
   { id: 'general', label: 'General & Contact' },
@@ -632,28 +632,64 @@ export default function WebsiteSettings() {
                 <Plus size={16} /> Add Slide
               </button>
             </div>
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {content.heroSlides.map((slide, index) => (
-                <div key={slide.id} className="p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-semibold text-[#3b82f6]">Slide {index + 1}</p>
-                    {content.heroSlides.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => setContent((prev) => ({ ...prev, heroSlides: prev.heroSlides.filter((s) => s.id !== slide.id) }))}
-                        className="p-1.5 text-[#ef4444] hover:bg-[#fee2e2] rounded-md"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <div><label className={labelClass}>Heading</label><input className={inputClass} value={slide.title} onChange={(e) => setContent((prev) => { const heroSlides = [...prev.heroSlides]; heroSlides[index] = { ...slide, title: e.target.value }; return { ...prev, heroSlides }; })} /></div>
-                      <div><label className={labelClass}>Subtitle</label><textarea className={`${inputClass} min-h-[80px]`} value={slide.subtitle} onChange={(e) => setContent((prev) => { const heroSlides = [...prev.heroSlides]; heroSlides[index] = { ...slide, subtitle: e.target.value }; return { ...prev, heroSlides }; })} /></div>
-                      <div><label className={labelClass}>Image URL</label><input className={inputClass} value={slide.image} onChange={(e) => setContent((prev) => { const heroSlides = [...prev.heroSlides]; heroSlides[index] = { ...slide, image: e.target.value }; return { ...prev, heroSlides }; })} placeholder="https://..." /></div>
+                <div key={slide.id} className="p-3 bg-[#f8fafc] rounded-xl border border-[#e2e8f0] flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-[#3b82f6]">Slide {index + 1}</p>
+                      {content.heroSlides.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setContent((prev) => ({ ...prev, heroSlides: prev.heroSlides.filter((s) => s.id !== slide.id) }))}
+                          className="p-1 text-[#ef4444] hover:bg-[#fee2e2] rounded"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
-                    {slide.image && <img src={slide.image} alt={slide.title} className="w-full h-40 lg:h-full min-h-[160px] object-cover rounded-lg border" />}
+                    <div className="mb-2 rounded border border-[#e2e8f0] bg-[#e2e8f0] overflow-hidden h-28 flex items-center justify-center">
+                      {slide.image?.trim() ? (
+                        <img
+                          src={slide.image}
+                          alt={slide.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <span className="text-[10px] text-[#64748b] p-2 text-center">No image preview</span>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Heading</label>
+                        <input
+                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs"
+                          value={slide.title}
+                          onChange={(e) => setContent((prev) => { const heroSlides = [...prev.heroSlides]; heroSlides[index] = { ...slide, title: e.target.value }; return { ...prev, heroSlides }; })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Subtitle</label>
+                        <textarea
+                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs resize-none"
+                          rows={2}
+                          value={slide.subtitle}
+                          onChange={(e) => setContent((prev) => { const heroSlides = [...prev.heroSlides]; heroSlides[index] = { ...slide, subtitle: e.target.value }; return { ...prev, heroSlides }; })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Image URL</label>
+                        <input
+                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs"
+                          value={slide.image}
+                          onChange={(e) => setContent((prev) => { const heroSlides = [...prev.heroSlides]; heroSlides[index] = { ...slide, image: e.target.value }; return { ...prev, heroSlides }; })}
+                          placeholder="https://..."
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -721,103 +757,105 @@ export default function WebsiteSettings() {
                 <Plus size={16} /> Add Image
               </button>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {content.galleryImages.map((image, index) => (
-                <div key={image.id} className="p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-semibold text-[#3b82f6]">Image {index + 1}</p>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setContent((prev) => ({
-                          ...prev,
-                          galleryImages: prev.galleryImages.filter((img) => img.id !== image.id),
-                        }))
-                      }
-                      disabled={content.galleryImages.length <= 1}
-                      className="p-1.5 text-[#ef4444] hover:bg-[#fee2e2] rounded-md disabled:opacity-40"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  <div className="mb-3 rounded-lg border border-[#e2e8f0] bg-[#e2e8f0] overflow-hidden min-h-[140px] flex items-center justify-center">
-                    {image.src?.trim() ? (
-                      <img
-                        src={image.src}
-                        alt={image.alt || image.title}
-                        className="w-full h-40 object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <span className="text-xs text-[#64748b] p-4 text-center">Enter image URL to preview</span>
-                    )}
-                  </div>
-                  <div className="space-y-3">
-                    <div>
-                      <label className={labelClass}>Image URL</label>
-                      <input
-                        className={inputClass}
-                        value={image.src}
-                        onChange={(e) => {
-                          const src = e.target.value;
+                <div key={image.id} className="p-3 bg-[#f8fafc] rounded-xl border border-[#e2e8f0] flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-[#3b82f6]">Image {index + 1}</p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setContent((prev) => ({
+                            ...prev,
+                            galleryImages: prev.galleryImages.filter((img) => img.id !== image.id),
+                          }))
+                        }
+                        disabled={content.galleryImages.length <= 1}
+                        className="p-1 text-[#ef4444] hover:bg-[#fee2e2] rounded disabled:opacity-40"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    <div className="mb-2 rounded border border-[#e2e8f0] bg-[#e2e8f0] overflow-hidden h-24 flex items-center justify-center">
+                      {image.src?.trim() ? (
+                        <img
+                          src={image.src}
+                          alt={image.alt || image.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <span className="text-[10px] text-[#64748b] p-2 text-center">No image preview</span>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Image URL</label>
+                        <input
+                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs"
+                          value={image.src}
+                          onChange={(e) => {
+                            const src = e.target.value;
+                            setContent((prev) => {
+                              const galleryImages = [...prev.galleryImages];
+                              galleryImages[index] = { ...image, src };
+                              return { ...prev, galleryImages };
+                            });
+                          }}
+                          placeholder="https://images.unsplash.com/..."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Caption / Title</label>
+                        <input
+                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs"
+                          value={image.title}
+                          onChange={(e) => {
+                            const title = e.target.value;
+                            setContent((prev) => {
+                              const galleryImages = [...prev.galleryImages];
+                              galleryImages[index] = {
+                                ...image,
+                                title,
+                                alt: image.alt || title,
+                              };
+                              return { ...prev, galleryImages };
+                            });
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Alt text</label>
+                        <input
+                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs"
+                          value={image.alt}
+                          onChange={(e) => {
+                            setContent((prev) => {
+                              const galleryImages = [...prev.galleryImages];
+                              galleryImages[index] = { ...image, alt: e.target.value };
+                              return { ...prev, galleryImages };
+                            });
+                          }}
+                          placeholder="Describe the image"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="text-[10px] text-[#3b82f6] hover:underline block w-full text-left mt-1"
+                        onClick={() =>
                           setContent((prev) => {
                             const galleryImages = [...prev.galleryImages];
-                            galleryImages[index] = { ...image, src };
+                            galleryImages[index] = { ...image, alt: image.title };
                             return { ...prev, galleryImages };
-                          });
-                        }}
-                        placeholder="https://images.unsplash.com/..."
-                      />
+                          })
+                        }
+                      >
+                        Copy title → alt text
+                      </button>
                     </div>
-                    <div>
-                      <label className={labelClass}>Caption / Title</label>
-                      <input
-                        className={inputClass}
-                        value={image.title}
-                        onChange={(e) => {
-                          const title = e.target.value;
-                          setContent((prev) => {
-                            const galleryImages = [...prev.galleryImages];
-                            galleryImages[index] = {
-                              ...image,
-                              title,
-                              alt: image.alt || title,
-                            };
-                            return { ...prev, galleryImages };
-                          });
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass}>Alt text (accessibility)</label>
-                      <input
-                        className={inputClass}
-                        value={image.alt}
-                        onChange={(e) => {
-                          setContent((prev) => {
-                            const galleryImages = [...prev.galleryImages];
-                            galleryImages[index] = { ...image, alt: e.target.value };
-                            return { ...prev, galleryImages };
-                          });
-                        }}
-                        placeholder="Describe the image"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      className="text-xs text-[#3b82f6] hover:underline"
-                      onClick={() =>
-                        setContent((prev) => {
-                          const galleryImages = [...prev.galleryImages];
-                          galleryImages[index] = { ...image, alt: image.title };
-                          return { ...prev, galleryImages };
-                        })
-                      }
-                    >
-                      Copy title → alt text
-                    </button>
                   </div>
                 </div>
               ))}
@@ -872,61 +910,61 @@ export default function WebsiteSettings() {
                 <Plus size={16} /> Add Profile
               </button>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {content.facultyMembers.map((member, index) => (
-                <div key={member.id} className="p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-semibold text-[#3b82f6]">Profile {index + 1}</p>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setContent((prev) => ({
-                          ...prev,
-                          facultyMembers: prev.facultyMembers.filter((item) => item.id !== member.id),
-                        }))
-                      }
-                      disabled={content.facultyMembers.length <= 1}
-                      className="p-1.5 text-[#ef4444] hover:bg-[#fee2e2] rounded-md disabled:opacity-40"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  <div className="mb-3 rounded-lg border border-[#e2e8f0] bg-[#e2e8f0] overflow-hidden min-h-[180px] flex items-center justify-center">
-                    {member.photo?.trim() ? (
-                      <img
-                        src={member.photo}
-                        alt={member.name}
-                        className="w-full h-48 object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <span className="text-xs text-[#64748b] p-4 text-center">Enter photo URL to preview</span>
-                    )}
-                  </div>
-                  <div className="space-y-3">
-                    <div>
-                      <label className={labelClass}>Photo URL</label>
-                      <input
-                        className={inputClass}
-                        value={member.photo}
-                        onChange={(e) => {
-                          const photo = e.target.value;
-                          setContent((prev) => {
-                            const facultyMembers = [...prev.facultyMembers];
-                            facultyMembers[index] = { ...member, photo };
-                            return { ...prev, facultyMembers };
-                          });
-                        }}
-                        placeholder="https://..."
-                      />
+                <div key={member.id} className="p-3 bg-[#f8fafc] rounded-xl border border-[#e2e8f0] flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-[#3b82f6]">Profile {index + 1}</p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setContent((prev) => ({
+                            ...prev,
+                            facultyMembers: prev.facultyMembers.filter((item) => item.id !== member.id),
+                          }))
+                        }
+                        disabled={content.facultyMembers.length <= 1}
+                        className="p-1 text-[#ef4444] hover:bg-[#fee2e2] rounded disabled:opacity-40"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="mb-2 rounded border border-[#e2e8f0] bg-[#e2e8f0] overflow-hidden h-24 flex items-center justify-center">
+                      {member.photo?.trim() ? (
+                        <img
+                          src={member.photo}
+                          alt={member.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <span className="text-[10px] text-[#64748b] p-2 text-center">No photo preview</span>
+                      )}
+                    </div>
+                    <div className="space-y-2">
                       <div>
-                        <label className={labelClass}>Name</label>
+                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Photo URL</label>
                         <input
-                          className={inputClass}
+                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs"
+                          value={member.photo}
+                          onChange={(e) => {
+                            const photo = e.target.value;
+                            setContent((prev) => {
+                              const facultyMembers = [...prev.facultyMembers];
+                              facultyMembers[index] = { ...member, photo };
+                              return { ...prev, facultyMembers };
+                            });
+                          }}
+                          placeholder="https://..."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Name</label>
+                        <input
+                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs"
                           value={member.name}
                           onChange={(e) => {
                             const name = e.target.value;
@@ -939,9 +977,9 @@ export default function WebsiteSettings() {
                         />
                       </div>
                       <div>
-                        <label className={labelClass}>Role / Designation</label>
+                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Role / Designation</label>
                         <input
-                          className={inputClass}
+                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs"
                           value={member.role}
                           onChange={(e) => {
                             const role = e.target.value;
@@ -953,22 +991,23 @@ export default function WebsiteSettings() {
                           }}
                         />
                       </div>
-                    </div>
-                    <div>
-                      <label className={labelClass}>Detail</label>
-                      <textarea
-                        className={`${inputClass} min-h-[92px]`}
-                        value={member.detail}
-                        onChange={(e) => {
-                          const detail = e.target.value;
-                          setContent((prev) => {
-                            const facultyMembers = [...prev.facultyMembers];
-                            facultyMembers[index] = { ...member, detail };
-                            return { ...prev, facultyMembers };
-                          });
-                        }}
-                        placeholder="Short detail about this faculty member"
-                      />
+                      <div>
+                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Detail</label>
+                        <textarea
+                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs resize-none"
+                          rows={2}
+                          value={member.detail}
+                          onChange={(e) => {
+                            const detail = e.target.value;
+                            setContent((prev) => {
+                              const facultyMembers = [...prev.facultyMembers];
+                              facultyMembers[index] = { ...member, detail };
+                              return { ...prev, facultyMembers };
+                            });
+                          }}
+                          placeholder="Short detail..."
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

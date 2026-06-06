@@ -26,12 +26,14 @@ export default function StudentRecords() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   // Fetch students whenever location changes (e.g., after edit/delete)
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         const data = await studentApi.getStudents();
-        // map MongoDB _id to id to maintain compatibility with existing UI if needed
         const mappedData = data.map((s: any) => ({
           ...s,
           id: s._id,
@@ -42,7 +44,6 @@ export default function StudentRecords() {
           course: getCourseLabel(s.course),
           joiningDate: formatJoiningDate(s.joiningDate || s.admissionDate),
         }));
-        // Sort students by name in ascending order
         mappedData.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
         setStudentList(mappedData);
       } catch (error) {
@@ -53,6 +54,11 @@ export default function StudentRecords() {
     };
     fetchStudents();
   }, [location]);
+
+  // Reset to first page when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
   const showNotification = (msg: string) => {
     setNotification(msg);
@@ -152,7 +158,6 @@ export default function StudentRecords() {
       doc.setFont('helvetica', 'bold');
       doc.text(`${label}:`, 20, y);
       try {
-        // Extract base64 part just in case
         doc.addImage(imgData, 20, y + 5, w, h);
       } catch(e) {
          doc.setFont('helvetica', 'normal');
@@ -168,14 +173,18 @@ export default function StudentRecords() {
     doc.save(`${student.name.replace(/\\s+/g, '_')}_Record.pdf`);
   };
 
-  
-
   const filteredStudents = studentList.filter((s) => {
     const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           s.studentId.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter ? s.status === statusFilter : true;
     return matchesSearch && matchesStatus;
   });
+
+  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+  const paginatedStudents = filteredStudents.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   if (loading) {
     return (
@@ -283,8 +292,6 @@ export default function StudentRecords() {
                     <p className="font-medium text-[#1e293b]">{viewingStudent.address || 'N/A'}</p>
                   </div>
                 </div>
-
-                {/* Dates and All Data sections removed per request */}
 
                 {(viewingStudent.aadharFront || viewingStudent.aadharBack) && (
                   <div className="mt-6">
@@ -394,87 +401,126 @@ export default function StudentRecords() {
                 </tr>
               </thead>
               <tbody>
-                {filteredStudents.map((student, index) => {
-                  const status = statusConfig[student.status as keyof typeof statusConfig];
-                  return (
-                    <motion.tr
-                      key={student.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.06, duration: 0.3 }}
-                      className="border-b border-[#e2e8f0] last:border-b-0 hover:bg-[#f8fafc] transition-colors duration-100"
-                    >
-                      <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 ${getAvatarColor(student.name)} rounded-full flex items-center justify-center`}>
-                            <span className="text-white text-xs font-semibold">{getInitials(student.name)}</span>
+                {paginatedStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-6 text-center text-sm text-[#64748b]">
+                      No students found.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedStudents.map((student, index) => {
+                    const status = statusConfig[student.status as keyof typeof statusConfig];
+                    return (
+                      <motion.tr
+                        key={student.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.04, duration: 0.3 }}
+                        className="border-b border-[#e2e8f0] last:border-b-0 hover:bg-[#f8fafc] transition-colors duration-100"
+                      >
+                        <td className="py-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-9 h-9 ${getAvatarColor(student.name)} rounded-full flex items-center justify-center`}>
+                              <span className="text-white text-xs font-semibold">{getInitials(student.name)}</span>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-[#1e293b]">{student.name}</p>
+                              <p className="text-xs text-[#94a3b8]">{student.studentId}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-medium text-[#1e293b]">{student.name}</p>
-                            <p className="text-xs text-[#94a3b8]">{student.studentId}</p>
+                        </td>
+                        <td className="py-4 text-sm font-mono font-medium text-[#3b82f6]">{student.password || 'N/A'}</td>
+                        <td className="py-4 text-sm text-[#1e293b]">{student.course}</td>
+                        <td className="py-4 text-sm text-[#64748b]">{student.seat}</td>
+                        <td className="py-4 text-sm text-[#64748b]">{student.contact}</td>
+                        <td className="py-4 text-sm text-[#64748b]">{student.joiningDate}</td>
+                        <td className="py-4">
+                          <span className={`px-2.5 py-1 ${status?.bg || ''} ${status?.text || ''} text-xs font-semibold rounded-md`}>
+                            {status?.label || student.status || 'N/A'}
+                          </span>
+                        </td>
+                        <td className="py-4 text-center">
+                          <input
+                            type="checkbox"
+                            checked={student.status === 'inactive'}
+                            onChange={() => handleToggleInactive(student)}
+                            className="w-4 h-4 cursor-pointer accent-[#3b82f6]"
+                            title={student.status === 'inactive' ? 'Mark as Active' : 'Mark as Inactive'}
+                          />
+                        </td>
+                        <td className="py-4">
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleView(student)}
+                              className="p-1.5 text-[#3b82f6] hover:bg-[#dbeafe] rounded-md transition-colors"
+                              title="View"
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleEdit(student.id)}
+                              className="p-1.5 text-[#eab308] hover:bg-[#fef9c3] rounded-md transition-colors"
+                              title="Edit"
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(student.id, student.name)}
+                              className="p-1.5 text-[#ef4444] hover:bg-[#fee2e2] rounded-md transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
-                        </div>
-                      </td>
-                      <td className="py-4 text-sm font-mono font-medium text-[#3b82f6]">{student.password || 'N/A'}</td>
-                      <td className="py-4 text-sm text-[#1e293b]">{student.course}</td>
-                      <td className="py-4 text-sm text-[#64748b]">{student.seat}</td>
-                      <td className="py-4 text-sm text-[#64748b]">{student.contact}</td>
-                      <td className="py-4 text-sm text-[#64748b]">{student.joiningDate}</td>
-                      <td className="py-4">
-                        <span className={`px-2.5 py-1 ${status.bg} ${status.text} text-xs font-semibold rounded-md`}>
-                          {status.label}
-                        </span>
-                      </td>
-                      <td className="py-4 text-center">
-                        <input
-                          type="checkbox"
-                          checked={student.status === 'inactive'}
-                          onChange={() => handleToggleInactive(student)}
-                          className="w-4 h-4 cursor-pointer accent-[#3b82f6]"
-                          title={student.status === 'inactive' ? 'Mark as Active' : 'Mark as Inactive'}
-                        />
-                      </td>
-                      <td className="py-4">
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => handleView(student)}
-                            className="p-1.5 text-[#3b82f6] hover:bg-[#dbeafe] rounded-md transition-colors"
-                            title="View"
-                          >
-                            <Eye size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleEdit(student.id)}
-                            className="p-1.5 text-[#eab308] hover:bg-[#fef9c3] rounded-md transition-colors"
-                            title="Edit"
-                          >
-                            <Pencil size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(student.id, student.name)}
-                            className="p-1.5 text-[#ef4444] hover:bg-[#fee2e2] rounded-md transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  );
-                })}
+                        </td>
+                      </motion.tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
 
           {/* Pagination */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-6 pt-4 border-t border-[#e2e8f0]">
-            <p className="text-sm text-[#64748b]">Showing {filteredStudents.length} of {studentList.length} students</p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button className="px-3 py-1.5 text-sm text-[#64748b] border border-[#e2e8f0] rounded-md hover:bg-[#f8fafc] transition-colors">Previous</button>
-              <button className="px-3 py-1.5 text-sm text-white bg-[#3b82f6] rounded-md">1</button>
-              <button className="px-3 py-1.5 text-sm text-[#64748b] border border-[#e2e8f0] rounded-md hover:bg-[#f8fafc] transition-colors">Next</button>
+          {totalPages > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-6 pt-4 border-t border-[#e2e8f0]">
+              <p className="text-sm text-[#64748b]">
+                Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredStudents.length)} to {Math.min(currentPage * itemsPerPage, filteredStudents.length)} of {filteredStudents.length} students
+              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 text-sm text-[#64748b] border border-[#e2e8f0] rounded-md hover:bg-[#f8fafc] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Previous
+                </button>
+                
+                {/* Generate page numbers dynamically */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button 
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                      currentPage === page 
+                        ? 'text-white bg-[#3b82f6]' 
+                        : 'text-[#64748b] border border-[#e2e8f0] hover:bg-[#f8fafc]'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 text-sm text-[#64748b] border border-[#e2e8f0] rounded-md hover:bg-[#f8fafc] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </motion.div>
     </div>

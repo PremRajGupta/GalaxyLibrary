@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TopHeader from '../components/layout/TopHeader';
 import { FileText, Download, FileSpreadsheet, TrendingUp, Users, IndianRupee, Calendar, Clock } from 'lucide-react';
@@ -215,7 +215,7 @@ export default function Reports() {
     }
   };
 
-  const chartData = feeData.length > 0 ? feeData : [{ month: 'No Data', collected: 0 }];
+  const chartData = feeData.length > 0 ? feeData : [{ month: 'No Data', collected: 0, pending: 0 }];
   const selectedPeriod = PERIOD_OPTIONS.find((option) => option.value === dateRange)?.label || 'This Month';
 
   return (
@@ -354,9 +354,10 @@ export default function Reports() {
                   <YAxis tick={{ fill: '#64748b', fontSize: 12 }} />
                   <Tooltip
                     contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
-                    formatter={(value: number) => [`₹${value.toLocaleString('en-IN')}`, 'Collected']}
+                    formatter={(value: number, name: string) => [`₹${value.toLocaleString('en-IN')}`, name]}
                   />
                   <Bar dataKey="collected" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Collected" />
+                  <Bar dataKey="pending" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Pending" />
                 </BarChart>
               )}
             </ResponsiveContainer>

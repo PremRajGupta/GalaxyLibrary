@@ -4,14 +4,14 @@ import { motion } from 'framer-motion';
 import TopHeader from '../components/layout/TopHeader';
 import { Armchair, X } from 'lucide-react';
 import { seatApi, studentApi } from '../lib/apiService';
-import { generateAllSeatNumbers } from '../lib/seatLayout';
+import { generateAllSeatNumbers, SEAT_COLUMNS, SEAT_CONFIG } from '../lib/seatLayout';
 
 type SeatStatus = 'available' | 'occupied' | 'reserved';
 
 interface Seat {
   id: string;
   number: string;
-  status: SeatStatus;
+  status: SeatStatus | 'empty';
   studentName?: string;
   studentId?: string;
   studentMobile?: string;
@@ -30,12 +30,30 @@ const statusLabels = {
   reserved: 'Reserved',
 };
 
-const generateBaseSeats = (): Seat[] =>
-  generateAllSeatNumbers().map((number) => ({
-    id: `seat-${number}`,
-    number,
-    status: 'available' as SeatStatus,
-  }));
+const generateBaseSeats = (): Seat[] => {
+  const baseSeats: Seat[] = [];
+  const maxRows = 60;
+  for (let row = 1; row <= maxRows; row += 1) {
+    for (const column of SEAT_COLUMNS) {
+      const count = SEAT_CONFIG[column] || 0;
+      if (row <= count) {
+        const number = `${column}${row}`;
+        baseSeats.push({
+          id: `seat-${number}`,
+          number,
+          status: 'available' as SeatStatus,
+        });
+      } else {
+        baseSeats.push({
+          id: `empty-${column}${row}`,
+          number: '',
+          status: 'empty',
+        });
+      }
+    }
+  }
+  return baseSeats;
+};
 
 export default function SeatMap() {
   const location = useLocation();
@@ -131,24 +149,33 @@ export default function SeatMap() {
           </div>
 
           {/* Seat Grid */}
-          <div className="grid grid-cols-5 sm:grid-cols-7 gap-1.5 sm:gap-2 md:gap-4 max-w-3xl mx-auto">
-            {seats.map((seat, index) => (
-              <motion.button
-                key={seat.id}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.005, duration: 0.2 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => (seat.status === 'occupied' || seat.status === 'reserved') && setSelectedSeat(seat)}
-                className={`aspect-square rounded-lg border-2 flex flex-col items-center justify-center gap-1 transition-all duration-150 ${
-                  statusColors[seat.status]
-                } ${seat.status !== 'available' ? 'cursor-pointer hover:shadow-md' : 'cursor-default'}`}
-              >
-                <Armchair className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="text-[10px] sm:text-xs font-semibold">{seat.number}</span>
-              </motion.button>
-            ))}
+          <div className="overflow-x-auto pb-4">
+            <div className="grid grid-cols-7 gap-1.5 sm:gap-2 md:gap-3 min-w-[500px] max-w-3xl mx-auto">
+              {seats.map((seat, index) => {
+                if (seat.status === 'empty') {
+                  return (
+                    <div key={seat.id} className="aspect-square" />
+                  );
+                }
+                return (
+                  <motion.button
+                    key={seat.id}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.002, duration: 0.2 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => (seat.status === 'occupied' || seat.status === 'reserved') && setSelectedSeat(seat as any)}
+                    className={`aspect-square rounded-lg border-2 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all duration-150 ${
+                      statusColors[seat.status]
+                    } ${seat.status !== 'available' ? 'cursor-pointer hover:shadow-md' : 'cursor-default'}`}
+                  >
+                    <Armchair className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="text-[10px] sm:text-xs font-semibold">{seat.number}</span>
+                  </motion.button>
+                );
+              })}
+            </div>
           </div>
         </div>
 

@@ -91,3 +91,15 @@
     @apply min-w-[720px];
   }
 }
+
+/* Hide number input spinners globally */
+@layer base {
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type=number] {
+    -moz-appearance: textfield;
+  }
+}

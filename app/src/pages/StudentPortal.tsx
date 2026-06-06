@@ -73,12 +73,16 @@ export default function StudentPortal() {
     );
   }
 
-  const { student, fees } = data;
+  const { student, fees, validity } = data;
   const paymentHistory = fees || [];
   const seatNumber = student.seatNumber && student.seatNumber !== '--' ? student.seatNumber : 'N/A';
   const shiftText = student.timeShift || 'N/A';
 
-  // Calculate fees status
+  // Calculate fees status using computed backend dues
+  const { dues } = data;
+  const pendingAmount = dues?.pendingAmount ?? 0;
+  const totalPaidAmount = dues?.paidAmount ?? 0;
+
   const isInactive = student.status === 'inactive';
   let feeStatus: 'paid' | 'due' | 'inactive' = 'due';
   let statusColor = 'text-red-600 bg-red-50 border-red-200';
@@ -88,26 +92,10 @@ export default function StudentPortal() {
     feeStatus = 'inactive';
     statusColor = 'text-gray-500 bg-gray-50 border-gray-200';
     statusText = 'Inactive Account';
-  } else if (paymentHistory.length > 0) {
-    // Basic due check: if last payment month is current month, it's paid
-    const currentMonth = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
-    const hasPaidCurrentMonth = paymentHistory.some(
-      (f: any) => f.month && f.month.toLowerCase().trim() === currentMonth.toLowerCase().trim()
-    );
-
-    // Also check if any payment covers the current date (for advance payments)
-    const hasActiveAdvance = paymentHistory.some((f: any) => {
-      if (!f.isAdvancePayment || !f.validUntilDate) return false;
-      const validUntil = new Date(f.validUntilDate);
-      const today = new Date();
-      return validUntil >= today;
-    });
-
-    if (hasPaidCurrentMonth || hasActiveAdvance) {
-      feeStatus = 'paid';
-      statusColor = 'text-[#16a34a] bg-[#f0fdf4] border-[#bbf7d0]';
-      statusText = 'Fees Paid';
-    }
+  } else if (pendingAmount === 0) {
+    feeStatus = 'paid';
+    statusColor = 'text-[#16a34a] bg-[#f0fdf4] border-[#bbf7d0]';
+    statusText = 'Fees Paid';
   }
 
   // Get last payment date
@@ -171,6 +159,36 @@ export default function StudentPortal() {
           </div>
         </div>
 
+        {/* Advance Payment Banner */}
+        {validity?.hasAdvancePayment && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+          >
+            <div className="flex items-start gap-4">
+              <span className="p-3 bg-emerald-500 text-white rounded-xl shadow-md shadow-emerald-500/20 mt-1 sm:mt-0">
+                <ShieldCheck size={24} className="animate-pulse" />
+              </span>
+              <div>
+                <h4 className="font-extrabold text-emerald-950 text-base sm:text-lg">Advance Payment Active ⚡</h4>
+                <p className="text-sm text-emerald-800/90 mt-1">
+                  You have paid fees for <span className="font-bold">{validity.monthsCovered} Month{validity.monthsCovered !== 1 ? 's' : ''}</span> in advance. 
+                  Your membership validity is fully secure.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col items-start sm:items-end justify-center">
+              <span className="text-2xl font-black text-emerald-600 tracking-tight">
+                {validity.daysRemaining} Days Left
+              </span>
+              <span className="text-xs font-semibold text-emerald-700 mt-0.5">
+                Valid until {new Date(validity.validUntilDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </span>
+            </div>
+          </motion.div>
+        )}
+
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           
@@ -223,8 +241,22 @@ export default function StudentPortal() {
                   <p className="text-lg font-bold text-[#1e293b]">{formatRupee(student.feeAmount || 0)}</p>
                 </div>
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <p className="text-xs text-[#94a3b8] font-semibold mb-1">Last Paid Date</p>
-                  <p className="text-sm font-bold text-[#1e293b] truncate">{lastPaymentText}</p>
+                  <p className="text-xs text-[#94a3b8] font-semibold mb-1">Valid Upto</p>
+                  <p className="text-sm font-bold text-[#1e293b] truncate">
+                    {validity?.validUntilDate 
+                      ? new Date(validity.validUntilDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : lastPayment?.validUntilDate 
+                        ? new Date(lastPayment.validUntilDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                        : 'N/A'}
+                  </p>
+                </div>
+                <div className="bg-[#f0fdf4] p-3 rounded-xl border border-[#bbf7d0] text-[#16a34a]">
+                  <p className="text-xs font-semibold mb-1">Total Paid</p>
+                  <p className="text-lg font-bold">{formatRupee(totalPaidAmount)}</p>
+                </div>
+                <div className={`${pendingAmount > 0 ? 'bg-red-50 border-red-100 text-red-700' : 'bg-slate-50 border-slate-100 text-[#1e293b]'} p-3 rounded-xl border`}>
+                  <p className={`text-xs ${pendingAmount > 0 ? 'text-red-700 font-semibold' : 'text-[#94a3b8] font-semibold'} mb-1`}>Payment Due</p>
+                  <p className="text-lg font-bold">{formatRupee(pendingAmount)}</p>
                 </div>
               </div>
             </div>
@@ -233,11 +265,29 @@ export default function StudentPortal() {
                 <span className="text-[#64748b]">Payment Mode:</span>
                 <span className="font-semibold text-[#1e293b] capitalize">{student.paymentMode || 'Cash'}</span>
               </div>
-              {lastPayment?.validUntilDate && (
+              {/* redundant valid until date removed from here */}
+              {validity?.hasAdvancePayment ? (
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#64748b]">Paid Valid Until:</span>
-                  <span className="font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded text-xs border border-green-100">
-                    {new Date(lastPayment.validUntilDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  <span className="text-[#64748b]">Advance Covered:</span>
+                  <span className="font-semibold text-[#3b82f6]">
+                    {validity.advanceMonths} Month{validity.advanceMonths !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              ) : lastPayment?.isAdvancePayment && lastPayment?.monthsCovered && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#64748b]">Advance Covered:</span>
+                  <span className="font-semibold text-[#3b82f6]">
+                    {lastPayment.monthsCovered} Month{lastPayment.monthsCovered !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              )}
+              {validity?.hasAdvancePayment && (
+                <div className="flex justify-between text-sm border-t border-slate-100 pt-2 mt-2">
+                  <span className="text-[#64748b] flex items-center gap-1">
+                    <Clock size={14} className="text-[#3b82f6]" /> Advance Remaining:
+                  </span>
+                  <span className="font-bold text-[#3b82f6]">
+                    {validity.daysRemaining} Days left
                   </span>
                 </div>
               )}

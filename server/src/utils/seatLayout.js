@@ -1,14 +1,25 @@
 import Seat from '../models/Seat.js';
 import Student from '../models/Student.js';
 
-export const SEAT_COLUMNS = ['A', 'B', 'C', 'D', 'Ex', 'G', 'N'];
-export const SEAT_ROWS = 25;
-export const TOTAL_SEAT_CAPACITY = SEAT_COLUMNS.length * SEAT_ROWS;
+export const SEAT_COLUMNS = ['A', 'B', 'C', 'D', 'G', 'N', 'Ex'];
+
+export const SEAT_CONFIG = {
+  A: 25,
+  B: 25,
+  C: 20,
+  D: 20,
+  G: 20,
+  N: 60,
+  Ex: 25
+};
+
+export const TOTAL_SEAT_CAPACITY = 195;
 
 export const generateAllSeatNumbers = () => {
   const seats = [];
-  for (let row = 1; row <= SEAT_ROWS; row += 1) {
-    for (const column of SEAT_COLUMNS) {
+  for (const column of SEAT_COLUMNS) {
+    const count = SEAT_CONFIG[column] || 0;
+    for (let row = 1; row <= count; row += 1) {
       seats.push(`${column}${row}`);
     }
   }
