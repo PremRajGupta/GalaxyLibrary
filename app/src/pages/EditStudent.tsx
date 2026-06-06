@@ -48,6 +48,7 @@ export default function EditStudent() {
     photo: undefined,
     aadharFront: undefined,
     aadharBack: undefined,
+    password: '',
   });
   const [submitted, setSubmitted] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -122,6 +123,7 @@ export default function EditStudent() {
           photo: student.photo || undefined,
           aadharFront: student.aadharFront || undefined,
           aadharBack: student.aadharBack || undefined,
+          password: student.password || '',
         });
         if (student.photo) setPhotoPreview(student.photo);
         if (student.aadharFront) setAadharFrontPreview(student.aadharFront);
@@ -551,6 +553,21 @@ export default function EditStudent() {
                     required
                   />
                   {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#1e293b] mb-2">
+                    Portal Login Password
+                  </label>
+                  <input
+                    type="text"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="e.g. Galaxy@1234"
+                    className="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/20 transition-all font-mono font-medium text-[#3b82f6]"
+                  />
+                  <p className="text-xs text-[#94a3b8] mt-1">You can change the password if the student requests a reset.</p>
                 </div>
 
                 <div className="md:col-span-2">

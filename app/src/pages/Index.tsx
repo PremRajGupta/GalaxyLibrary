@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import LandingNavbar from '../components/landing/LandingNavbar';
 import HeroSlider from '../components/landing/HeroSlider';
 import StatsSection from '../components/landing/StatsSection';
 import GallerySection from '../components/landing/GallerySection';
+import OfferBanner from '../components/landing/OfferBanner';
 import FacultySection from '../components/landing/FacultySection';
 import ContactSection from '../components/landing/ContactSection';
 import LandingFooter from '../components/landing/LandingFooter';
@@ -13,6 +14,7 @@ import { loadSiteContent, SITE_CONTENT_UPDATED_EVENT } from '../lib/siteContentS
 
 export default function Index() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [content, setContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
   const [loading, setLoading] = useState(true);
   const [apiOffline, setApiOffline] = useState(false);
@@ -45,6 +47,26 @@ export default function Index() {
       window.removeEventListener('focus', onUpdated);
     };
   }, [refreshContent]);
+
+  useEffect(() => {
+    if (!loading && location.state && (location.state as any).scrollToSection) {
+      const sectionId = (location.state as any).scrollToSection;
+      
+      const timer = setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else if (sectionId === 'home') {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 100);
+
+      // Clear the state so it doesn't scroll again on re-render or reload
+      navigate('/', { replace: true, state: {} });
+
+      return () => clearTimeout(timer);
+    }
+  }, [loading, location, navigate]);
 
   const scrollTo = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -110,6 +132,7 @@ export default function Index() {
         pageText={pageText}
         navMenuItems={navMenuItems}
         onNavigate={scrollTo}
+        announcement={content.announcement}
       />
 
       <HeroSlider
@@ -146,6 +169,9 @@ export default function Index() {
 
       <StatsSection pageText={pageText} />
       <GallerySection images={galleryImages} pageText={pageText} />
+      {content.announcement?.show && content.announcement?.text && (
+        <OfferBanner announcement={content.announcement} onNavigate={scrollTo} />
+      )}
       <FacultySection members={facultyMembers} pageText={pageText} />
       <ContactSection libraryInfo={libraryInfo} admissionContact={admissionContact} pageText={pageText} />
       <LandingFooter

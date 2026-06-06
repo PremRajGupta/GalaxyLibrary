@@ -271,6 +271,10 @@ export default function StudentRecords() {
                     <p className="font-medium text-[#1e293b]">{viewingStudent.email || viewingStudent.emailAddress || 'N/A'}</p>
                   </div>
                   <div>
+                    <p className="text-[#64748b] mb-1">Portal Password</p>
+                    <p className="font-mono font-semibold text-[#3b82f6]">{viewingStudent.password || 'N/A'}</p>
+                  </div>
+                  <div>
                     <p className="text-[#64748b] mb-1">Joining Date</p>
                     <p className="font-medium text-[#1e293b]">{viewingStudent.joiningDate}</p>
                   </div>
@@ -379,6 +383,7 @@ export default function StudentRecords() {
               <thead>
                 <tr className="text-left border-b border-[#e2e8f0]">
                   <th className="pb-3 text-sm font-medium text-[#64748b]">Student</th>
+                  <th className="pb-3 text-sm font-medium text-[#64748b]">Portal Password</th>
                   <th className="pb-3 text-sm font-medium text-[#64748b]">Course</th>
                   <th className="pb-3 text-sm font-medium text-[#64748b]">Seat</th>
                   <th className="pb-3 text-sm font-medium text-[#64748b]">Contact</th>
@@ -410,6 +415,7 @@ export default function StudentRecords() {
                           </div>
                         </div>
                       </td>
+                      <td className="py-4 text-sm font-mono font-medium text-[#3b82f6]">{student.password || 'N/A'}</td>
                       <td className="py-4 text-sm text-[#1e293b]">{student.course}</td>
                       <td className="py-4 text-sm text-[#64748b]">{student.seat}</td>
                       <td className="py-4 text-sm text-[#64748b]">{student.contact}</td>

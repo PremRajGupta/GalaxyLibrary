@@ -112,7 +112,17 @@ export const NAV_SECTION_OPTIONS: { id: string; label: string }[] = [
   { id: 'contact', label: 'Contact' },
 ];
 
+export type Announcement = {
+  title: string;
+  text: string;
+  link: string;
+  endDate: string;
+  show: boolean;
+  upcomingText: string;
+};
+
 export type SiteContent = {
+  announcement?: Announcement;
   libraryInfo: LibraryInfo;
   admissionContact: ContactCardInfo;
   pageText: PageText;
@@ -177,6 +187,14 @@ export const DEFAULT_PAGE_TEXT: PageText = {
 };
 
 export const DEFAULT_SITE_CONTENT: SiteContent = {
+  announcement: {
+    title: 'Special Discount Offer',
+    text: 'Join today and get 10% off on your first month admission fee!',
+    link: '#contact',
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    show: false,
+    upcomingText: 'Stay tuned! An exciting new offer is coming soon. Check back here.',
+  },
   libraryInfo: {
     name: 'Galaxy Library',
     tagline: 'Your Space to Focus, Learn & Grow',

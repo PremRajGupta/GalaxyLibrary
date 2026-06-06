@@ -1,5 +1,13 @@
 export const defaultSiteContent = {
   key: 'landing',
+  announcement: {
+    title: 'Special Discount Offer',
+    text: 'Join today and get 10% off on your first month admission fee!',
+    link: '#contact',
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    show: false,
+    upcomingText: 'Stay tuned! An exciting new offer is coming soon. Check back here.',
+  },
   libraryInfo: {
     name: 'Galaxy Library',
     tagline: 'Your Space to Focus, Learn & Grow',

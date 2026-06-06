@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import AppLogo from '../AppLogo';
-import type { LibraryInfo, NavMenuItem, PageText } from '../../data/landingContent';
+import type { LibraryInfo, NavMenuItem, PageText, Announcement } from '../../data/landingContent';
 
 type LandingNavbarProps = {
   libraryInfo: LibraryInfo;
   pageText: PageText;
   navMenuItems: NavMenuItem[];
   onNavigate: (sectionId: string) => void;
+  announcement?: Announcement;
 };
 
 export default function LandingNavbar({
@@ -16,6 +17,7 @@ export default function LandingNavbar({
   pageText,
   navMenuItems,
   onNavigate,
+  announcement,
 }: LandingNavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -24,8 +26,28 @@ export default function LandingNavbar({
     setMenuOpen(false);
   };
 
+  // Navbar banner sirf tab dikhega jab offer active ho aur endDate future me ho
+  const isOfferActive =
+    announcement?.show &&
+    announcement?.text &&
+    announcement?.endDate &&
+    new Date(announcement.endDate).getTime() > Date.now();
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#1a2b4a]/95 backdrop-blur-md border-b border-white/10">
+      {isOfferActive && (
+        <div className="bg-gradient-to-r from-[#3b82f6] to-[#2563eb] text-white py-2.5 px-4 text-center text-xs sm:text-sm font-semibold select-none flex items-center justify-center gap-2 border-b border-white/10 shadow-inner">
+          <span className="tracking-wide">📢 {announcement.text}</span>
+          {announcement.link && (
+            <Link
+              to={announcement.link}
+              className="underline hover:text-blue-100 transition-colors inline-flex items-center font-bold ml-1"
+            >
+              Learn More →
+            </Link>
+          )}
+        </div>
+      )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <button

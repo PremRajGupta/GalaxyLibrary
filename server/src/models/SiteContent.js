@@ -51,6 +51,14 @@ const navMenuItemSchema = new mongoose.Schema(
 const siteContentSchema = new mongoose.Schema(
   {
     key: { type: String, default: 'landing', unique: true },
+    announcement: {
+      title: { type: String, default: '' },
+      text: { type: String, default: '' },
+      link: { type: String, default: '' },
+      endDate: { type: String, default: '' },
+      show: { type: Boolean, default: false },
+      upcomingText: { type: String, default: '' },
+    },
     libraryInfo: {
       name: { type: String, default: '' },
       tagline: { type: String, default: '' },

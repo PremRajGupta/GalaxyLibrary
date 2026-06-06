@@ -15,6 +15,11 @@ import reportRoutes from './routes/reportRoutes.js';
 import { getSiteContent, updateSiteContent } from './controllers/siteContentController.js';
 import { getPublicStats, recordPublicVisit } from './controllers/publicStatsController.js';
 
+// Models
+import Student from './models/Student.js';
+import Fee from './models/Fee.js';
+import Seat from './models/Seat.js';
+
 // Middleware
 import { verifyToken } from './middleware/auth.js';
 
@@ -124,6 +129,76 @@ app.post('/login', (req, res) => {
   return res.json({ token, user });
 });
 
+// ===== Student Authentication Route =====
+app.post(['/api/student/login', '/api/v1/student/login', '/student/login'], async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    // Find all students matching email or studentId case-insensitively
+    const emailOrId = email.trim();
+    const students = await Student.find({
+      $or: [
+        { email: { $regex: new RegExp("^" + emailOrId + "$", "i") } },
+        { studentId: { $regex: new RegExp("^" + emailOrId + "$", "i") } }
+      ]
+    });
+
+    if (students.length === 0) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // Find the student whose password matches
+    let student = null;
+    for (const s of students) {
+      // If student exists but does not have a password field, migrate on the fly
+      if (!s.password) {
+        const randomPin = Math.floor(1000 + Math.random() * 9000);
+        s.password = `Galaxy@${randomPin}`;
+        await s.save();
+      }
+
+      if (password === s.password) {
+        student = s;
+        break;
+      }
+    }
+
+    if (!student) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    const token = jwt.sign(
+      {
+        uid: student._id.toString(),
+        email: student.email,
+        role: 'student',
+        studentId: student.studentId,
+        organizationId: student.organizationId,
+        branchId: student.branchId
+      },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
+
+    const user = {
+      uid: student._id.toString(),
+      email: student.email,
+      displayName: student.name,
+      role: 'student',
+      studentId: student.studentId
+    };
+
+    return res.json({ token, user });
+  } catch (error) {
+    console.error('Student login error:', error);
+    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+});
+
 // ===== PUBLIC ROUTES (Before auth middleware) =====
 // Public Website Content (No Auth — home page must load/save for all visitors)
 app.get('/api/v1/site-content', getSiteContent);
@@ -140,6 +215,45 @@ app.post('/api/public/stats/visit', recordPublicVisit);
 // ===== AUTHENTICATION MIDDLEWARE (Protects all /api routes below this) =====
 app.use('/api/v1', verifyToken);
 app.use('/api', verifyToken);
+
+// ===== Student Me Route (Returns logged-in student details) =====
+app.get(['/api/v1/student/me', '/api/student/me'], async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const role = req.user.role;
+
+    if (role !== 'student') {
+      return res.status(403).json({ message: 'Access denied: Not a student' });
+    }
+
+    const student = await Student.findById(userId);
+    if (!student) {
+      return res.status(404).json({ message: 'Student details not found' });
+    }
+
+    // Fetch fee records
+    const fees = await Fee.find({ studentId: student._id }).sort({ paymentDate: -1 });
+
+    // Fetch seat details if available
+    let seat = null;
+    if (student.seatNumber && student.seatNumber !== '--') {
+      seat = await Seat.findOne({
+        seatNumber: student.seatNumber,
+        organizationId: student.organizationId,
+        branchId: student.branchId
+      });
+    }
+
+    return res.json({
+      student,
+      fees,
+      seat
+    });
+  } catch (error) {
+    console.error('Fetch student/me error:', error);
+    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+});
 
 // ===== PROTECTED API Routes (v1) =====
 app.use('/api/v1/students', studentRoutes);

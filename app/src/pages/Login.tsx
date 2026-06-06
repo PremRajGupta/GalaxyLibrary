@@ -7,12 +7,13 @@ import AppLogo from '../components/AppLogo';
 import S from '../lib/strings';
 
 export default function Login() {
+  const [loginType, setLoginType] = useState<'student' | 'admin'>('student');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, studentLogin } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,8 +22,13 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await login(email, password);
-      navigate('/dashboard');
+      if (loginType === 'student') {
+        await studentLogin(email.trim(), password);
+        navigate('/student-portal');
+      } else {
+        await login(email.trim(), password);
+        navigate('/dashboard');
+      }
     } catch (err) {
       const message = (err as Error).message || 'An error occurred. Please try again.';
       setError(message);
@@ -40,10 +46,45 @@ export default function Login() {
         className="w-full max-w-md"
       >
         <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8">
-          <div className="flex flex-col items-center mb-8">
+          <div className="flex flex-col items-center mb-6">
             <AppLogo size="xl" className="mb-4 justify-center" />
             <h1 className="text-2xl font-bold text-[#1e293b]">{S.appName}</h1>
             <p className="text-sm text-[#64748b] mt-1">Library Management System</p>
+          </div>
+
+          {/* Sliding Tab Toggle */}
+          <div className="flex bg-[#f1f5f9] p-1 rounded-xl mb-6 relative">
+            <motion.div
+              className="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm"
+              animate={{
+                x: loginType === 'student' ? '0%' : '100%',
+              }}
+              transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setLoginType('student');
+                setError('');
+              }}
+              className={`flex-1 py-2.5 text-sm font-semibold rounded-lg z-10 transition-colors duration-200 relative text-center ${
+                loginType === 'student' ? 'text-[#1e293b]' : 'text-[#64748b]'
+              }`}
+            >
+              Student Portal
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setLoginType('admin');
+                setError('');
+              }}
+              className={`flex-1 py-2.5 text-sm font-semibold rounded-lg z-10 transition-colors duration-200 relative text-center ${
+                loginType === 'admin' ? 'text-[#1e293b]' : 'text-[#64748b]'
+              }`}
+            >
+              Admin Access
+            </button>
           </div>
 
           {error && (
@@ -59,7 +100,7 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-[#1e293b] mb-2">
-                Email / Username
+                {loginType === 'student' ? 'Student Email' : 'Admin Email'}
               </label>
               <input
                 type="email"
@@ -80,7 +121,7 @@ export default function Login() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder={loginType === 'student' ? 'Galaxy@XXXX' : 'Enter your password'}
                   className="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg bg-white text-[#1e293b] placeholder:text-[#94a3b8] focus:outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/20 transition-all pr-12"
                   required
                 />
@@ -94,22 +135,12 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-sm mb-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="rounded border-[#e2e8f0]" />
-                <span className="text-[#64748b]">Remember me</span>
-              </label>
-              <button type="button" className="text-[#3b82f6] hover:underline">
-                Forgot password?
-              </button>
-            </div>
-
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-[#1a2b4a] text-white font-semibold rounded-lg hover:bg-[#2a3b5a] transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-[#1a2b4a] text-white font-semibold rounded-lg hover:bg-[#2a3b5a] transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Signing in...' : `Sign In as ${loginType === 'student' ? 'Student' : 'Admin'}`}
             </button>
           </form>
 

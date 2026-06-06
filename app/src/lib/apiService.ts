@@ -108,7 +108,8 @@ export const reportApi = {
   }
 };
 
-const siteContentUrl = () => apiUrl('/api/site-content');
+// Old code: const siteContentUrl = () => apiUrl('/api/site-content');
+const siteContentUrl = () => '/site-content';
 
 export const siteContentApi = {
   get: async () => {
@@ -119,5 +120,12 @@ export const siteContentApi = {
     const response = await api.put(siteContentUrl(), data);
     return response.data;
   },
+};
+
+export const studentPortalApi = {
+  getMyDetails: async () => {
+    const response = await api.get('/student/me');
+    return response.data;
+  }
 };
 

@@ -9,7 +9,16 @@ import { generateUniqueStudentId } from '../utils/studentId.js';
 export const getStudents = async (req, res) => {
   try {
     const students = await Student.find().sort({ createdAt: -1 });
-    res.status(200).json(students);
+    // Migrate any students that don't have a password yet
+    const migratedStudents = await Promise.all(students.map(async (student) => {
+      if (!student.password) {
+        const randomPin = Math.floor(1000 + Math.random() * 9000);
+        student.password = `Galaxy@${randomPin}`;
+        await student.save();
+      }
+      return student;
+    }));
+    res.status(200).json(migratedStudents);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching students', error: error.message });
   }
@@ -19,6 +28,13 @@ export const getStudentById = async (req, res) => {
   try {
     const student = await Student.findById(req.params.id);
     if (!student) return res.status(404).json({ message: 'Student not found' });
+    
+    if (!student.password) {
+      const randomPin = Math.floor(1000 + Math.random() * 9000);
+      student.password = `Galaxy@${randomPin}`;
+      await student.save();
+    }
+    
     res.status(200).json(student);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching student', error: error.message });
@@ -27,9 +43,12 @@ export const getStudentById = async (req, res) => {
 
 export const createStudent = async (req, res) => {
   try {
+    // Generate a secure random password for the student (Galaxy@XXXX)
+    const randomPin = Math.floor(1000 + Math.random() * 9000);
     const studentData = {
       organizationId: process.env.DEFAULT_ORGANIZATION_ID || 'galaxy-library',
       branchId: process.env.DEFAULT_BRANCH_ID || 'main-branch',
+      password: `Galaxy@${randomPin}`,
       ...req.body
     };
 

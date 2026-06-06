@@ -16,8 +16,9 @@ import WebsiteSettings from './pages/WebsiteSettings';
 import Index from './pages/Index';
 import About from './pages/About';
 import Services from './pages/Services';
+import StudentPortal from './pages/StudentPortal';
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -30,6 +31,32 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (user.role !== 'admin') {
+    return <Navigate to="/student-portal" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function StudentRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-[#f1f5f9]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3b82f6]" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user.role !== 'student') {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -47,7 +74,11 @@ function PublicLoginRoute() {
   }
 
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    if (user.role === 'admin') {
+      return <Navigate to="/dashboard" replace />;
+    } else if (user.role === 'student') {
+      return <Navigate to="/student-portal" replace />;
+    }
   }
 
   return <Login />;
@@ -61,11 +92,12 @@ function AppRoutes() {
       <Route path="/services" element={<Services />} />
       <Route path="/login" element={<PublicLoginRoute />} />
 
+      {/* Admin Protected Routes */}
       <Route
         element={
-          <ProtectedRoute>
+          <AdminRoute>
             <MainLayout />
-          </ProtectedRoute>
+          </AdminRoute>
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
@@ -79,6 +111,16 @@ function AppRoutes() {
         <Route path="/reports" element={<Reports />} />
         <Route path="/website-settings" element={<WebsiteSettings />} />
       </Route>
+
+      {/* Student Protected Route */}
+      <Route
+        path="/student-portal"
+        element={
+          <StudentRoute>
+            <StudentPortal />
+          </StudentRoute>
+        }
+      />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

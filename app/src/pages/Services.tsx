@@ -12,6 +12,8 @@ export default function Services() {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      navigate('/', { state: { scrollToSection: sectionId } });
     }
   };
 

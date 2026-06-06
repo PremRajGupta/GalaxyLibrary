@@ -56,6 +56,14 @@ export function mergeSiteContent(saved: Partial<SiteContent>): SiteContent {
   );
 
   return {
+    announcement: {
+      title: saved.announcement?.title ?? DEFAULT_SITE_CONTENT.announcement?.title ?? '',
+      text: saved.announcement?.text ?? DEFAULT_SITE_CONTENT.announcement?.text ?? '',
+      link: saved.announcement?.link ?? DEFAULT_SITE_CONTENT.announcement?.link ?? '',
+      endDate: saved.announcement?.endDate ?? DEFAULT_SITE_CONTENT.announcement?.endDate ?? '',
+      show: saved.announcement?.show ?? DEFAULT_SITE_CONTENT.announcement?.show ?? false,
+      upcomingText: saved.announcement?.upcomingText ?? DEFAULT_SITE_CONTENT.announcement?.upcomingText ?? '',
+    },
     libraryInfo,
     admissionContact: mergeStringFields(
       DEFAULT_SITE_CONTENT.admissionContact,
@@ -128,41 +136,53 @@ export function prepareSiteContentForSave(content: SiteContent): SiteContent {
     content.admissionContact.phoneRaw || normalizePhoneRaw(content.admissionContact.phone);
 
   const galleryImages = content.galleryImages.map((img) => {
-    const title = img.title.trim();
-    const src = img.src.trim();
-    const alt = img.alt.trim() || title;
+    const title = (img.title ?? '').trim();
+    const src = (img.src ?? '').trim();
+    const alt = (img.alt ?? '').trim() || title;
     return { ...img, title, src, alt };
   });
 
   const facultyMembers = content.facultyMembers.map((member) => ({
     ...member,
-    photo: member.photo.trim(),
-    name: member.name.trim(),
-    role: member.role.trim(),
-    detail: member.detail.trim(),
+    photo: (member.photo ?? '').trim(),
+    name: (member.name ?? '').trim(),
+    role: (member.role ?? '').trim(),
+    detail: (member.detail ?? '').trim(),
   }));
 
   const navMenuItems =
-    content.navMenuItems.length > 0
+    content.navMenuItems && content.navMenuItems.length > 0
       ? content.navMenuItems.map((item) => ({
           id: item.id,
-          label: item.label.trim() || 'Link',
-          sectionId: item.sectionId.trim() || 'home',
+          label: (item.label ?? '').trim() || 'Link',
+          sectionId: (item.sectionId ?? '').trim() || 'home',
         }))
       : DEFAULT_NAV_MENU_ITEMS;
 
+  const announcement = content.announcement
+    ? {
+        title: (content.announcement.title ?? '').trim(),
+        text: (content.announcement.text ?? '').trim(),
+        link: (content.announcement.link ?? '').trim(),
+        endDate: (content.announcement.endDate ?? '').trim(),
+        show: content.announcement.show ?? false,
+        upcomingText: (content.announcement.upcomingText ?? '').trim(),
+      }
+    : DEFAULT_SITE_CONTENT.announcement;
+
   return {
     ...content,
+    announcement,
     libraryInfo: {
       ...content.libraryInfo,
       phoneRaw,
-      mapUrl: content.libraryInfo.mapUrl.trim(),
+      mapUrl: (content.libraryInfo.mapUrl ?? '').trim(),
     },
     admissionContact: {
       ...content.admissionContact,
-      title: content.admissionContact.title.trim() || DEFAULT_SITE_CONTENT.admissionContact.title,
+      title: (content.admissionContact.title ?? '').trim() || DEFAULT_SITE_CONTENT.admissionContact.title,
       phoneRaw: admissionPhoneRaw,
-      mapUrl: content.admissionContact.mapUrl.trim(),
+      mapUrl: (content.admissionContact.mapUrl ?? '').trim(),
     },
     navMenuItems,
     galleryImages,

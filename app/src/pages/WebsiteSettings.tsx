@@ -25,6 +25,7 @@ const labelClass = 'block text-sm font-medium text-[#1e293b] mb-1.5';
 
 const TABS = [
   { id: 'general', label: 'General & Contact' },
+  { id: 'announcement', label: 'Announcements & Offers' },
   { id: 'navbar', label: 'Navbar & Footer' },
   { id: 'hero', label: 'Hero Slider' },
   { id: 'about', label: 'About' },
@@ -288,6 +289,224 @@ export default function WebsiteSettings() {
               </div>
             </section>
           </>
+        )}
+
+        {activeTab === 'announcement' && (
+          <section className="page-card space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-[#1e293b]">Announcements & Special Offers</h3>
+              <p className="text-sm text-[#64748b] mt-1">
+                Control the offer banner that appears on the homepage (below the Gallery section). When enabled, visitors see the offer with a live countdown timer. When the timer expires, the "Upcoming Offer" message is shown instead.
+              </p>
+            </div>
+
+            {/* Master Toggle */}
+            <div className="flex items-center gap-3 p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]">
+              <div className="relative inline-flex">
+                <input
+                  type="checkbox"
+                  id="showAnnouncement"
+                  checked={content.announcement?.show ?? false}
+                  onChange={(e) =>
+                    setContent((prev) => ({
+                      ...prev,
+                      announcement: {
+                        title: prev.announcement?.title ?? '',
+                        text: prev.announcement?.text ?? '',
+                        link: prev.announcement?.link ?? '',
+                        endDate: prev.announcement?.endDate ?? '',
+                        upcomingText: prev.announcement?.upcomingText ?? '',
+                        show: e.target.checked,
+                      },
+                    }))
+                  }
+                  className="w-5 h-5 text-[#3b82f6] border-gray-300 rounded focus:ring-[#3b82f6] cursor-pointer"
+                />
+              </div>
+              <div>
+                <label htmlFor="showAnnouncement" className="text-sm font-semibold text-[#1e293b] cursor-pointer block">
+                  Show Offer Banner on Homepage
+                </label>
+                <p className="text-xs text-[#64748b] mt-0.5">Visitors will see this banner below the Gallery section.</p>
+              </div>
+            </div>
+
+            {/* Offer Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Title / Badge */}
+              <div>
+                <label className={labelClass}>Offer Badge / Title</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={content.announcement?.title ?? ''}
+                  onChange={(e) =>
+                    setContent((prev) => ({
+                      ...prev,
+                      announcement: {
+                        title: e.target.value,
+                        text: prev.announcement?.text ?? '',
+                        link: prev.announcement?.link ?? '',
+                        endDate: prev.announcement?.endDate ?? '',
+                        upcomingText: prev.announcement?.upcomingText ?? '',
+                        show: prev.announcement?.show ?? false,
+                      },
+                    }))
+                  }
+                  placeholder="e.g. Special Discount Offer"
+                />
+                <p className="text-xs text-[#94a3b8] mt-1">Shown as the badge/tag at the top of the offer card.</p>
+              </div>
+
+              {/* End Date */}
+              <div>
+                <label className={labelClass}>Offer End Date & Time</label>
+                <input
+                  type="datetime-local"
+                  className={inputClass}
+                  value={
+                    content.announcement?.endDate
+                      ? new Date(
+                          new Date(content.announcement.endDate).getTime() -
+                            new Date().getTimezoneOffset() * 60000
+                        )
+                          .toISOString()
+                          .slice(0, 16)
+                      : ''
+                  }
+                  onChange={(e) =>
+                    setContent((prev) => ({
+                      ...prev,
+                      announcement: {
+                        title: prev.announcement?.title ?? '',
+                        text: prev.announcement?.text ?? '',
+                        link: prev.announcement?.link ?? '',
+                        endDate: e.target.value ? new Date(e.target.value).toISOString() : '',
+                        upcomingText: prev.announcement?.upcomingText ?? '',
+                        show: prev.announcement?.show ?? false,
+                      },
+                    }))
+                  }
+                />
+                <p className="text-xs text-[#94a3b8] mt-1">Countdown timer will count down to this date & time.</p>
+              </div>
+
+              {/* Offer Text */}
+              <div className="md:col-span-2">
+                <label className={labelClass}>Offer Description</label>
+                <textarea
+                  rows={2}
+                  className={`${inputClass} resize-none`}
+                  value={content.announcement?.text ?? ''}
+                  onChange={(e) =>
+                    setContent((prev) => ({
+                      ...prev,
+                      announcement: {
+                        title: prev.announcement?.title ?? '',
+                        text: e.target.value,
+                        link: prev.announcement?.link ?? '',
+                        endDate: prev.announcement?.endDate ?? '',
+                        upcomingText: prev.announcement?.upcomingText ?? '',
+                        show: prev.announcement?.show ?? false,
+                      },
+                    }))
+                  }
+                  placeholder="e.g. Join today and get 10% off on your first month admission fee!"
+                />
+                <p className="text-xs text-[#94a3b8] mt-1">Main message shown on the offer banner.</p>
+              </div>
+
+              {/* Link */}
+              <div>
+                <label className={labelClass}>CTA Button Link (Optional)</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={content.announcement?.link ?? ''}
+                  onChange={(e) =>
+                    setContent((prev) => ({
+                      ...prev,
+                      announcement: {
+                        title: prev.announcement?.title ?? '',
+                        text: prev.announcement?.text ?? '',
+                        link: e.target.value,
+                        endDate: prev.announcement?.endDate ?? '',
+                        upcomingText: prev.announcement?.upcomingText ?? '',
+                        show: prev.announcement?.show ?? false,
+                      },
+                    }))
+                  }
+                  placeholder="e.g. #contact or /services"
+                />
+                <p className="text-xs text-[#94a3b8] mt-1">#contact scrolls to Contact section. Leave blank to hide the button.</p>
+              </div>
+
+              {/* Upcoming Text */}
+              <div>
+                <label className={labelClass}>Upcoming Offer Message</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={content.announcement?.upcomingText ?? ''}
+                  onChange={(e) =>
+                    setContent((prev) => ({
+                      ...prev,
+                      announcement: {
+                        title: prev.announcement?.title ?? '',
+                        text: prev.announcement?.text ?? '',
+                        link: prev.announcement?.link ?? '',
+                        endDate: prev.announcement?.endDate ?? '',
+                        upcomingText: e.target.value,
+                        show: prev.announcement?.show ?? false,
+                      },
+                    }))
+                  }
+                  placeholder="e.g. Stay tuned! An exciting new offer is coming soon."
+                />
+                <p className="text-xs text-[#94a3b8] mt-1">Shown when the countdown timer reaches zero (offer expired).</p>
+              </div>
+            </div>
+
+            {/* Live Preview */}
+            {content.announcement?.show && (
+              <div className="mt-2 pt-6 border-t border-[#e2e8f0]">
+                <p className="text-sm font-semibold text-[#1e293b] mb-3">📋 Live Preview (Navbar Banner)</p>
+                <div className="bg-gradient-to-r from-[#3b82f6] to-[#2563eb] text-white py-2.5 px-4 text-center text-sm font-semibold rounded-lg flex items-center justify-center gap-2 shadow-sm">
+                  <span>📢 {content.announcement?.text || 'Your announcement text will appear here'}</span>
+                  {content.announcement?.link && (
+                    <span className="underline font-bold ml-1 cursor-pointer hover:text-blue-100">Learn More →</span>
+                  )}
+                </div>
+                <p className="text-xs text-[#64748b] mt-3 mb-2 font-semibold">📦 Offer Card Preview (Homepage - below Gallery)</p>
+                <div className="rounded-xl p-5 border border-[#6366f1]/30 bg-gradient-to-br from-[#0f172a] to-[#1e1b4b] text-white relative overflow-hidden">
+                  <div className="inline-flex items-center gap-1 bg-[#6366f1]/25 border border-[#6366f1]/40 text-[#a5b4fc] text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-3">
+                    🎁 {content.announcement?.title || 'Limited Time Offer'}
+                  </div>
+                  <h4 className="text-lg font-extrabold mb-1">Exclusive <span className="text-[#a5b4fc]">Special Offer</span></h4>
+                  <p className="text-[#cbd5e1] text-sm mb-3">{content.announcement?.text || 'Offer description...'}</p>
+                  <div className="flex items-center gap-2 text-xs text-[#94a3b8] mb-3">
+                    <span>⏱ Offer ends in:</span>
+                    {['DD', 'HH', 'MM', 'SS'].map((u, i) => (
+                      <span key={u} className="flex flex-col items-center gap-0.5">
+                        <span className="bg-[#0f172a] border border-[#6366f1]/30 rounded px-2 py-1 text-[#a5b4fc] font-bold text-sm">{u}</span>
+                        <span className="text-[10px] text-[#64748b] uppercase">{['Days','Hrs','Min','Sec'][i]}</span>
+                      </span>
+                    ))}
+                  </div>
+                  {content.announcement?.link && (
+                    <div className="inline-flex items-center gap-1 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] text-white text-xs font-bold px-4 py-2 rounded-lg shadow">
+                      ✨ Grab This Offer →
+                    </div>
+                  )}
+                </div>
+                {content.announcement?.upcomingText && (
+                  <div className="mt-3 p-3 rounded-lg bg-[#f8fafc] border border-[#e2e8f0] text-sm text-[#64748b]">
+                    <span className="font-semibold text-[#475569]">⏳ When expired, visitors see:</span> "{content.announcement.upcomingText}"
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
         )}
 
         {activeTab === 'navbar' && (

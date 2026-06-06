@@ -2,6 +2,16 @@ import SiteContent from '../models/SiteContent.js';
 import { defaultSiteContent } from '../data/defaultSiteContent.js';
 
 const toResponse = (doc) => ({
+  announcement: doc.announcement
+    ? {
+        title: doc.announcement.title || '',
+        text: doc.announcement.text || '',
+        link: doc.announcement.link || '',
+        endDate: doc.announcement.endDate || '',
+        show: doc.announcement.show || false,
+        upcomingText: doc.announcement.upcomingText || '',
+      }
+    : { title: '', text: '', link: '', endDate: '', show: false, upcomingText: '' },
   libraryInfo: doc.libraryInfo,
   admissionContact: doc.admissionContact,
   pageText: doc.pageText,
@@ -33,6 +43,11 @@ const mergeSiteContent = (existing, incoming) => {
   const base = existing ?? defaultSiteContent;
 
   return {
+    announcement: {
+      ...defaultSiteContent.announcement,
+      ...base.announcement,
+      ...(incoming.announcement ?? {}),
+    },
     libraryInfo: {
       ...defaultSiteContent.libraryInfo,
       ...base.libraryInfo,

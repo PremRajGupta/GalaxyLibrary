@@ -24,6 +24,7 @@ export interface AdmissionFormData {
   photo?: string;
   aadharFront?: string;
   aadharBack?: string;
+  password?: string;
 }
 
 export interface AdmissionResult {

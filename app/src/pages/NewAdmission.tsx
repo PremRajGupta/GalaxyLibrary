@@ -222,7 +222,7 @@ export default function NewAdmission() {
         setSubmitted(false);
         setSuccessMessage('');
         setAdmissionResult(null);
-      }, 5000);
+      }, 15000);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to process admission';
       setErrorMessage(errorMsg);
@@ -814,6 +814,8 @@ export default function NewAdmission() {
                       {admissionResult.student && (
                         <>
                           <p>✓ Student ID: <span className="font-semibold">{admissionResult.student.studentId}</span></p>
+                          <p>📧 Portal Login Email: <span className="font-semibold">{admissionResult.student.email}</span></p>
+                          <p>🔑 Portal Login Password: <span className="font-mono font-bold text-[#3b82f6] bg-blue-50 px-2 py-0.5 rounded border border-blue-200">{admissionResult.student.password || 'Galaxy@XXXX'}</span></p>
                           <p>✓ Course: {getCourseLabel(admissionResult.student.course)}</p>
                           <p>✓ Joining Date: {formatJoiningDate(
                             admissionResult.student.joiningDate || admissionResult.student.admissionDate

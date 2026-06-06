@@ -9,9 +9,15 @@ export default function About() {
   const { libraryInfo, pageText, navMenuItems } = DEFAULT_SITE_CONTENT;
 
   const scrollTo = (sectionId: string) => {
+    if (sectionId === 'about') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      navigate('/', { state: { scrollToSection: sectionId } });
     }
   };
 
