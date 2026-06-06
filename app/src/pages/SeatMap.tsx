@@ -18,7 +18,7 @@ interface Seat {
   fatherName?: string;
 }
 
-const statusColors = {
+const statusColors: Record<SeatStatus | 'empty', string> = {
   available: 'bg-[#dcfce7] border-[#22c55e] text-[#22c55e]',
   occupied: 'bg-[#fee2e2] border-[#ef4444] text-[#ef4444]',
   reserved: 'bg-[#fef9c3] border-[#eab308] text-[#eab308]',
