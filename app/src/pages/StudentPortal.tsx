@@ -16,7 +16,7 @@ const RUPEE = '\u20B9';
 const formatRupee = (amount: number) => `${RUPEE}${amount.toLocaleString('en-IN')}`;
 
 export default function StudentPortal() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -73,7 +73,7 @@ export default function StudentPortal() {
     );
   }
 
-  const { student, fees, seat } = data;
+  const { student, fees } = data;
   const paymentHistory = fees || [];
   const seatNumber = student.seatNumber && student.seatNumber !== '--' ? student.seatNumber : 'N/A';
   const shiftText = student.timeShift || 'N/A';
