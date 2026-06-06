@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import TopHeader from '../components/layout/TopHeader';
 import { Armchair, X } from 'lucide-react';
 import { seatApi, studentApi } from '../lib/apiService';
-import { generateAllSeatNumbers, SEAT_COLUMNS, SEAT_CONFIG } from '../lib/seatLayout';
+import { SEAT_COLUMNS, SEAT_CONFIG } from '../lib/seatLayout';
 
 type SeatStatus = 'available' | 'occupied' | 'reserved';
 
@@ -22,6 +22,7 @@ const statusColors = {
   available: 'bg-[#dcfce7] border-[#22c55e] text-[#22c55e]',
   occupied: 'bg-[#fee2e2] border-[#ef4444] text-[#ef4444]',
   reserved: 'bg-[#fef9c3] border-[#eab308] text-[#eab308]',
+  empty: '',
 };
 
 const statusLabels = {

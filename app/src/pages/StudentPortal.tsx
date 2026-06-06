@@ -100,9 +100,6 @@ export default function StudentPortal() {
 
   // Get last payment date
   const lastPayment = paymentHistory[0]; // array is sorted by date desc
-  const lastPaymentText = lastPayment 
-    ? new Date(lastPayment.paymentDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-    : 'No record';
 
   return (
     <div className="min-h-screen bg-[#f8fafc]">
