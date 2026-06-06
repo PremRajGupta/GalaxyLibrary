@@ -25,10 +25,11 @@ const statusColors: Record<SeatStatus | 'empty', string> = {
   empty: '',
 };
 
-const statusLabels = {
+const statusLabels: Record<SeatStatus | 'empty', string> = {
   available: 'Available',
   occupied: 'Occupied',
   reserved: 'Reserved',
+  empty: '',
 };
 
 const generateBaseSeats = (): Seat[] => {
@@ -141,7 +142,7 @@ export default function SeatMap() {
 
           {/* Legend */}
           <div className="flex flex-wrap items-center gap-3 sm:gap-6 mb-6 sm:mb-8 p-3 sm:p-4 bg-[#f8fafc] rounded-lg">
-            {(Object.keys(statusLabels) as SeatStatus[]).map((status) => (
+            {(Object.keys(statusLabels) as (SeatStatus | 'empty')[]).map((status) => (
               <div key={status} className="flex items-center gap-2">
                 <div className={`w-4 h-4 rounded border-2 ${statusColors[status]}`} />
                 <span className="text-sm text-[#64748b]">{statusLabels[status]}</span>
