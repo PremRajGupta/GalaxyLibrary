@@ -11,47 +11,38 @@ type SeatStatus = 'available' | 'occupied' | 'reserved';
 interface Seat {
   id: string;
   number: string;
-  status: SeatStatus | 'empty';
+  column: string;
+  status: SeatStatus;
   studentName?: string;
   studentId?: string;
   studentMobile?: string;
   fatherName?: string;
 }
 
-const statusColors: Record<SeatStatus | 'empty', string> = {
+const statusColors: Record<SeatStatus, string> = {
   available: 'bg-[#dcfce7] border-[#22c55e] text-[#22c55e]',
   occupied: 'bg-[#fee2e2] border-[#ef4444] text-[#ef4444]',
   reserved: 'bg-[#fef9c3] border-[#eab308] text-[#eab308]',
-  empty: '',
 };
 
-const statusLabels: Record<SeatStatus | 'empty', string> = {
+const statusLabels: Record<SeatStatus, string> = {
   available: 'Available',
   occupied: 'Occupied',
   reserved: 'Reserved',
-  empty: '',
 };
 
 const generateBaseSeats = (): Seat[] => {
   const baseSeats: Seat[] = [];
-  const maxRows = 60;
-  for (let row = 1; row <= maxRows; row += 1) {
-    for (const column of SEAT_COLUMNS) {
-      const count = SEAT_CONFIG[column] || 0;
-      if (row <= count) {
-        const number = `${column}${row}`;
-        baseSeats.push({
-          id: `seat-${number}`,
-          number,
-          status: 'available' as SeatStatus,
-        });
-      } else {
-        baseSeats.push({
-          id: `empty-${column}${row}`,
-          number: '',
-          status: 'empty',
-        });
-      }
+  for (const column of SEAT_COLUMNS) {
+    const count = SEAT_CONFIG[column] || 0;
+    for (let row = 1; row <= count; row += 1) {
+      const number = `${column}${row}`;
+      baseSeats.push({
+        id: `seat-${number}`,
+        number,
+        column,
+        status: 'available',
+      });
     }
   }
   return baseSeats;
@@ -61,6 +52,7 @@ export default function SeatMap() {
   const location = useLocation();
   const [seats, setSeats] = useState<Seat[]>(generateBaseSeats());
   const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
+  const [activeSection, setActiveSection] = useState<string>('A');
 
   useEffect(() => {
     const fetchSeats = async () => {
@@ -121,6 +113,12 @@ export default function SeatMap() {
     fetchSeats();
   }, [location]);
 
+  const stats = {
+    available: seats.filter((s) => s.status === 'available').length,
+    occupied: seats.filter((s) => s.status === 'occupied').length,
+    reserved: seats.filter((s) => s.status === 'reserved').length,
+  };
+
   return (
     <div>
       <TopHeader />
@@ -140,43 +138,59 @@ export default function SeatMap() {
             </div>
           </div>
 
-          {/* Legend */}
-          <div className="flex flex-wrap items-center gap-3 sm:gap-6 mb-6 sm:mb-8 p-3 sm:p-4 bg-[#f8fafc] rounded-lg">
-            {(Object.keys(statusLabels) as (SeatStatus | 'empty')[]).map((status) => (
-              <div key={status} className="flex items-center gap-2">
-                <div className={`w-4 h-4 rounded border-2 ${statusColors[status]}`} />
-                <span className="text-sm text-[#64748b]">{statusLabels[status]}</span>
+          {/* Legend - Top Row */}
+          <div className="flex flex-wrap items-center gap-4 sm:gap-8 mb-4 p-4 sm:p-5 bg-[#f8fafc] rounded-xl border border-slate-100 w-full">
+            {(Object.keys(statusLabels) as SeatStatus[]).map((status) => (
+              <div key={status} className="flex items-center gap-2.5">
+                <div className={`w-5 h-5 rounded-md border-2 ${statusColors[status]}`} />
+                <span className="text-sm font-semibold text-[#475569]">
+                  {statusLabels[status]} <span className="text-[#1e293b] font-black ml-1">({stats[status]})</span>
+                </span>
               </div>
             ))}
           </div>
 
+          {/* Section Tabs - Second Row */}
+          <div className="flex flex-wrap items-center gap-2 mb-6 sm:mb-8 w-full">
+            {SEAT_COLUMNS.map((col) => (
+              <button
+                key={col}
+                onClick={() => setActiveSection(col)}
+                className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                  activeSection === col 
+                  ? 'bg-[#1e293b] text-white shadow-md' 
+                  : 'bg-white border border-[#e2e8f0] text-[#64748b] hover:bg-slate-50 hover:text-[#1e293b]'
+                }`}
+              >
+                Section {col}
+              </button>
+            ))}
+          </div>
+
           {/* Seat Grid */}
-          <div className="overflow-x-auto pb-4">
-            <div className="grid grid-cols-7 gap-1.5 sm:gap-2 md:gap-3 min-w-[500px] max-w-3xl mx-auto">
-              {seats.map((seat, index) => {
-                if (seat.status === 'empty') {
+          <div className="pb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 max-w-6xl mx-auto">
+              {seats
+                .filter((seat) => seat.column === activeSection)
+                .map((seat, index) => {
                   return (
-                    <div key={seat.id} className="aspect-square" />
+                    <motion.button
+                      key={seat.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.01, duration: 0.2 }}
+                      whileHover={seat.status !== 'available' ? { scale: 1.03 } : {}}
+                      whileTap={seat.status !== 'available' ? { scale: 0.97 } : {}}
+                      onClick={() => (seat.status === 'occupied' || seat.status === 'reserved') && setSelectedSeat(seat as any)}
+                      className={`h-14 sm:h-16 rounded-xl border-2 flex items-center justify-between px-4 sm:px-5 transition-all duration-150 shadow-sm ${
+                        statusColors[seat.status]
+                      } ${seat.status !== 'available' ? 'cursor-pointer hover:shadow-md' : 'cursor-default'}`}
+                    >
+                      <Armchair className="w-5 h-5 sm:w-6 sm:h-6 opacity-70" />
+                      <span className="text-sm sm:text-base font-black">{seat.number}</span>
+                    </motion.button>
                   );
-                }
-                return (
-                  <motion.button
-                    key={seat.id}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.002, duration: 0.2 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => (seat.status === 'occupied' || seat.status === 'reserved') && setSelectedSeat(seat as any)}
-                    className={`aspect-square rounded-lg border-2 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all duration-150 ${
-                      statusColors[seat.status]
-                    } ${seat.status !== 'available' ? 'cursor-pointer hover:shadow-md' : 'cursor-default'}`}
-                  >
-                    <Armchair className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="text-[10px] sm:text-xs font-semibold">{seat.number}</span>
-                  </motion.button>
-                );
-              })}
+                })}
             </div>
           </div>
         </div>

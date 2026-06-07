@@ -7,10 +7,10 @@ export const SEAT_CONFIG: Record<string, number> = {
   D: 20,
   G: 20,
   N: 60,
-  Ex: 25
+  Ex: 30
 };
 
-export const TOTAL_SEAT_CAPACITY = 195;
+export const TOTAL_SEAT_CAPACITY = 200;
 
 export const generateAllSeatNumbers = (): string[] => {
   const seats: string[] = [];
