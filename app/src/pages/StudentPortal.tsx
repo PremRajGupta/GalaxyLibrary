@@ -5,7 +5,7 @@ import { studentPortalApi } from '../lib/apiService';
 import { 
   LogOut, User, Calendar, CreditCard, Clock, Phone, MapPin, 
   CheckCircle, AlertCircle, Receipt, ShieldCheck, Mail,
-  QrCode, MessageCircle, Users, ArrowRight
+  MessageCircle, Users
 } from 'lucide-react';
 import { getInitials, getAvatarColor } from '../sections/students/students';
 import { getCourseLabel } from '../lib/courseOptions';
