@@ -117,11 +117,12 @@ export const generateReceiptPDF = async (payment: PaymentReceipt, logoUrl?: stri
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text(`Name: ${payment.studentName}`, margin + 2, cursorY + 10);
-  doc.text(`Father's Name: ${payment.fatherName || 'N/A'}`, margin + 2, cursorY + 16);
-  doc.text(`Mobile: ${payment.studentMobile || 'N/A'}`, margin + 2, cursorY + 22);
-  doc.text(`Seat Number: ${payment.seatNumber || 'N/A'}`, margin + 2, cursorY + 28);
-  doc.text(`Course: ${payment.course || 'N/A'}`, margin + 2, cursorY + 34);
-  doc.text(`Joining Date: ${formatJoiningDate(payment.joiningDate)}`, margin + 2, cursorY + 40);
+  doc.text(`Student ID: ${payment.studentId}`, margin + 2, cursorY + 16);
+  doc.text(`Father's Name: ${payment.fatherName || 'N/A'}`, margin + 2, cursorY + 22);
+  doc.text(`Mobile: ${payment.studentMobile || 'N/A'}`, margin + 2, cursorY + 28);
+  doc.text(`Seat Number: ${payment.seatNumber || 'N/A'}`, margin + 2, cursorY + 34);
+  doc.text(`Course: ${payment.course || 'N/A'}`, margin + 2, cursorY + 40);
+  doc.text(`Joining Date: ${formatJoiningDate(payment.joiningDate)}`, margin + 2, cursorY + 46);
 
   cursorY += 74;
   doc.setFillColor(255, 255, 255);

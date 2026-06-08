@@ -6,7 +6,8 @@ import type { PaymentReceipt } from '../sections/fees/receiptService';
 import S from '../lib/strings';
 import { getStoredPayments } from '../sections/fees/collectionService';
 import { Download, Search, Eye, X, Pencil, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, RefreshCw, Zap } from 'lucide-react';
-import { feeApi } from '../lib/apiService';
+import { feeApi, studentApi } from '../lib/apiService';
+import { getStudentDisplayId } from '../lib/studentId';
 import { formatJoiningDate } from '../lib/formatDate';
 
 interface ReceiptGroup {
@@ -42,6 +43,7 @@ export default function PdfGenerator() {
   const [notification, setNotification] = useState<Notification | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [validityData, setValidityData] = useState<Record<string, PaymentValidity>>({});
+  const [studentFees, setStudentFees] = useState<Record<string, number>>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [filterAdvanceOnly, setFilterAdvanceOnly] = useState(false);
   const RECORDS_PER_PAGE = 7;
@@ -69,8 +71,21 @@ export default function PdfGenerator() {
   useEffect(() => {
     const fetchPayments = async () => {
       try {
-        const data = await getStoredPayments();
+        const [data, studentsList] = await Promise.all([
+          getStoredPayments(),
+          studentApi.getStudents().catch(() => [])
+        ]);
         setPayments(data);
+        
+        const feeMap: Record<string, number> = {};
+        studentsList.forEach((s: any) => {
+          const sid = getStudentDisplayId(s);
+          if (sid) {
+            feeMap[sid] = Number(s.feeAmount) || 0;
+          }
+        });
+        setStudentFees(feeMap);
+
         await fetchValidityData(data);
       } catch (error) {
         console.error('Error fetching fees:', error);
@@ -82,8 +97,21 @@ export default function PdfGenerator() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      const data = await getStoredPayments();
+      const [data, studentsList] = await Promise.all([
+        getStoredPayments(),
+        studentApi.getStudents().catch(() => [])
+      ]);
       setPayments(data);
+      
+      const feeMap: Record<string, number> = {};
+      studentsList.forEach((s: any) => {
+        const sid = getStudentDisplayId(s);
+        if (sid) {
+          feeMap[sid] = Number(s.feeAmount) || 0;
+        }
+      });
+      setStudentFees(feeMap);
+
       await fetchValidityData(data);
       showNotification('Data refreshed successfully!', 'success');
     } catch (error) {
@@ -546,7 +574,7 @@ export default function PdfGenerator() {
               <tr>
                 <th className="px-4 py-3">Student</th>
                 <th className="px-4 py-3">Student ID</th>
-                <th className="px-4 py-3">Receipts</th>
+                <th className="px-4 py-3">Monthly Fee</th>
                 <th className="px-4 py-3">Total Paid</th>
                 <th className="px-4 py-3">Last Payment</th>
                 <th className="px-4 py-3">Payment Validity</th>
@@ -556,7 +584,7 @@ export default function PdfGenerator() {
             <tbody className="divide-y divide-slate-200 bg-white">
               {paginatedPayments.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
+                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
                     {S.pdfEmpty}
                   </td>
                 </tr>
@@ -576,7 +604,9 @@ export default function PdfGenerator() {
                         </div>
                       </td>
                       <td className="px-4 py-4 text-slate-600">{group.studentId}</td>
-                      <td className="px-4 py-4 text-slate-600">{group.payments.length} receipt{group.payments.length > 1 ? 's' : ''}</td>
+                      <td className="px-4 py-4 text-slate-900 font-bold">
+                        {studentFees[group.studentId] !== undefined ? `₹${studentFees[group.studentId]}` : 'N/A'}
+                      </td>
                       <td className="px-4 py-4 text-slate-900">₹{group.totalAmount.toFixed(2)}</td>
                       <td className="px-4 py-4 text-slate-600">{group.lastPaymentDate}</td>
                       <td className="px-4 py-4">
