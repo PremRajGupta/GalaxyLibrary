@@ -1583,7 +1583,6 @@ export function FeeCollection() {
                         {/* Advance Preview */}
                         {markAsAdvanceDuringCollection && payAmount && parseFloat(payAmount) > 0 && (() => {
                           const totalPayment = parseFloat(payAmount) || 0;
-                          const discountValue = parseFloat(discount) || 0;
                           const feeCredit = Math.max(0, totalPayment);
                           const advanceAmount = Math.max(0, feeCredit - selectedStudent.feeDue);
                           const advanceMonths = selectedStudent.monthlyFee > 0
