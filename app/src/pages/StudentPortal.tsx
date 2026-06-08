@@ -429,7 +429,7 @@ export default function StudentPortal() {
 
                 <div className="mb-6 w-full max-w-sm">
                   <a 
-                    href={`upi://pay?pa=7488252019@okbizaxis&pn=Galaxy%20Library&am=${customPayAmount !== '' ? customPayAmount : (pendingAmount > 0 ? pendingAmount : (student.feeAmount || 0))}&cu=INR`}
+                    href={`upi://pay?pa=7488252019@okbizaxis&pn=GalaxyLibrary&tr=GL${Date.now()}&tn=LibraryFee&am=${Number(customPayAmount !== '' ? customPayAmount : (pendingAmount > 0 ? pendingAmount : (student.feeAmount || 0))).toFixed(2)}&cu=INR`}
                     className="w-full py-3.5 bg-white text-[#512da8] hover:shadow-[0_5px_20px_rgba(255,255,255,0.4)] rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
