@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { studentPortalApi } from '../lib/apiService';
-import jsPDF from 'jspdf';
 import { 
   LogOut, User, Calendar, CreditCard, Clock, Phone, MapPin, 
   CheckCircle, AlertCircle, Receipt, ShieldCheck, Mail,
