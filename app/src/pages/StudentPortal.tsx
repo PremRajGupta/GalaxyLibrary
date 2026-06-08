@@ -23,6 +23,7 @@ export default function StudentPortal() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'payments'>('overview');
+  const [customPayAmount, setCustomPayAmount] = useState<string>('');
 
   useEffect(() => {
     const fetchStudentData = async () => {
@@ -415,9 +416,20 @@ export default function StudentPortal() {
                   <p className="text-white/80 text-sm leading-relaxed">Scan the QR code or use the button below to clear your dues instantly using any UPI application.</p>
                 </div>
 
+                <div className="mb-4 w-full max-w-sm">
+                  <label className="text-[11px] text-white/70 font-bold uppercase tracking-widest mb-1.5 block">Enter Amount to Pay (₹)</label>
+                  <input
+                    type="number"
+                    placeholder={`e.g. ${pendingAmount > 0 ? pendingAmount : (student.feeAmount || 0)}`}
+                    value={customPayAmount}
+                    onChange={(e) => setCustomPayAmount(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors font-bold appearance-none"
+                  />
+                </div>
+
                 <div className="mb-6 w-full max-w-sm">
                   <a 
-                    href="upi://pay?pa=7488252019@okbizaxis&pn=Galaxy%20Library&cu=INR"
+                    href={`upi://pay?pa=7488252019@okbizaxis&pn=Galaxy%20Library&am=${customPayAmount !== '' ? customPayAmount : (pendingAmount > 0 ? pendingAmount : (student.feeAmount || 0))}&cu=INR`}
                     className="w-full py-3.5 bg-white text-[#512da8] hover:shadow-[0_5px_20px_rgba(255,255,255,0.4)] rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>

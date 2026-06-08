@@ -365,7 +365,7 @@ export function FeeCollection() {
       return;
     }
 
-    const creditAmount = collectedAmount - discountValue;
+    const creditAmount = collectedAmount;
     if (creditAmount <= 0) {
       showNotification('Amount after discount must be greater than zero.', 'error');
       return;
@@ -1141,7 +1141,7 @@ export function FeeCollection() {
                               <div className="flex items-center justify-between p-4 bg-[#eff6ff] rounded-[14px]">
                                 <span className="text-sm font-semibold text-[#1e3a8a]">Final Payment</span>
                                 <span className="text-xl font-bold text-[#2F4FD7]">
-                                  ₹{(successPayment.feeCreditAmount ?? successPayment.amount).toLocaleString()}
+                                  ₹{(successPayment.amount - (successPayment.discountAmount || 0)).toLocaleString()}
                                 </span>
                               </div>
                             </div>
@@ -1505,7 +1505,7 @@ export function FeeCollection() {
                           className="w-full px-4 py-3.5 border-2 border-[#e2e8f0] rounded-[12px] focus:outline-none focus:border-[#2F4FD7] focus:ring-2 focus:ring-[#2F4FD7]/20 transition-all"
                         />
                         <p className="text-xs text-[#64748b] mt-2">
-                          Fee credit = Pay amount − Discount (reduces pending balance).
+                          Fee credit = Pay amount (reduces pending balance). Final cash = Pay amount - Discount.
                         </p>
                         {payAmount && (() => {
                           const payValue = parseFloat(payAmount) || 0;
@@ -1534,7 +1534,7 @@ export function FeeCollection() {
                               <p className={`mt-1 text-xs ${
                                 isInvalidDiscount ? 'text-[#b91c1c]' : 'text-[#475569]'
                               }`}>
-                                Pay amount ₹{payValue.toLocaleString('en-IN')} − Discount ₹{discountValue.toLocaleString('en-IN')} = ₹{Math.max(0, finalPayment).toLocaleString('en-IN')} reduces pending balance.
+                                Pay amount ₹{payValue.toLocaleString('en-IN')} reduces pending balance. Final cash: ₹{Math.max(0, finalPayment).toLocaleString('en-IN')}.
                               </p>
                               {isInvalidDiscount && (
                                 <p className="mt-1 text-xs font-semibold text-[#b91c1c]">
@@ -1584,7 +1584,7 @@ export function FeeCollection() {
                         {markAsAdvanceDuringCollection && payAmount && parseFloat(payAmount) > 0 && (() => {
                           const totalPayment = parseFloat(payAmount) || 0;
                           const discountValue = parseFloat(discount) || 0;
-                          const feeCredit = Math.max(0, totalPayment - discountValue);
+                          const feeCredit = Math.max(0, totalPayment);
                           const advanceAmount = Math.max(0, feeCredit - selectedStudent.feeDue);
                           const advanceMonths = selectedStudent.monthlyFee > 0
                             ? Math.floor(advanceAmount / selectedStudent.monthlyFee)
