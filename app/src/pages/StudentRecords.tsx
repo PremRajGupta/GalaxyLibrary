@@ -27,7 +27,7 @@ export default function StudentRecords() {
   const location = useLocation();
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const itemsPerPage = 10;
 
   // Fetch students whenever location changes (e.g., after edit/delete)
   useEffect(() => {

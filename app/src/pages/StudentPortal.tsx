@@ -31,16 +31,16 @@ const buildUpiPaymentUrl = (amount: number) => {
     ['pn', PAYMENT_PAYEE_NAME],
     ['tn', PAYMENT_NOTE],
     ['am', amount.toFixed(2)],
-    ['cu', 'INR'],
-    ['mode', '02'],
-    ['purpose', '00']
+    ['cu', 'INR']
   ]
     .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
     .join('&');
 
   return {
     generic: `upi://pay?${params}`,
-    phonePe: `intent://pay?${params}#Intent;scheme=upi;package=com.phonepe.app;end`
+    phonePe: `intent://pay?${params}#Intent;scheme=upi;package=com.phonepe.app;end`,
+    gpay: `intent://pay?${params}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`,
+    paytm: `intent://pay?${params}#Intent;scheme=upi;package=net.one97.paytm;end`
   };
 };
 
@@ -162,8 +162,7 @@ export default function StudentPortal() {
     }
 
     setPaymentError('');
-    const isAndroid = /Android/i.test(navigator.userAgent);
-    window.location.href = isAndroid && upiPaymentUrls ? upiPaymentUrls.phonePe : upiPaymentUrls!.generic;
+    window.location.href = upiPaymentUrls!.generic;
   };
 
   return (
@@ -443,7 +442,7 @@ export default function StudentPortal() {
                 </div>
                 <p className="text-[11px] font-bold text-gray-500 mb-2 uppercase tracking-widest">Scan & Pay with UPI</p>
                 <div className="bg-white p-3 border-2 border-gray-100 rounded-2xl shadow-sm mb-3">
-                  <img src="/qr-code.png" alt="Payment QR" className="w-48 h-48 sm:w-52 sm:h-52 object-contain" />
+                  <img src={upiPaymentUrls ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiPaymentUrls.generic)}` : "/qr-code.png"} alt="Payment QR" className="w-48 h-48 sm:w-52 sm:h-52 object-contain" />
                 </div>
                 <p className="text-[11px] text-gray-500 font-bold mb-1 tracking-wide">UPI ID : 7488252019@okbizaxis</p>
                 <div className="flex justify-center items-center gap-2 my-1">
@@ -484,14 +483,14 @@ export default function StudentPortal() {
                     className={`w-full py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all transform ${selectedPayAmount > 0 ? 'bg-white text-[#512da8] hover:shadow-[0_5px_20px_rgba(255,255,255,0.4)] hover:-translate-y-0.5' : 'bg-white/50 text-[#512da8]/60 cursor-not-allowed'}`}
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                    Pay with PhonePe
+                    Pay Online (Google Pay, PhonePe, Paytm)
                   </button>
                   {upiPaymentUrls && (
                     <a
                       href={upiPaymentUrls.generic}
                       className="mt-2 w-full py-2.5 bg-white/10 text-white hover:bg-white/15 border border-white/20 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all"
                     >
-                      Open Any UPI App - {formatRupee(selectedPayAmount)}
+                      Open UPI App - {formatRupee(selectedPayAmount)}
                     </a>
                   )}
                   <p className="mt-2 text-[11px] text-white/70 font-semibold">

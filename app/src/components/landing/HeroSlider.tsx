@@ -18,7 +18,7 @@ export default function HeroSlider({ slides, pageText, onVisit, onContact }: Her
     if (slides.length === 0) return undefined;
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % slides.length);
-    }, 6000); 
+    }, 10000); 
     return () => clearInterval(timer);
   }, [slides.length]);
 
@@ -144,28 +144,6 @@ export default function HeroSlider({ slides, pageText, onVisit, onContact }: Her
         ))}
       </div>
 
-      <motion.button
-        whileHover={{ scale: 1.1, backgroundColor: "var(--hover-bg)" }}
-        whileTap={{ scale: 0.9 }}
-        type="button"
-        onClick={() => goTo(current - 1)}
-        style={{ "--hover-bg": "rgba(100,100,100,0.1)" } as any}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 sm:p-4 bg-white/50 dark:bg-black/20 backdrop-blur-md border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white rounded-2xl transition-all shadow-sm dark:shadow-none hover:bg-white/80 dark:hover:bg-white/10"
-        aria-label="Previous slide"
-      >
-        <ChevronLeft size={24} />
-      </motion.button>
-      <motion.button
-        whileHover={{ scale: 1.1, backgroundColor: "var(--hover-bg)" }}
-        whileTap={{ scale: 0.9 }}
-        type="button"
-        onClick={() => goTo(current + 1)}
-        style={{ "--hover-bg": "rgba(100,100,100,0.1)" } as any}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 sm:p-4 bg-white/50 dark:bg-black/20 backdrop-blur-md border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white rounded-2xl transition-all shadow-sm dark:shadow-none hover:bg-white/80 dark:hover:bg-white/10"
-        aria-label="Next slide"
-      >
-        <ChevronRight size={24} />
-      </motion.button>
     </section>
   );
 }
