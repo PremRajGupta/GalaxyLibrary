@@ -19,6 +19,7 @@ import Services from './pages/Services';
 import StudentPortal from './pages/StudentPortal';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
+import ComputerCenter from './pages/ComputerCenter';
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -94,6 +95,7 @@ function AppRoutes() {
       <Route path="/services" element={<Services />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-service" element={<TermsOfService />} />
+      <Route path="/computer-center" element={<ComputerCenter />} />
       <Route path="/login" element={<PublicLoginRoute />} />
 
       {/* Admin Protected Routes */}

@@ -9,6 +9,10 @@ export default function About() {
   const { libraryInfo, pageText, navMenuItems } = DEFAULT_SITE_CONTENT;
 
   const scrollTo = (sectionId: string) => {
+    if (sectionId.startsWith('/')) {
+      navigate(sectionId);
+      return;
+    }
     if (sectionId === 'about') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
@@ -22,7 +26,7 @@ export default function About() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#040814] text-slate-800 dark:text-slate-300 font-sans selection:bg-blue-500/30 transition-colors duration-300 flex flex-col">
       <SEOMeta
         title="About Galaxy Library - Best Educational Institute in Tehta | Galaxy Education"
         description="Learn about Galaxy Library, the leading educational institute in Tehta. Discover our mission, vision, expert faculty, modern infrastructure, and comprehensive education programs."

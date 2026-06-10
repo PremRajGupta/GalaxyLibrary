@@ -1,4 +1,4 @@
-import { useState, useEffect, type MouseEvent } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { studentPortalApi } from '../lib/apiService';
@@ -26,15 +26,22 @@ const normalizePaymentAmount = (value: string | number) => {
 };
 
 const buildUpiPaymentUrl = (amount: number) => {
-  const params = new URLSearchParams({
-    pa: PAYMENT_UPI_ID,
-    pn: PAYMENT_PAYEE_NAME,
-    tn: PAYMENT_NOTE,
-    am: amount.toFixed(2),
-    cu: 'INR'
-  });
+  const params = [
+    ['pa', PAYMENT_UPI_ID],
+    ['pn', PAYMENT_PAYEE_NAME],
+    ['tn', PAYMENT_NOTE],
+    ['am', amount.toFixed(2)],
+    ['cu', 'INR'],
+    ['mode', '02'],
+    ['purpose', '00']
+  ]
+    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+    .join('&');
 
-  return `upi://pay?${params.toString()}`;
+  return {
+    generic: `upi://pay?${params}`,
+    phonePe: `intent://pay?${params}#Intent;scheme=upi;package=com.phonepe.app;end`
+  };
 };
 
 export default function StudentPortal() {
@@ -128,7 +135,7 @@ export default function StudentPortal() {
   const totalPaidAmount = dues?.paidAmount ?? 0;
   const fallbackPayAmount = pendingAmount > 0 ? pendingAmount : (student.feeAmount || 0);
   const selectedPayAmount = normalizePaymentAmount(customPayAmount !== '' ? customPayAmount : fallbackPayAmount);
-  const upiPaymentUrl = selectedPayAmount > 0 ? buildUpiPaymentUrl(selectedPayAmount) : '#';
+  const upiPaymentUrls = selectedPayAmount > 0 ? buildUpiPaymentUrl(selectedPayAmount) : null;
 
   const isInactive = student.status === 'inactive';
   let feeStatus: 'paid' | 'due' | 'inactive' = 'due';
@@ -148,14 +155,15 @@ export default function StudentPortal() {
   // Get last payment date
   const lastPayment = paymentHistory[0]; // array is sorted by date desc
 
-  const handlePaymentClick = (event: MouseEvent<HTMLAnchorElement>) => {
+  const handlePaymentClick = () => {
     if (selectedPayAmount <= 0) {
-      event.preventDefault();
       setPaymentError('Please enter a valid amount greater than 0.');
       return;
     }
 
     setPaymentError('');
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    window.location.href = isAndroid && upiPaymentUrls ? upiPaymentUrls.phonePe : upiPaymentUrls!.generic;
   };
 
   return (
@@ -470,14 +478,22 @@ export default function StudentPortal() {
                 </div>
 
                 <div className="mb-6 w-full max-w-sm">
-                  <a 
-                    href={upiPaymentUrl}
+                  <button
+                    type="button"
                     onClick={handlePaymentClick}
                     className={`w-full py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all transform ${selectedPayAmount > 0 ? 'bg-white text-[#512da8] hover:shadow-[0_5px_20px_rgba(255,255,255,0.4)] hover:-translate-y-0.5' : 'bg-white/50 text-[#512da8]/60 cursor-not-allowed'}`}
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                    Pay {formatRupee(selectedPayAmount || fallbackPayAmount)} Now
-                  </a>
+                    Pay with PhonePe
+                  </button>
+                  {upiPaymentUrls && (
+                    <a
+                      href={upiPaymentUrls.generic}
+                      className="mt-2 w-full py-2.5 bg-white/10 text-white hover:bg-white/15 border border-white/20 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all"
+                    >
+                      Open Any UPI App - {formatRupee(selectedPayAmount)}
+                    </a>
+                  )}
                   <p className="mt-2 text-[11px] text-white/70 font-semibold">
                     Agar app nahi khulta hai, QR scan karein ya UPI ID {PAYMENT_UPI_ID} par pay karein.
                   </p>

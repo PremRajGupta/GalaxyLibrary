@@ -34,19 +34,33 @@ function buildNavMenuFromPageText(pageText: SiteContent['pageText']): NavMenuIte
     { id: 3, label: pageText.navStats, sectionId: 'stats' },
     { id: 4, label: 'Gallery', sectionId: 'gallery' },
     { id: 5, label: pageText.navContact, sectionId: 'contact' },
+    { id: 6, label: 'Computer Classes', sectionId: '/computer-center' },
   ];
 }
 
 function resolveNavMenuItems(saved: Partial<SiteContent>): NavMenuItem[] {
+  let items: NavMenuItem[];
   if (saved.navMenuItems && saved.navMenuItems.length > 0) {
-    return saved.navMenuItems.map((item) => ({
+    items = saved.navMenuItems.map((item) => ({
       id: item.id,
       label: item.label?.trim() || 'Link',
       sectionId: item.sectionId?.trim() || 'home',
     }));
+  } else {
+    const pageText = mergeStringFields(DEFAULT_SITE_CONTENT.pageText, saved.pageText);
+    items = buildNavMenuFromPageText(pageText);
   }
-  const pageText = mergeStringFields(DEFAULT_SITE_CONTENT.pageText, saved.pageText);
-  return buildNavMenuFromPageText(pageText);
+
+  // Ensure Computer Classes is always present
+  if (!items.find((item) => item.sectionId === '/computer-center')) {
+    items.push({
+      id: items.length > 0 ? Math.max(...items.map((i) => i.id)) + 1 : 1,
+      label: 'Computer Classes',
+      sectionId: '/computer-center',
+    });
+  }
+
+  return items;
 }
 
 export function mergeSiteContent(saved: Partial<SiteContent>): SiteContent {

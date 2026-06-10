@@ -69,9 +69,15 @@ export default function Index() {
   }, [loading, location, navigate]);
 
   const scrollTo = (sectionId: string) => {
+    if (sectionId.startsWith('/')) {
+      navigate(sectionId);
+      return;
+    }
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (sectionId === 'home') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 

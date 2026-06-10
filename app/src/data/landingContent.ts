@@ -140,6 +140,7 @@ export const DEFAULT_NAV_MENU_ITEMS: NavMenuItem[] = [
   { id: 3, label: 'Stats', sectionId: 'stats' },
   { id: 4, label: 'Gallery', sectionId: 'gallery' },
   { id: 5, label: 'Contact Us', sectionId: 'contact' },
+  { id: 6, label: 'Computer Classes', sectionId: '/computer-center' },
 ];
 
 export const DEFAULT_GALLERY_IMAGE_URL =

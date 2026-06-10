@@ -14,7 +14,11 @@ export default function PrivacyPolicy() {
   }, []);
 
   const handleNavigate = (sectionId: string) => {
-    navigate('/', { state: { scrollToSection: sectionId } });
+    if (sectionId.startsWith('/')) {
+      navigate(sectionId);
+    } else {
+      navigate('/', { state: { scrollToSection: sectionId } });
+    }
   };
 
   const { libraryInfo, pageText, navMenuItems } = DEFAULT_SITE_CONTENT;
