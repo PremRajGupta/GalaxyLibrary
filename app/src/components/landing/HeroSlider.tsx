@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ChevronRight, Sparkles } from 'lucide-react';
 import type { HeroSlide, PageText } from '../../data/landingContent';
 
 type HeroSliderProps = {
@@ -133,7 +133,7 @@ export default function HeroSlider({ slides, pageText, onVisit, onContact }: Her
           <button
             key={item.id}
             type="button"
-            onClick={() => setCurrent(index)}
+            onClick={() => goTo(index)}
             aria-label={`Go to slide ${index + 1}`}
             className={`h-1.5 rounded-full transition-all duration-500 ${
               index === current 
