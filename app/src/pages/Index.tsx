@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import LandingNavbar from '../components/landing/LandingNavbar';
 import HeroSlider from '../components/landing/HeroSlider';
 import StatsSection from '../components/landing/StatsSection';
@@ -61,7 +62,6 @@ export default function Index() {
         }
       }, 100);
 
-      // Clear the state so it doesn't scroll again on re-render or reload
       navigate('/', { replace: true, state: {} });
 
       return () => clearTimeout(timer);
@@ -77,8 +77,8 @@ export default function Index() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#1a2b4a]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3b82f6]" />
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#040814] transition-colors duration-300">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
       </div>
     );
   }
@@ -86,47 +86,21 @@ export default function Index() {
   const { libraryInfo, admissionContact, pageText, navMenuItems, heroSlides, aboutContent, galleryImages, facultyMembers } = content;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#040814] text-slate-800 dark:text-slate-300 font-sans selection:bg-blue-500/30 transition-colors duration-300">
       <SEOMeta
         title="Galaxy Library - Top Educational Institute in Tehta | Galaxy Education Hub"
-        description="Galaxy Library is the leading educational institute in Tehta providing quality education, comprehensive admission services, transparent fee collection, and advanced student management systems. Join thousands of satisfied students today."
+        description="Galaxy Library is the leading educational institute in Tehta providing quality education, comprehensive admission services, transparent fee collection, and advanced student management systems."
         keywords="galaxy library, galaxy library tehta, galaxy education, educational institute, quality education, admission portal, fee collection, student management, learning center"
         ogUrl="https://galaxyhub.in/"
         canonical="https://galaxyhub.in/"
-        schema={{
-          "@context": "https://schema.org",
-          "@type": "EducationalOrganization",
-          "name": "Galaxy Library",
-          "url": "https://galaxyhub.in",
-          "logo": "https://galaxyhub.in/logo.png",
-          "description": "Galaxy Library is the leading educational institute in Tehta providing quality education, admissions, and comprehensive services.",
-          "address": {
-            "@type": "PostalAddress",
-            "addressLocality": "Tehta",
-            "addressCountry": "IN"
-          },
-          "telephone": "+91-XXXXXXXXXX",
-          "email": "info@galaxyhub.in",
-          "sameAs": [
-            "https://www.facebook.com/galaxylibrary",
-            "https://twitter.com/galaxylibrary",
-            "https://www.instagram.com/galaxylibrary"
-          ],
-          "contactPoint": {
-            "@type": "ContactPoint",
-            "contactType": "Customer Service",
-            "availableLanguage": ["en", "hi"]
-          },
-          "potentialAction": {
-            "@type": "EnrollAction"
-          }
-        }}
       />
+      
       {apiOffline && (
-        <div className="bg-[#fef3c7] border-b border-[#f59e0b] text-[#92400e] text-center text-sm px-4 py-2">
+        <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-600 dark:text-amber-400 text-center text-sm px-4 py-2 backdrop-blur-md">
           Server offline — showing saved/default content. Start backend on port 5000, then refresh.
         </div>
       )}
+
       <LandingNavbar
         libraryInfo={libraryInfo}
         pageText={pageText}
@@ -142,26 +116,48 @@ export default function Index() {
         onContact={() => scrollTo('contact')}
       />
 
-      <section id="about" className="py-16 sm:py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#1e293b] mb-4">{aboutContent.title}</h2>
-            {aboutContent.paragraphs.map((paragraph) => (
-              <p key={paragraph.slice(0, 32)} className="text-[#64748b] leading-relaxed mb-4">
+      <section id="about" className="relative py-24 overflow-hidden bg-white dark:bg-transparent transition-colors duration-300">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-100 dark:bg-blue-600/10 rounded-full blur-[120px] pointer-events-none transition-colors duration-300" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-100 dark:bg-purple-600/10 rounded-full blur-[120px] pointer-events-none transition-colors duration-300" />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+            className="max-w-3xl mx-auto text-center mb-16"
+          >
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-500 mb-6 pb-2 transition-all">
+              {aboutContent.title}
+            </h2>
+            {aboutContent.paragraphs.map((paragraph, idx) => (
+              <p key={idx} className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4 text-lg transition-colors">
                 {paragraph}
               </p>
             ))}
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {aboutContent.highlights.map((item) => (
-              <div
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+            {aboutContent.highlights.map((item, index) => (
+              <motion.div
                 key={`${item.label}-${item.value}`}
-                className="text-center p-5 sm:p-6 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ y: -5, scale: 1.02 }}
+                className="group relative p-1 rounded-2xl bg-gradient-to-b from-slate-200 to-slate-100 hover:from-blue-200 hover:to-purple-200 dark:from-slate-800 dark:to-slate-900/50 dark:hover:from-blue-500/50 dark:hover:to-purple-500/50 transition-all duration-500"
               >
-                <p className="text-xl sm:text-2xl font-bold text-[#3b82f6] mb-1">{item.value}</p>
-                <p className="text-sm text-[#64748b]">{item.label}</p>
-              </div>
+                <div className="h-full w-full bg-white dark:bg-[#0a0f1e] rounded-xl p-6 sm:p-8 text-center border border-slate-100 dark:border-slate-800 group-hover:border-transparent transition-all duration-500 flex flex-col justify-center shadow-md hover:shadow-lg dark:shadow-lg dark:group-hover:shadow-[0_0_30px_rgba(59,130,246,0.3)]">
+                  <p className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300 mb-2 drop-shadow-sm dark:drop-shadow-md transition-all">
+                    {item.value}
+                  </p>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 tracking-wide uppercase group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
+                    {item.label}
+                  </p>
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -169,11 +165,14 @@ export default function Index() {
 
       <StatsSection pageText={pageText} />
       <GallerySection images={galleryImages} pageText={pageText} />
+      
       {content.announcement?.show && content.announcement?.text && (
         <OfferBanner announcement={content.announcement} onNavigate={scrollTo} />
       )}
+      
       <FacultySection members={facultyMembers} pageText={pageText} />
       <ContactSection libraryInfo={libraryInfo} admissionContact={admissionContact} pageText={pageText} />
+      
       <LandingFooter
         libraryInfo={libraryInfo}
         pageText={pageText}

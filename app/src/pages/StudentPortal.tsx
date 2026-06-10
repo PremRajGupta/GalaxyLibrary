@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type MouseEvent } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { studentPortalApi } from '../lib/apiService';
@@ -15,7 +15,27 @@ import S from '../lib/strings';
 import AppLogo from '../components/AppLogo';
 
 const RUPEE = '\u20B9';
+const PAYMENT_UPI_ID = '7488252019@okbizaxis';
+const PAYMENT_PAYEE_NAME = 'Galaxy Library';
+const PAYMENT_NOTE = 'Library Fee';
 const formatRupee = (amount: number) => `${RUPEE}${amount.toLocaleString('en-IN')}`;
+
+const normalizePaymentAmount = (value: string | number) => {
+  const amount = Number(value);
+  return Number.isFinite(amount) && amount > 0 ? Number(amount.toFixed(2)) : 0;
+};
+
+const buildUpiPaymentUrl = (amount: number) => {
+  const params = new URLSearchParams({
+    pa: PAYMENT_UPI_ID,
+    pn: PAYMENT_PAYEE_NAME,
+    tn: PAYMENT_NOTE,
+    am: amount.toFixed(2),
+    cu: 'INR'
+  });
+
+  return `upi://pay?${params.toString()}`;
+};
 
 export default function StudentPortal() {
   const { logout } = useAuth();
@@ -24,6 +44,7 @@ export default function StudentPortal() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'payments'>('overview');
   const [customPayAmount, setCustomPayAmount] = useState<string>('');
+  const [paymentError, setPaymentError] = useState('');
 
   useEffect(() => {
     const fetchStudentData = async () => {
@@ -105,6 +126,9 @@ export default function StudentPortal() {
   const { dues } = data;
   const pendingAmount = dues?.pendingAmount ?? 0;
   const totalPaidAmount = dues?.paidAmount ?? 0;
+  const fallbackPayAmount = pendingAmount > 0 ? pendingAmount : (student.feeAmount || 0);
+  const selectedPayAmount = normalizePaymentAmount(customPayAmount !== '' ? customPayAmount : fallbackPayAmount);
+  const upiPaymentUrl = selectedPayAmount > 0 ? buildUpiPaymentUrl(selectedPayAmount) : '#';
 
   const isInactive = student.status === 'inactive';
   let feeStatus: 'paid' | 'due' | 'inactive' = 'due';
@@ -123,6 +147,16 @@ export default function StudentPortal() {
 
   // Get last payment date
   const lastPayment = paymentHistory[0]; // array is sorted by date desc
+
+  const handlePaymentClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (selectedPayAmount <= 0) {
+      event.preventDefault();
+      setPaymentError('Please enter a valid amount greater than 0.');
+      return;
+    }
+
+    setPaymentError('');
+  };
 
   return (
     <div className="min-h-screen bg-[#eef2f6] relative overflow-hidden">
@@ -420,21 +454,33 @@ export default function StudentPortal() {
                   <label className="text-[11px] text-white/70 font-bold uppercase tracking-widest mb-1.5 block">Enter Amount to Pay (₹)</label>
                   <input
                     type="number"
+                    min="1"
+                    step="1"
                     placeholder={`e.g. ${pendingAmount > 0 ? pendingAmount : (student.feeAmount || 0)}`}
                     value={customPayAmount}
-                    onChange={(e) => setCustomPayAmount(e.target.value)}
+                    onChange={(e) => {
+                      setCustomPayAmount(e.target.value);
+                      setPaymentError('');
+                    }}
                     className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors font-bold appearance-none"
                   />
+                  {paymentError && (
+                    <p className="mt-2 text-xs font-bold text-amber-100">{paymentError}</p>
+                  )}
                 </div>
 
                 <div className="mb-6 w-full max-w-sm">
                   <a 
-                    href={`upi://pay?pa=7488252019@okbizaxis&pn=GalaxyLibrary&tr=GL${Date.now()}&tn=LibraryFee&am=${Number(customPayAmount !== '' ? customPayAmount : (pendingAmount > 0 ? pendingAmount : (student.feeAmount || 0))).toFixed(2)}&cu=INR`}
-                    className="w-full py-3.5 bg-white text-[#512da8] hover:shadow-[0_5px_20px_rgba(255,255,255,0.4)] rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5"
+                    href={upiPaymentUrl}
+                    onClick={handlePaymentClick}
+                    className={`w-full py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all transform ${selectedPayAmount > 0 ? 'bg-white text-[#512da8] hover:shadow-[0_5px_20px_rgba(255,255,255,0.4)] hover:-translate-y-0.5' : 'bg-white/50 text-[#512da8]/60 cursor-not-allowed'}`}
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                    Pay Now (Open UPI App)
+                    Pay {formatRupee(selectedPayAmount || fallbackPayAmount)} Now
                   </a>
+                  <p className="mt-2 text-[11px] text-white/70 font-semibold">
+                    Agar app nahi khulta hai, QR scan karein ya UPI ID {PAYMENT_UPI_ID} par pay karein.
+                  </p>
                 </div>
 
                 <div className="bg-white/10 border border-white/20 rounded-xl p-4 text-sm leading-relaxed text-white/90 shadow-sm max-w-2xl mt-auto">

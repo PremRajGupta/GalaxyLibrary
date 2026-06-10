@@ -8,7 +8,7 @@ type StatsSectionProps = {
   pageText: PageText;
 };
 
-function useCountUp(target: number, duration = 1200) {
+function useCountUp(target: number, duration = 1500) {
   const [value, setValue] = useState(0);
 
   useEffect(() => {
@@ -40,29 +40,38 @@ type StatCardProps = {
   value: number;
   suffix?: string;
   accent: string;
+  delay?: number;
 };
 
-function StatCard({ icon: Icon, label, value, suffix = '', accent }: StatCardProps) {
+function StatCard({ icon: Icon, label, value, suffix = '', accent, delay = 0 }: StatCardProps) {
   const display = useCountUp(value);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.4 }}
-      className="text-center p-6 sm:p-8 bg-white rounded-2xl border border-[#e2e8f0] shadow-sm hover:shadow-md transition-shadow"
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.6, delay }}
+      whileHover={{ y: -8, scale: 1.02 }}
+      className="relative group p-1 rounded-2xl bg-gradient-to-b from-slate-200 to-slate-100 hover:from-blue-200 hover:to-cyan-200 dark:from-slate-800 dark:to-slate-900/50 dark:hover:from-blue-500/50 dark:hover:to-cyan-500/50 transition-all duration-500"
     >
-      <div
-        className={`w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center ${accent}`}
-      >
-        <Icon className="text-white" size={24} />
+      <div className="absolute inset-0 bg-blue-500/10 dark:bg-blue-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+      <div className="relative h-full w-full bg-white dark:bg-[#0a0f1e] rounded-xl p-6 sm:p-8 border border-slate-100 dark:border-slate-800 group-hover:border-transparent transition-all duration-500 shadow-md hover:shadow-xl dark:shadow-xl overflow-hidden">
+        <div className={`absolute top-0 left-0 w-32 h-32 blur-3xl opacity-10 dark:opacity-20 group-hover:opacity-30 dark:group-hover:opacity-40 transition-opacity ${accent}`} />
+        
+        <div className="flex items-center gap-5 sm:gap-6 relative z-10">
+          <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex-shrink-0 flex items-center justify-center bg-slate-50 dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg group-hover:shadow-md dark:group-hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all duration-500`}>
+            <Icon className="text-blue-500 dark:text-blue-400 group-hover:text-cyan-500 dark:group-hover:text-cyan-300 transition-colors w-8 h-8 sm:w-10 sm:h-10" />
+          </div>
+          <div className="text-left flex-1">
+            <p className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-800 to-slate-500 group-hover:from-blue-600 group-hover:to-cyan-500 dark:from-white dark:to-slate-400 dark:group-hover:from-blue-200 dark:group-hover:to-cyan-100 mb-1 tabular-nums drop-shadow-sm transition-all duration-500">
+              {display.toLocaleString('en-IN')}
+              {suffix}
+            </p>
+            <p className="text-sm sm:text-base font-semibold text-slate-500 dark:text-slate-400 tracking-wide uppercase group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">{label}</p>
+          </div>
+        </div>
       </div>
-      <p className="text-3xl sm:text-4xl font-bold text-[#1e293b] mb-1 tabular-nums">
-        {display.toLocaleString('en-IN')}
-        {suffix}
-      </p>
-      <p className="text-sm text-[#64748b]">{label}</p>
     </motion.div>
   );
 }
@@ -80,60 +89,79 @@ export default function StatsSection({ pageText }: StatsSectionProps) {
           icon: Users,
           label: pageText.statsAdmissionsLabel,
           value: stats.totalAdmissions,
-          accent: 'bg-[#3b82f6]',
+          accent: 'bg-blue-500',
         },
         {
           icon: Eye,
           label: pageText.statsVisitorsLabel,
           value: stats.visitorCount,
-          accent: 'bg-[#22c55e]',
+          accent: 'bg-emerald-500',
         },
         {
           icon: Clock,
           label: pageText.statsStudyShiftsLabel,
           value: 0,
           suffix: '',
-          accent: 'bg-[#06b6d4]',
+          accent: 'bg-cyan-500',
           staticText: '4h – 24h',
         },
       ]
     : [];
 
   return (
-    <section id="stats" className="py-16 sm:py-20 bg-gradient-to-b from-[#f8fafc] to-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#1e293b] mb-3">{pageText.statsTitle}</h2>
-          <p className="text-[#64748b] max-w-2xl mx-auto">{pageText.statsSubtitle}</p>
-        </div>
+    <section id="stats" className="relative py-24 bg-slate-50 dark:bg-[#040814] overflow-hidden transition-colors duration-300">
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent transition-colors duration-300" />
+      <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent transition-colors duration-300" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white mb-4 drop-shadow-sm dark:drop-shadow-md transition-colors">{pageText.statsTitle}</h2>
+          <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto text-lg transition-colors">{pageText.statsSubtitle}</p>
+        </motion.div>
 
         {!stats ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 w-full">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-36 sm:h-40 bg-[#e2e8f0] rounded-2xl animate-pulse"
+                className="h-48 bg-slate-200 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-800 animate-pulse transition-colors"
               />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
-            {cards.map((card) =>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 w-full">
+            {cards.map((card, index) =>
               'staticText' in card && card.staticText ? (
                 <motion.div
                   key={card.label}
-                  initial={{ opacity: 0, y: 16 }}
+                  initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className="text-center p-6 sm:p-8 bg-white rounded-2xl border border-[#e2e8f0] shadow-sm"
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  whileHover={{ y: -8, scale: 1.02 }}
+                  className="relative group p-1 rounded-2xl bg-gradient-to-b from-slate-200 to-slate-100 hover:from-blue-200 hover:to-cyan-200 dark:from-slate-800 dark:to-slate-900/50 dark:hover:from-blue-500/50 dark:hover:to-cyan-500/50 transition-all duration-500"
                 >
-                  <div
-                    className={`w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center ${card.accent}`}
-                  >
-                    <card.icon className="text-white" size={24} />
+                  <div className="absolute inset-0 bg-blue-500/10 dark:bg-blue-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                  <div className="relative h-full w-full bg-white dark:bg-[#0a0f1e] rounded-xl p-6 sm:p-8 border border-slate-100 dark:border-slate-800 group-hover:border-transparent transition-all duration-500 shadow-md hover:shadow-xl dark:shadow-xl overflow-hidden">
+                    <div className={`absolute top-0 left-0 w-32 h-32 blur-3xl opacity-10 dark:opacity-20 group-hover:opacity-30 dark:group-hover:opacity-40 transition-opacity ${card.accent}`} />
+                    
+                    <div className="flex items-center gap-5 sm:gap-6 relative z-10">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-2xl flex items-center justify-center bg-slate-50 dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg group-hover:shadow-md dark:group-hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all duration-500">
+                        <card.icon className="text-blue-500 dark:text-blue-400 group-hover:text-cyan-500 dark:group-hover:text-cyan-300 transition-colors w-8 h-8 sm:w-10 sm:h-10" />
+                      </div>
+                      <div className="text-left flex-1">
+                        <p className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-800 to-slate-500 group-hover:from-blue-600 group-hover:to-cyan-500 dark:from-white dark:to-slate-400 dark:group-hover:from-blue-200 dark:group-hover:to-cyan-100 mb-1 drop-shadow-sm transition-all duration-500">
+                          {card.staticText}
+                        </p>
+                        <p className="text-sm sm:text-base font-semibold text-slate-500 dark:text-slate-400 tracking-wide uppercase group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">{card.label}</p>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-3xl sm:text-4xl font-bold text-[#1e293b] mb-1">{card.staticText}</p>
-                  <p className="text-sm text-[#64748b]">{card.label}</p>
                 </motion.div>
               ) : (
                 <StatCard
@@ -143,13 +171,22 @@ export default function StatsSection({ pageText }: StatsSectionProps) {
                   value={card.value}
                   suffix={'suffix' in card ? card.suffix : ''}
                   accent={card.accent}
+                  delay={index * 0.1}
                 />
               )
             )}
           </div>
         )}
 
-        <p className="text-center text-xs text-[#94a3b8] mt-8">{pageText.statsFootnote}</p>
+        <motion.p 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.5 }}
+          className="text-center text-sm text-slate-500 dark:text-slate-600 mt-12 font-medium tracking-wide transition-colors"
+        >
+          {pageText.statsFootnote}
+        </motion.p>
       </div>
     </section>
   );
