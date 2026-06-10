@@ -16,7 +16,7 @@ import AppLogo from '../components/AppLogo';
 
 const RUPEE = '\u20B9';
 const PAYMENT_UPI_ID = '7488252019@okbizaxis';
-const PAYMENT_PAYEE_NAME = 'Galaxy Library';
+const PAYMENT_PAYEE_NAME = 'Galaxy Computer';
 const PAYMENT_NOTE = 'Library Fee';
 const formatRupee = (amount: number) => `${RUPEE}${amount.toLocaleString('en-IN')}`;
 
@@ -29,6 +29,9 @@ const buildUpiPaymentUrl = (amount: number) => {
   const params = [
     ['pa', PAYMENT_UPI_ID],
     ['pn', PAYMENT_PAYEE_NAME],
+    ['mc', '8220'],
+    ['aid', 'uGICAgMCliuicYA'],
+    ['tr', 'BCR2DN4TTWQMVMS3'],
     ['tn', PAYMENT_NOTE],
     ['am', amount.toFixed(2)],
     ['cu', 'INR']

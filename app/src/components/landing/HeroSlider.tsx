@@ -55,7 +55,7 @@ export default function HeroSlider({ slides, pageText, onVisit, onContact }: Her
             <img
               src={slide.image}
               alt={slide.title}
-              className="w-full h-full object-cover mix-blend-overlay dark:mix-blend-overlay opacity-80 dark:opacity-100"
+              className="w-full h-full object-cover opacity-100 dark:opacity-70 transition-opacity duration-700"
               loading="eager"
               onError={() => setImageFailed(true)}
             />
@@ -63,8 +63,8 @@ export default function HeroSlider({ slides, pageText, onVisit, onContact }: Her
             <div className="w-full h-full bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 dark:from-[#040814] dark:via-[#0f172a] dark:to-[#1e1b4b]" />
           )}
           {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 dark:from-[#040814] dark:via-[#040814]/80 to-transparent transition-colors duration-300" />
-          <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent dark:from-[#040814] dark:via-transparent to-transparent transition-colors duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/60 to-transparent dark:from-[#040814]/95 dark:via-[#040814]/60 dark:to-transparent transition-colors duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-transparent to-transparent dark:from-[#040814]/90 dark:via-transparent dark:to-transparent transition-colors duration-300" />
         </motion.div>
       </AnimatePresence>
 
@@ -110,7 +110,6 @@ export default function HeroSlider({ slides, pageText, onVisit, onContact }: Her
               >
                 <span className="relative z-10 flex items-center gap-2">
                   {pageText.heroVisitButton}
-                  <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
                 </span>
               </motion.button>
               
