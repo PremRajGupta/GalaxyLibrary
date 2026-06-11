@@ -74,7 +74,6 @@ export default function StudentPortal() {
   const [customPayAmount, setCustomPayAmount] = useState<string>('');
   const [utrNumber, setUtrNumber] = useState<string>('');
   const [paymentError, setPaymentError] = useState('');
-  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'opening' | 'failed'>('idle');
   const [copiedUpi, setCopiedUpi] = useState(false);
 
   useEffect(() => {
@@ -186,7 +185,6 @@ export default function StudentPortal() {
     }
 
     setPaymentError('');
-    setPaymentStatus('opening');
 
     const userAgent = navigator.userAgent || '';
     const isAndroid = /Android/i.test(userAgent);
@@ -194,7 +192,6 @@ export default function StudentPortal() {
     const isMobile = isAndroid || isIOS || /Mobile/i.test(userAgent);
 
     if (!isMobile) {
-      setPaymentStatus('failed');
       setPaymentError('Desktop par QR code scan karein phone se payment karne ke liye.');
       return;
     }
@@ -216,9 +213,6 @@ export default function StudentPortal() {
 
       // Fallback chain: if app-specific fails, generic intent will be tried by OS
       // We also set a timeout to show fallback UI if nothing opened
-      setTimeout(() => {
-        setPaymentStatus('failed');
-      }, 3500);
       return;
     }
 
@@ -247,35 +241,14 @@ export default function StudentPortal() {
       }, 2000);
 
       // Show fallback UI if app didn't open
-      setTimeout(() => {
-        setPaymentStatus('failed');
-      }, 4000);
       return;
     }
 
     // Generic mobile fallback
     window.location.href = upiPaymentUrls.generic;
     setTimeout(() => {
-      setPaymentStatus('failed');
+      setPaymentError('Payment could not be completed automatically. Please try again or use the UPI ID.');
     }, 4000);
-  };
-
-  const handleCopyUpiId = async () => {
-    try {
-      await navigator.clipboard.writeText(`${PAYMENT_UPI_ID}?amount=${selectedPayAmount.toFixed(2)}`);
-      setCopiedUpi(true);
-      setTimeout(() => setCopiedUpi(false), 3000);
-    } catch {
-      // Fallback for older browsers
-      const textArea = document.createElement('textarea');
-      textArea.value = `${PAYMENT_UPI_ID}?amount=${selectedPayAmount.toFixed(2)}`;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      setCopiedUpi(true);
-      setTimeout(() => setCopiedUpi(false), 3000);
-    }
   };
 
   return (
