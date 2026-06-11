@@ -72,6 +72,7 @@ export default function StudentPortal() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'payments'>('overview');
   const [customPayAmount, setCustomPayAmount] = useState<string>('');
+  const [utrNumber, setUtrNumber] = useState<string>('');
   const [paymentError, setPaymentError] = useState('');
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'opening' | 'failed'>('idle');
   const [copiedUpi, setCopiedUpi] = useState(false);
@@ -544,17 +545,17 @@ export default function StudentPortal() {
             {/* Payment QR Code Card */}
             <motion.div 
               whileHover={{ y: -2 }}
-              className="bg-gradient-to-r from-[#673ab7] to-[#512da8] rounded-2xl sm:rounded-3xl shadow-lg border border-[#512da8] p-1.5 sm:p-2 flex flex-col lg:flex-row gap-2 relative overflow-hidden items-stretch"
+              className="bg-gradient-to-r from-[#673ab7] to-[#512da8] rounded-2xl sm:rounded-3xl shadow-lg border border-[#512da8] p-1.5 sm:p-2 flex flex-col lg:flex-row gap-2 relative overflow-hidden items-stretch mt-6"
             >
               {/* QR Code Left Side */}
               <div className="bg-white/95 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-6 flex flex-col items-center justify-center w-full lg:min-w-[280px] lg:w-auto">
                  <div className="text-center mb-3 sm:mb-4 flex items-center justify-center gap-2">
                   <div className="w-6 h-6 sm:w-7 sm:h-7 bg-[#673ab7] rounded-full flex items-center justify-center font-bold text-white text-xs sm:text-sm">पे</div>
-                  <span className="font-black text-[#512da8] text-lg sm:text-xl tracking-wide drop-shadow-sm">PhonePe</span>
+                  <span className="font-black text-[#512da8] text-lg sm:text-xl tracking-wide drop-shadow-sm">Google Pay</span>
                 </div>
-                <p className="text-[10px] sm:text-[11px] font-bold text-gray-500 mb-2 uppercase tracking-widest">Scan & Pay with UPI</p>
+                <p className="text-[10px] sm:text-[11px] font-bold text-gray-500 mb-2 uppercase tracking-widest">Scan & Pay</p>
                 <div className="bg-white p-2 sm:p-3 border-2 border-gray-100 rounded-xl sm:rounded-2xl shadow-sm mb-2 sm:mb-3">
-                  <img src={upiPaymentUrls ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiPaymentUrls.generic)}` : "/qr-code.png"} alt="Payment QR" className="w-36 h-36 sm:w-48 sm:h-48 lg:w-52 lg:h-52 object-contain" />
+                  <img src="/qr-code.png" alt="Payment QR" className="w-36 h-36 sm:w-48 sm:h-48 lg:w-52 lg:h-52 object-contain" />
                 </div>
                 <p className="text-[10px] sm:text-[11px] text-gray-500 font-bold mb-1 tracking-wide">UPI ID : 7488252019@okbizaxis</p>
                 <div className="flex justify-center items-center gap-2 my-1">
@@ -562,130 +563,116 @@ export default function StudentPortal() {
                 </div>
               </div>
 
-              {/* Right Side Content */}
-              <div className="flex-1 flex flex-col justify-center p-4 sm:p-6 text-white">
-                <div className="mb-4 sm:mb-6">
-                  <h3 className="text-xl sm:text-2xl font-black mb-1 sm:mb-2">Galaxy Library</h3>
-                  <p className="text-white/80 text-xs sm:text-sm leading-relaxed">Scan the QR code or use the button below to clear your dues instantly using any UPI application.</p>
-                </div>
+              {/* Center and Right Side Container */}
+              <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 p-4 sm:p-6 text-white">
+                
+                {/* Center Column: Form & Payment */}
+                <div className="flex flex-col justify-center">
+                  <div className="mb-4 sm:mb-6">
+                    <h3 className="text-xl sm:text-2xl font-black mb-1 sm:mb-2">Galaxy Computer</h3>
+                    <p className="text-white/80 text-xs sm:text-sm leading-relaxed">Scan the QR code or use the deep link to pay instantly using any UPI application.</p>
+                  </div>
 
-                <div className="mb-3 sm:mb-4 w-full max-w-sm">
-                  <label className="text-[10px] sm:text-[11px] text-white/70 font-bold uppercase tracking-widest mb-1 sm:mb-1.5 block">Enter Amount to Pay (₹)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    placeholder={`e.g. ${pendingAmount > 0 ? pendingAmount : (student.feeAmount || 0)}`}
-                    value={customPayAmount}
-                    onChange={(e) => {
-                      setCustomPayAmount(e.target.value);
-                      setPaymentError('');
-                      setPaymentStatus('idle');
-                    }}
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors font-bold appearance-none text-sm sm:text-base"
-                  />
-                  {paymentError && (
-                    <p className="mt-2 text-xs font-bold text-amber-100">{paymentError}</p>
-                  )}
-                </div>
-
-                <div className="mb-4 sm:mb-6 w-full max-w-sm space-y-2">
-                  {/* Main Pay Button */}
-                  <button
-                    type="button"
-                    onClick={handlePaymentClick}
-                    disabled={selectedPayAmount <= 0 || paymentStatus === 'opening'}
-                    className={`w-full py-3 sm:py-3.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all transform ${selectedPayAmount > 0 && paymentStatus !== 'opening' ? 'bg-white text-[#512da8] hover:shadow-[0_5px_20px_rgba(255,255,255,0.4)] hover:-translate-y-0.5' : 'bg-white/50 text-[#512da8]/60 cursor-not-allowed'}`}
-                  >
-                    {paymentStatus === 'opening' ? (
-                      <>
-                        <span className="inline-block w-4 h-4 border-2 border-[#512da8] border-t-transparent rounded-full animate-spin" />
-                        Opening UPI App...
-                      </>
-                    ) : (
-                      <>
-                        <svg width="18" height="18" className="sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                        Pay Online (Google Pay, PhonePe, Paytm)
-                      </>
+                  <div className="mb-3 sm:mb-4 w-full">
+                    <label className="text-[10px] sm:text-[11px] text-white/70 font-bold uppercase tracking-widest mb-1 sm:mb-1.5 block">Enter Amount to Pay (₹)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      placeholder={`e.g. ${pendingAmount > 0 ? pendingAmount : (student.feeAmount || 0)}`}
+                      value={customPayAmount}
+                      onChange={(e) => {
+                        setCustomPayAmount(e.target.value);
+                        setPaymentError('');
+                      }}
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors font-bold appearance-none text-sm sm:text-base mb-4"
+                    />
+                    
+                    <label className="text-[10px] sm:text-[11px] text-white/70 font-bold uppercase tracking-widest mb-1 sm:mb-1.5 block">UTR / Transaction Reference No. (12-Digit)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 123456789012"
+                      maxLength={20}
+                      value={utrNumber}
+                      onChange={(e) => setUtrNumber(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors font-bold text-sm sm:text-base mb-2"
+                    />
+                    
+                    {paymentError && (
+                      <p className="mt-2 text-xs font-bold text-amber-100">{paymentError}</p>
                     )}
-                  </button>
+                  </div>
 
-                  {/* Direct UPI App Links (shown when amount is valid) */}
-                  {upiPaymentUrls && selectedPayAmount > 0 && paymentStatus !== 'opening' && (
-                    <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-                      <a
-                        href={upiPaymentUrls.gpay}
-                        className="py-1.5 sm:py-2 bg-white/10 text-white hover:bg-white/20 border border-white/20 rounded-lg text-[10px] sm:text-xs font-bold flex items-center justify-center gap-1 transition-all"
-                      >
-                        GPay
-                      </a>
-                      <a
-                        href={upiPaymentUrls.phonePe}
-                        className="py-1.5 sm:py-2 bg-white/10 text-white hover:bg-white/20 border border-white/20 rounded-lg text-[10px] sm:text-xs font-bold flex items-center justify-center gap-1 transition-all"
-                      >
-                        PhonePe
-                      </a>
-                      <a
-                        href={upiPaymentUrls.paytm}
-                        className="py-1.5 sm:py-2 bg-white/10 text-white hover:bg-white/20 border border-white/20 rounded-lg text-[10px] sm:text-xs font-bold flex items-center justify-center gap-1 transition-all"
-                      >
-                        Paytm
-                      </a>
-                    </div>
-                  )}
-
-                  {/* Fallback: Copy UPI ID button */}
-                  {selectedPayAmount > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleCopyUpiId}
-                      className="w-full py-2 sm:py-2.5 bg-white/10 text-white hover:bg-white/15 border border-white/20 rounded-lg sm:rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all"
-                    >
-                      {copiedUpi ? (
-                        <>
-                          <CheckCircle size={14} /> UPI ID Copied!
-                        </>
-                      ) : (
-                        <>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                          Copy UPI ID with Amount
-                        </>
-                      )}
-                    </button>
-                  )}
-
-                  {/* Payment failed / retry hint */}
-                  {paymentStatus === 'failed' && (
-                    <div className="p-2.5 sm:p-3 bg-amber-500/20 border border-amber-400/30 rounded-lg sm:rounded-xl">
-                      <p className="text-[11px] sm:text-xs font-bold text-amber-100">
-                        UPI app open nahi hua? Upar diye gaye <strong>GPay / PhonePe / Paytm</strong> buttons try karein, ya <strong>UPI ID copy</strong> karke manually pay karein.
-                      </p>
+                  <div className="w-full space-y-3">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
                       <button
                         type="button"
-                        onClick={() => setPaymentStatus('idle')}
-                        className="mt-2 text-xs font-bold text-white underline hover:text-amber-100"
+                        onClick={handlePaymentClick}
+                        disabled={selectedPayAmount <= 0}
+                        className={`flex-1 py-3 sm:py-3.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all transform ${selectedPayAmount > 0 ? 'bg-white text-[#512da8] hover:shadow-[0_5px_20px_rgba(255,255,255,0.4)] hover:-translate-y-0.5' : 'bg-white/50 text-[#512da8]/60 cursor-not-allowed'}`}
                       >
-                        Retry Payment
+                        <svg width="18" height="18" className="sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                        Pay Online
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText('7488252019@okbizaxis');
+                          setCopiedUpi(true);
+                          setTimeout(() => setCopiedUpi(false), 2000);
+                        }}
+                        className="flex-1 py-3 sm:py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all"
+                      >
+                        {copiedUpi ? (
+                          <><CheckCircle size={16} /> Copied!</>
+                        ) : (
+                          <>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            Copy UPI ID
+                          </>
+                        )}
                       </button>
                     </div>
-                  )}
 
-                  <p className="text-[10px] sm:text-[11px] text-white/70 font-semibold">
-                    Agar app nahi khulta hai, QR scan karein ya UPI ID <strong>{PAYMENT_UPI_ID}</strong> par pay karein.
-                  </p>
+                    <p className="text-[10px] sm:text-[11px] text-white/70 font-semibold text-center mt-1">
+                      Agar app nahi khulta hai, QR scan karein ya UPI ID copy karke pay karein.
+                    </p>
+                  </div>
                 </div>
 
-                <div className="bg-white/10 border border-white/20 rounded-lg sm:rounded-xl p-3 sm:p-4 text-xs sm:text-sm leading-relaxed text-white/90 shadow-sm max-w-2xl mt-auto">
-                  <div className="flex gap-2 sm:gap-3 items-start">
-                    <AlertCircle size={18} className="sm:w-5 sm:h-5 text-amber-300 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <strong className="block mb-1 text-amber-200 text-xs sm:text-sm">Important Note:</strong> 
-                      <p className="mb-1.5 text-xs sm:text-[13px]">
-                        Payment ke baad apna <strong>Screenshot</strong> aur <strong>Student ID</strong> <a href="https://wa.me/917488252019" target="_blank" rel="noreferrer" className="text-amber-100 underline font-bold">7488252019</a> par bhejein taaki payment successful ho sake.
-                      </p>
-                      <p className="text-red-200 font-semibold text-[11px] sm:text-[12px]">
-                        Without sharing the Payment Screenshot, the payment is not valid.
-                      </p>
+                {/* Right Column: WhatsApp Verification */}
+                <div className="flex flex-col justify-center border-t lg:border-t-0 lg:border-l border-white/10 pt-5 lg:pt-0 lg:pl-6">
+                  <div className="bg-white/10 border border-white/20 p-3 sm:p-4 rounded-lg sm:rounded-xl text-[10px] sm:text-[11px] text-[#4ade80] leading-relaxed font-bold mb-4 text-center shadow-sm">
+                    "UTR / Transaction Reference No." Paste karne ke baad hi WhatsApp par message kar sakte hain. Agar aap QR/UPI ID se payment karte hain to UTR number paste karein aur WhatsApp par send karein.
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (utrNumber.length < 12) {
+                        alert('Please enter the 12-digit UTR / Transaction Reference No. first.');
+                      } else {
+                        window.open(`https://wa.me/917488252019?text=${encodeURIComponent(`Hi, I have paid ₹${selectedPayAmount} for Student ID: ${student.studentId}.\nName: ${student.name}\nUTR No: ${utrNumber}\n\n*Please find the screenshot attached.*`)}`, '_blank');
+                      }
+                    }}
+                    className={`w-full py-3 sm:py-3.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all mb-4 border ${utrNumber.length >= 12 ? 'bg-[#25d366] text-white border-[#1da851] hover:shadow-[0_5px_20px_rgba(37,211,102,0.4)] hover:-translate-y-0.5' : 'bg-white/10 text-[#4ade80] border-white/20 hover:bg-white/20'}`}
+                  >
+                    <MessageCircle size={18} /> WhatsApp Screenshot & UTR
+                  </button>
+
+                  <div className="bg-white/10 border border-white/20 rounded-lg sm:rounded-xl p-3 sm:p-4 text-xs sm:text-sm leading-relaxed text-white/90 shadow-sm mt-auto">
+                    <div className="flex gap-2 sm:gap-3 items-start">
+                      <AlertCircle size={18} className="sm:w-5 sm:h-5 text-[#facc15] flex-shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="block mb-2 text-[#facc15] text-xs sm:text-sm font-black">Important Note:</strong> 
+                        <p className="mb-3 text-xs sm:text-[13px] leading-relaxed">
+                          Payment ke baad apna <strong>Screenshot</strong> aur <strong>Student ID 7488252019 par Whatsapps bhejein</strong> taaki payment successful ho sake.
+                        </p>
+                        <p className="text-[#fecdd3] font-bold text-[11px] sm:text-[12px]">
+                          Without sharing the Payment Screenshot, the payment is not valid.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
