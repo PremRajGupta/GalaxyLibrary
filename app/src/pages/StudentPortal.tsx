@@ -558,7 +558,7 @@ export default function StudentPortal() {
                         setCustomPayAmount(e.target.value);
                         setPaymentError('');
                       }}
-                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors font-bold appearance-none text-sm sm:text-base mb-4"
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#512da8] transition-all font-black appearance-none text-sm sm:text-base mb-4 shadow-inner"
                     />
                     
                     <label className="text-[10px] sm:text-[11px] text-white/70 font-bold uppercase tracking-widest mb-1 sm:mb-1.5 block">UTR / Transaction Reference No. (12-Digit)</label>
@@ -568,7 +568,7 @@ export default function StudentPortal() {
                       maxLength={20}
                       value={utrNumber}
                       onChange={(e) => setUtrNumber(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
-                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors font-bold text-sm sm:text-base mb-2"
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#512da8] transition-all font-black text-sm sm:text-base mb-2 shadow-inner"
                     />
                     
                     {paymentError && (

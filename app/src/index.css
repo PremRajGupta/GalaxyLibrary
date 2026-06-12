@@ -76,6 +76,9 @@
     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
+  input, textarea, select {
+    @apply text-slate-900;
+  }
 }
 
 @layer utilities {
