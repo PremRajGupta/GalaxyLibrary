@@ -24,7 +24,7 @@ export default function LandingFooter({
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-blue-400 dark:via-blue-500 to-transparent opacity-30 dark:opacity-50 transition-opacity duration-300" />
       
       {/* Ambient background light */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-[800px] h-[300px] bg-blue-100 dark:bg-blue-600/10 blur-[100px] pointer-events-none rounded-full transition-colors duration-300" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-[90vw] max-w-[800px] h-[45vw] max-h-[300px] bg-blue-100 dark:bg-blue-600/10 blur-[100px] pointer-events-none rounded-full transition-colors duration-300" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">

@@ -42,8 +42,8 @@ export default function Login() {
       
       {/* Background Decor */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center">
-        <div className="absolute w-[500px] h-[500px] rounded-full bg-blue-400/10 blur-[100px] mix-blend-multiply -top-20 -left-20" />
-        <div className="absolute w-[400px] h-[400px] rounded-full bg-purple-400/10 blur-[100px] mix-blend-multiply bottom-10 right-10" />
+        <div className="absolute w-[80vw] max-w-[500px] h-[80vw] max-h-[500px] rounded-full bg-blue-400/10 blur-[100px] mix-blend-multiply -top-16 -left-16" />
+        <div className="absolute w-[70vw] max-w-[400px] h-[70vw] max-h-[400px] rounded-full bg-purple-400/10 blur-[100px] mix-blend-multiply bottom-10 right-10" />
       </div>
 
       {/* Login Form Container */}

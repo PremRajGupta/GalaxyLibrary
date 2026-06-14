@@ -91,7 +91,12 @@
   }
 
   .table-scroll table {
-    @apply min-w-[720px];
+    @apply min-w-full sm:min-w-[720px];
+  }
+
+  .table-scroll th,
+  .table-scroll td {
+    @apply break-words;
   }
 }
 
