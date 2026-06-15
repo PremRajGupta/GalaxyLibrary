@@ -144,6 +144,23 @@ export default function HeroSlider({ slides, pageText, onVisit, onContact }: Her
               {slide.subtitle}
             </motion.p>
           </AnimatePresence>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={onVisit}
+              className="inline-flex items-center justify-center rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 shadow-lg shadow-blue-500/20"
+            >
+              {pageText.heroVisitButton}
+            </button>
+            <button
+              type="button"
+              onClick={onContact}
+              className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+            >
+              {pageText.heroContactButton}
+            </button>
+          </div>
         </div>
       </div>
     </section>
