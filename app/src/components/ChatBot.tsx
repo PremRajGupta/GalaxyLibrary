@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
+import { X, Send, Bot, User, Loader2, Sparkles, MessageCircle } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Initialize Gemini API
@@ -12,18 +12,21 @@ interface Message {
 }
 
 const SYSTEM_PROMPT = `You are the official AI Assistant for Galaxy Library.
-Be helpful, polite, and concise. Respond in Hinglish or English based on the user's language.
+Be helpful, polite, and concise. 
+IMPORTANT FORMATTING: Do NOT use markdown symbols like ** or * or #. Use plain text and real newlines to separate lists and points.
+IMPORTANT LANGUAGE RULE: ALWAYS reply in the exact language the user uses. If the user asks in pure English, reply strictly in English. If the user asks in Hindi or Hinglish (e.g. "kaise ho"), reply in friendly Hinglish.
 Here is the information you know:
 - Library Name: Galaxy Library
 - Address: Tehta, Jehanabad
 - Timing: 24 Hours Open
 - Contact Number: 7488252019
+- Naksha Ghar Contact Number: 7985434308
 - Services: Premium seating, Free Wi-Fi, Daily Newspapers, Magazines, AC environment, RO Water, Solar Power.
 - Fees/Shift Pricing: 
   * 4 Hours: ₹300/month
   * 6 Hours: ₹400/month
   * 8 Hours: ₹500/month
-  * 12 Hours: ₹500/month
+  * 12 Hours: ₹600/month
   * 24 Hours: ₹800/month
   * Night Shift: ₹350/month
 Do not make up any information. If you don't know, ask the user to call the Contact Number.`;
@@ -86,16 +89,30 @@ export default function ChatBot() {
 
   return (
     <>
-      {/* Floating Button */}
+      {/* Floating Buttons */}
       {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 p-3 sm:p-4 bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:shadow-[0_8px_30px_rgba(99,102,241,0.5)] transition-all transform hover:scale-110 z-50 flex items-center justify-center animate-bounce group"
-          style={{ animationDuration: '3s' }}
-        >
-          <Bot size={28} className="group-hover:rotate-12 transition-transform duration-300" />
-          <Sparkles size={14} className="absolute top-2 right-2 text-yellow-300 animate-pulse" />
-        </button>
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col gap-4">
+          <a
+            href="https://wa.me/917488252019?text=Hi! I want to know more about Galaxy Library."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-3 sm:p-4 bg-gradient-to-tr from-green-500 to-emerald-600 text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:shadow-[0_8px_30px_rgba(34,197,94,0.5)] transition-all transform hover:scale-110 flex items-center justify-center animate-bounce group"
+            style={{ animationDuration: '3.5s' }}
+            title="Chat on WhatsApp"
+          >
+            <MessageCircle size={28} className="group-hover:rotate-12 transition-transform duration-300" />
+          </a>
+
+          <button
+            onClick={() => setIsOpen(true)}
+            className="p-3 sm:p-4 bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:shadow-[0_8px_30px_rgba(99,102,241,0.5)] transition-all transform hover:scale-110 flex items-center justify-center animate-bounce group"
+            style={{ animationDuration: '3s' }}
+            title="Ask AI Assistant"
+          >
+            <Bot size={28} className="group-hover:rotate-12 transition-transform duration-300" />
+            <Sparkles size={14} className="absolute top-2 right-2 text-yellow-300 animate-pulse" />
+          </button>
+        </div>
       )}
 
       {/* Chat Window */}
@@ -135,7 +152,7 @@ export default function ChatBot() {
                   {msg.isBot ? <Bot size={16} /> : <User size={16} />}
                 </div>
                 <div 
-                  className={`p-3 rounded-2xl text-sm leading-relaxed ${
+                  className={`p-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                     msg.isBot 
                       ? 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-tl-none shadow-sm' 
                       : 'bg-blue-600 text-white rounded-tr-none shadow-md'

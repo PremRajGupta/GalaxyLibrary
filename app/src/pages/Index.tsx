@@ -95,9 +95,9 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#040814] text-slate-800 dark:text-slate-300 font-sans selection:bg-blue-500/30 transition-colors duration-300">
       <SEOMeta
-        title="Galaxy Library - Top Educational Institute in Tehta | Galaxy Education Hub"
-        description="Galaxy Library is the leading educational institute in Tehta providing quality education, comprehensive admission services, transparent fee collection, and advanced student management systems."
-        keywords="galaxy library, galaxy library tehta, galaxy education, educational institute, quality education, admission portal, fee collection, student management, learning center"
+        title="Galaxy Library Tehta | Education Hub in Tehta, Jehanabad"
+        description="Galaxy Library Tehta is the leading educational institute and education hub in Tehta, Jehanabad. Explore Galaxy Computer Center for premium education and digital skills."
+        keywords="galaxy library tehta,galaxy library jehanabad, galaxy education hub tehta, galaxy educaion hub tehta, education hub in tehta, galaxy computer center tehta, computer center tehta, galaxy computer center jehanabad, educational institute tehta"
         ogUrl="https://galaxyhub.in/"
         canonical="https://galaxyhub.in/"
       />
@@ -145,7 +145,7 @@ export default function Index() {
             ))}
           </motion.div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-8">
             {aboutContent.highlights.map((item, index) => (
               <motion.div
                 key={`${item.label}-${item.value}`}
@@ -156,11 +156,11 @@ export default function Index() {
                 whileHover={{ y: -5, scale: 1.02 }}
                 className="group relative p-1 rounded-2xl bg-gradient-to-b from-slate-200 to-slate-100 hover:from-blue-200 hover:to-purple-200 dark:from-slate-800 dark:to-slate-900/50 dark:hover:from-blue-500/50 dark:hover:to-purple-500/50 transition-all duration-500"
               >
-                <div className="h-full w-full bg-white dark:bg-[#0a0f1e] rounded-xl p-6 sm:p-8 text-center border border-slate-100 dark:border-slate-800 group-hover:border-transparent transition-all duration-500 flex flex-col justify-center shadow-md hover:shadow-lg dark:shadow-lg dark:group-hover:shadow-[0_0_30px_rgba(59,130,246,0.3)]">
-                  <p className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300 mb-2 drop-shadow-sm dark:drop-shadow-md transition-all">
+                <div className="h-full w-full bg-white dark:bg-[#0a0f1e] rounded-xl p-3 sm:p-5 md:p-6 text-center border border-slate-100 dark:border-slate-800 group-hover:border-transparent transition-all duration-500 flex flex-col justify-center items-center shadow-md hover:shadow-lg dark:shadow-lg dark:group-hover:shadow-[0_0_30px_rgba(59,130,246,0.3)]">
+                  <p className="text-xl sm:text-2xl md:text-3xl lg:text-2xl xl:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300 mb-1 sm:mb-2 drop-shadow-sm dark:drop-shadow-md transition-all">
                     {item.value}
                   </p>
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 tracking-wide uppercase group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
+                  <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 tracking-wide uppercase group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
                     {item.label}
                   </p>
                 </div>

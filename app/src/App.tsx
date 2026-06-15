@@ -93,6 +93,13 @@ function AppRoutes() {
       <Route path="/" element={<Index />} />
       <Route path="/about" element={<About />} />
       <Route path="/services" element={<Services />} />
+      
+      {/* Legacy URL Redirects */}
+      <Route path="/privacy-policy" element={<Navigate to="/privacypolicy" replace />} />
+      <Route path="/terms-of-service" element={<Navigate to="/termsofservice" replace />} />
+      <Route path="/computer-center" element={<Navigate to="/computercenter" replace />} />
+
+      {/* Main Pages */}
       <Route path="/privacypolicy" element={<PrivacyPolicy />} />
       <Route path="/termsofservice" element={<TermsOfService />} />
       <Route path="/computercenter" element={<ComputerCenter />} />

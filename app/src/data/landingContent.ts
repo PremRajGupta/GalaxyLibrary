@@ -144,7 +144,7 @@ export const DEFAULT_NAV_MENU_ITEMS: NavMenuItem[] = [
 ];
 
 export const DEFAULT_GALLERY_IMAGE_URL =
-  'https://images.unsplash.com/photo-1497633762263-9fc17917a379?w=800&q=80';
+  'https://images.unsplash.com/photo-1456513080920-9a0d7562240b?w=800&q=80';
 
 export const DEFAULT_FACULTY_PHOTO_URL =
   'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&q=80';
@@ -233,19 +233,19 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     },
     {
       id: 3,
-      image: 'https://images.unsplash.com/photo-1497633762263-9fc17917a379?w=1600&q=80',
+      image: 'https://images.unsplash.com/photo-1456513080920-9a0d7562240b?w=1600&q=80',
       title: 'Books & Resources',
       subtitle: 'Access study material and a calm place to prepare for your goals.',
     },
     {
       id: 4,
-      image: 'https://images.unsplash.com/photo-1524995997947-0401c39e8a98?w=1600&q=80',
+      image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1600&q=80',
       title: 'Join Galaxy Library Today',
       subtitle: 'Flexible shifts, affordable fees, and a supportive study community.',
     },
     {
       id: 5,
-      image: 'https://images.unsplash.com/photo-1524995997947-0401c39e8a98?w=1600&q=80',
+      image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1600&q=80',
       title: 'Join Galaxy Library Today',
       subtitle: 'Separate seats for boys and girls.',
     },
@@ -266,7 +266,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   galleryImages: [
     {
       id: 1,
-      src: 'https://images.unsplash.com/photo-1497633762263-9fc17917a379?w=800&q=80',
+      src: 'https://images.unsplash.com/photo-1456513080920-9a0d7562240b?w=800&q=80',
       title: 'Reading Hall',
       alt: 'Students reading in the library hall',
     },

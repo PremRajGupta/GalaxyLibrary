@@ -5,7 +5,7 @@ import { studentPortalApi } from '../lib/apiService';
 import { 
   LogOut, User, Calendar, CreditCard, Clock, Phone, MapPin, 
   CheckCircle, AlertCircle, Receipt, ShieldCheck, Mail,
-  MessageCircle, Users, Download
+  MessageCircle, Users, Download, BookOpen, Monitor, MessageSquare, Send
 } from 'lucide-react';
 import { getInitials, getAvatarColor } from '../sections/students/students';
 import { getCourseLabel } from '../lib/courseOptions';
@@ -71,7 +71,7 @@ export default function StudentPortal() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'payments'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'payments' | 'courses' | 'feedback'>('overview');
   const [customPayAmount, setCustomPayAmount] = useState<string>('');
   const [utrNumber, setUtrNumber] = useState<string>('');
   const [paymentError, setPaymentError] = useState('');
@@ -317,7 +317,7 @@ export default function StudentPortal() {
         </div>
 
         {/* Tab Navigation Menu */}
-        <div className="flex space-x-1.5 sm:space-x-2 bg-white/50 backdrop-blur-md p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-white shadow-sm mb-6 sm:mb-8 overflow-x-auto w-full md:w-fit mx-0 scrollbar-hide">
+        <div className="flex flex-wrap gap-2 sm:gap-2 bg-white/50 backdrop-blur-md p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-white shadow-sm mb-6 sm:mb-8 w-full md:w-fit mx-0 justify-center md:justify-start">
           <button 
             onClick={() => setActiveTab('overview')}
             className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'overview' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
@@ -335,6 +335,18 @@ export default function StudentPortal() {
             className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'payments' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
           >
             🧾 Payment History
+          </button>
+          <button 
+            onClick={() => setActiveTab('courses')}
+            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'courses' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
+          >
+            📚 Courses
+          </button>
+          <button 
+            onClick={() => setActiveTab('feedback')}
+            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'feedback' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
+          >
+            💬 Feedback
           </button>
         </div>
 
@@ -853,6 +865,57 @@ export default function StudentPortal() {
                   </div>
                 </>
               )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* -------------------- TAB 4: COURSES -------------------- */}
+        {activeTab === 'courses' && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="max-w-4xl mx-auto">
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-sm border border-white p-4 sm:p-6 lg:p-8">
+              <h3 className="font-black text-xl sm:text-2xl text-[#0f172a] mb-6 sm:mb-8 flex items-center gap-2 sm:gap-3 border-b border-slate-100 pb-3 sm:pb-4">
+                <BookOpen size={20} className="sm:w-6 sm:h-6 text-[#3b82f6]" /> Enrolled Courses
+              </h3>
+              <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-5 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                 <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Monitor size={32} />
+                 </div>
+                 <div>
+                    <h4 className="text-lg font-bold text-slate-800">{student.course || "No specific course"}</h4>
+                    <p className="text-sm text-slate-500 mt-1">Status: <span className="text-green-600 font-semibold uppercase">{student.status}</span></p>
+                    <p className="text-sm text-slate-500 mt-1">Joined: {formatJoiningDate(student.admissionDate || student.joiningDate)}</p>
+                 </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* -------------------- TAB 5: FEEDBACK -------------------- */}
+        {activeTab === 'feedback' && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="max-w-4xl mx-auto">
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-sm border border-white p-4 sm:p-6 lg:p-8">
+              <h3 className="font-black text-xl sm:text-2xl text-[#0f172a] mb-6 sm:mb-8 flex items-center gap-2 sm:gap-3 border-b border-slate-100 pb-3 sm:pb-4">
+                <MessageSquare size={20} className="sm:w-6 sm:h-6 text-[#3b82f6]" /> Student Feedback
+              </h3>
+              
+              <div className="max-w-2xl">
+                <p className="text-sm text-slate-600 mb-6">We value your feedback! Share your suggestions, complaints, or ideas to help us improve Galaxy.</p>
+                <textarea 
+                  className="w-full h-32 p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4 resize-none bg-white/50"
+                  placeholder="Type your feedback here..."
+                  id="feedback-text"
+                ></textarea>
+                <button 
+                  onClick={() => {
+                    const text = (document.getElementById('feedback-text') as HTMLTextAreaElement).value;
+                    if(!text) return alert('Please write some feedback first.');
+                    window.open(`https://wa.me/917488252019?text=${encodeURIComponent(`*Student Feedback*\nName: ${student.name}\nID: ${student.studentId}\nFeedback: ${text}`)}`, '_blank');
+                  }}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center gap-2 transition-all shadow-md"
+                >
+                  <Send size={18} /> Submit Feedback
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

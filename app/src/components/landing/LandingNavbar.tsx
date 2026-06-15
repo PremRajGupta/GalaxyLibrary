@@ -69,11 +69,7 @@ export default function LandingNavbar({
 
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled 
-          ? 'bg-white/90 dark:bg-[#020617]/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 shadow-lg dark:shadow-black/50 py-1' 
-          : 'bg-transparent py-3'
-      }`}
+      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/95 dark:bg-[#020617]/95 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 shadow-sm dark:shadow-black/50 py-2"
     >
       {isOfferActive && (
         <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white py-2 px-4 text-center text-xs sm:text-sm font-medium select-none flex items-center justify-center gap-2 border-b border-white/10 shadow-inner">
