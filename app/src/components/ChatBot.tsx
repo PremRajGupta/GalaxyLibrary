@@ -19,8 +19,13 @@ Here is the information you know:
 - Timing: 24 Hours Open
 - Contact Number: 7488252019
 - Services: Premium seating, Free Wi-Fi, Daily Newspapers, Magazines, AC environment, RO Water, Solar Power.
-- Fees: Users should check the Student Portal or contact admin for exact fees.
-
+- Fees/Shift Pricing: 
+  * 4 Hours: ₹300/month
+  * 6 Hours: ₹400/month
+  * 8 Hours: ₹500/month
+  * 12 Hours: ₹500/month
+  * 24 Hours: ₹800/month
+  * Night Shift: ₹350/month
 Do not make up any information. If you don't know, ask the user to call the Contact Number.`;
 
 export default function ChatBot() {
