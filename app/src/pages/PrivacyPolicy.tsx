@@ -29,8 +29,8 @@ export default function PrivacyPolicy() {
         title="Privacy Policy | Galaxy Education Hub"
         description="Privacy policy and data protection guidelines for Galaxy Library."
         keywords="privacy policy, data protection, galaxy library"
-        ogUrl="https://galaxyhub.in/privacy-policy"
-        canonical="https://galaxyhub.in/privacy-policy"
+        ogUrl="https://galaxyhub.in/privacypolicy"
+        canonical="https://galaxyhub.in/privacypolicy"
       />
 
       <LandingNavbar

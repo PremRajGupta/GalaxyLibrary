@@ -13,6 +13,7 @@ import { formatJoiningDate } from '../lib/formatDate';
 import { generateReceiptPDF, getDefaultReceiptLogo } from '../sections/fees/receiptService';
 import S from '../lib/strings';
 import AppLogo from '../components/AppLogo';
+import ChatBot from '../components/ChatBot';
 
 const RUPEE = '\u20B9';
 const PAYMENT_UPI_ID = '7488252019@okbizaxis';
@@ -857,6 +858,7 @@ export default function StudentPortal() {
         )}
 
       </main>
+      <ChatBot />
     </div>
   );
 }

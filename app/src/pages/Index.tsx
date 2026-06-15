@@ -9,6 +9,7 @@ import OfferBanner from '../components/landing/OfferBanner';
 import FacultySection from '../components/landing/FacultySection';
 import ContactSection from '../components/landing/ContactSection';
 import LandingFooter from '../components/landing/LandingFooter';
+import ChatBot from '../components/ChatBot';
 import { SEOMeta } from '../components/SEOMeta';
 import { DEFAULT_SITE_CONTENT, type SiteContent } from '../data/landingContent';
 import { loadSiteContent, SITE_CONTENT_UPDATED_EVENT } from '../lib/siteContentService';
@@ -185,6 +186,7 @@ export default function Index() {
         navMenuItems={navMenuItems}
         onNavigate={scrollTo}
       />
+      <ChatBot />
     </div>
   );
 }

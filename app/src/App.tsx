@@ -93,9 +93,9 @@ function AppRoutes() {
       <Route path="/" element={<Index />} />
       <Route path="/about" element={<About />} />
       <Route path="/services" element={<Services />} />
-      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-      <Route path="/terms-of-service" element={<TermsOfService />} />
-      <Route path="/computer-center" element={<ComputerCenter />} />
+      <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+      <Route path="/termsofservice" element={<TermsOfService />} />
+      <Route path="/computercenter" element={<ComputerCenter />} />
       <Route path="/login" element={<PublicLoginRoute />} />
 
       {/* Admin Protected Routes */}

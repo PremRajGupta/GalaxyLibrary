@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Monitor, Cpu, Code, BookOpen, Clock, Award } from 'lucide-react';
 import LandingNavbar from '../components/landing/LandingNavbar';
 import LandingFooter from '../components/landing/LandingFooter';
+import ChatBot from '../components/ChatBot';
 import { SEOMeta } from '../components/SEOMeta';
 import { DEFAULT_SITE_CONTENT } from '../data/landingContent';
 
@@ -19,6 +20,7 @@ export default function ComputerCenter() {
   };
 
   const { libraryInfo, pageText, navMenuItems } = DEFAULT_SITE_CONTENT;
+  const computerCenterInfo = { ...libraryInfo, name: 'Galaxy Computer Center' };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#040814] text-slate-800 dark:text-slate-300 font-sans selection:bg-blue-500/30 transition-colors duration-300 flex flex-col">
@@ -26,12 +28,12 @@ export default function ComputerCenter() {
         title="Galaxy Computer Center | Coming Soon"
         description="Galaxy Computer Center is launching soon! Get ready for premium computer education, programming courses, and digital skills training in Tehta."
         keywords="galaxy computer center, computer classes tehta, programming courses, digital skills, computer education"
-        ogUrl="https://galaxyhub.in/computer-center"
-        canonical="https://galaxyhub.in/computer-center"
+        ogUrl="https://galaxyhub.in/computercenter"
+        canonical="https://galaxyhub.in/computercenter"
       />
 
       <LandingNavbar
-        libraryInfo={libraryInfo}
+        libraryInfo={computerCenterInfo}
         pageText={pageText}
         navMenuItems={navMenuItems}
         onNavigate={handleNavigate}
@@ -107,11 +109,12 @@ export default function ComputerCenter() {
       </main>
 
       <LandingFooter
-        libraryInfo={libraryInfo}
+        libraryInfo={computerCenterInfo}
         pageText={pageText}
         navMenuItems={navMenuItems}
         onNavigate={handleNavigate}
       />
+      <ChatBot />
     </div>
   );
 }

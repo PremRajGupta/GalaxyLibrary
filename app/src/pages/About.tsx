@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import LandingNavbar from '../components/landing/LandingNavbar';
 import LandingFooter from '../components/landing/LandingFooter';
+import ChatBot from '../components/ChatBot';
 import { SEOMeta } from '../components/SEOMeta';
 import { DEFAULT_SITE_CONTENT } from '../data/landingContent';
 
@@ -312,6 +313,7 @@ export default function About() {
         navMenuItems={navMenuItems}
         onNavigate={scrollTo}
       />
+      <ChatBot />
     </div>
   );
 }

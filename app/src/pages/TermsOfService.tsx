@@ -29,8 +29,8 @@ export default function TermsOfService() {
         title="Terms of Service | Galaxy Education Hub"
         description="Terms of service and rules for Galaxy Library."
         keywords="terms of service, rules, galaxy library"
-        ogUrl="https://galaxyhub.in/terms-of-service"
-        canonical="https://galaxyhub.in/terms-of-service"
+        ogUrl="https://galaxyhub.in/termsofservice"
+        canonical="https://galaxyhub.in/termsofservice"
       />
 
       <LandingNavbar

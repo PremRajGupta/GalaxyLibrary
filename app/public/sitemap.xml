@@ -24,20 +24,20 @@
 
   <!-- Utility / Legal Pages -->
   <url>
-    <loc>https://galaxyhub.in/privacy-policy</loc>
+    <loc>https://galaxyhub.in/privacypolicy</loc>
     <lastmod>2026-06-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://galaxyhub.in/terms-of-service</loc>
+    <loc>https://galaxyhub.in/termsofservice</loc>
     <lastmod>2026-06-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
-    <loc>https://galaxyhub.in/computer-center</loc>
+    <loc>https://galaxyhub.in/computercenter</loc>
     <lastmod>2026-06-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
