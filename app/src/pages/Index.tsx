@@ -118,9 +118,6 @@ export default function Index() {
 
       <HeroSlider
         slides={heroSlides}
-        pageText={pageText}
-        onVisit={() => scrollTo('gallery')}
-        onContact={() => scrollTo('contact')}
       />
 
       <section id="about" className="relative py-24 overflow-hidden bg-white dark:bg-transparent transition-colors duration-300">

@@ -62,12 +62,9 @@ const Typewriter = ({
 
 type HeroSliderProps = {
   slides: HeroSlide[];
-  pageText: PageText;
-  onVisit: () => void;
-  onContact: () => void;
 };
 
-export default function HeroSlider({ slides, pageText, onVisit, onContact }: HeroSliderProps) {
+export default function HeroSlider({ slides }: HeroSliderProps) {
   const [current, setCurrent] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
 

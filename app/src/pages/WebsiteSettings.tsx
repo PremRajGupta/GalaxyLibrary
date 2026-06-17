@@ -7,9 +7,7 @@ import {
   DEFAULT_FACULTY_PHOTO_URL,
   DEFAULT_GALLERY_IMAGE_URL,
   DEFAULT_SITE_CONTENT,
-  NAV_SECTION_OPTIONS,
   nextItemId,
-  type NavMenuItem,
   type PageText,
   type SiteContent,
 } from '../data/landingContent';
@@ -71,35 +69,6 @@ export default function WebsiteSettings() {
     setContent((prev) => ({
       ...prev,
       pageText: { ...prev.pageText, [field]: value },
-    }));
-  };
-
-  const updateNavMenuItem = (index: number, patch: Partial<NavMenuItem>) => {
-    setContent((prev) => {
-      const navMenuItems = [...prev.navMenuItems];
-      navMenuItems[index] = { ...navMenuItems[index], ...patch };
-      return { ...prev, navMenuItems };
-    });
-  };
-
-  const addNavMenuItem = () => {
-    setContent((prev) => ({
-      ...prev,
-      navMenuItems: [
-        ...prev.navMenuItems,
-        {
-          id: nextItemId(prev.navMenuItems),
-          label: 'New Link',
-          sectionId: 'about',
-        },
-      ],
-    }));
-  };
-
-  const removeNavMenuItem = (id: number) => {
-    setContent((prev) => ({
-      ...prev,
-      navMenuItems: prev.navMenuItems.filter((item) => item.id !== id),
     }));
   };
 
