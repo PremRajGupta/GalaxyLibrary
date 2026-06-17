@@ -64,7 +64,7 @@ function StatCard({ icon: Icon, label, value, suffix = '', accent, delay = 0 }: 
             <Icon className="text-blue-500 dark:text-blue-400 group-hover:text-cyan-500 dark:group-hover:text-cyan-300 transition-colors w-8 h-8 sm:w-10 sm:h-10" />
           </div>
           <div className="text-left flex-1">
-            <p className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-800 to-slate-500 group-hover:from-blue-600 group-hover:to-cyan-500 dark:from-white dark:to-slate-400 dark:group-hover:from-blue-200 dark:group-hover:to-cyan-100 mb-1 tabular-nums drop-shadow-sm transition-all duration-500">
+            <p className="text-4xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-800 to-slate-500 group-hover:from-blue-600 group-hover:to-cyan-500 dark:from-white dark:to-slate-400 dark:group-hover:from-blue-200 dark:group-hover:to-cyan-100 mb-1 tabular-nums drop-shadow-sm transition-all duration-500">
               {display.toLocaleString('en-IN')}
               {suffix}
             </p>
@@ -125,7 +125,7 @@ export default function StatsSection({ pageText }: StatsSectionProps) {
         </motion.div>
 
         {!stats ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 w-full">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
@@ -134,7 +134,7 @@ export default function StatsSection({ pageText }: StatsSectionProps) {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 w-full">
             {cards.map((card, index) =>
               'staticText' in card && card.staticText ? (
                 <motion.div
@@ -155,7 +155,7 @@ export default function StatsSection({ pageText }: StatsSectionProps) {
                         <card.icon className="text-blue-500 dark:text-blue-400 group-hover:text-cyan-500 dark:group-hover:text-cyan-300 transition-colors w-8 h-8 sm:w-10 sm:h-10" />
                       </div>
                       <div className="text-left flex-1">
-                        <p className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-800 to-slate-500 group-hover:from-blue-600 group-hover:to-cyan-500 dark:from-white dark:to-slate-400 dark:group-hover:from-blue-200 dark:group-hover:to-cyan-100 mb-1 drop-shadow-sm transition-all duration-500">
+                        <p className="text-4xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-800 to-slate-500 group-hover:from-blue-600 group-hover:to-cyan-500 dark:from-white dark:to-slate-400 dark:group-hover:from-blue-200 dark:group-hover:to-cyan-100 mb-1 drop-shadow-sm transition-all duration-500">
                           {card.staticText}
                         </p>
                         <p className="text-sm sm:text-base font-semibold text-slate-500 dark:text-slate-400 tracking-wide uppercase group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">{card.label}</p>

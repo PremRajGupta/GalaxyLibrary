@@ -102,7 +102,7 @@ export default function LandingNavbar({
             </span>
           </button>
 
-          <nav className="hidden md:flex items-center gap-2 lg:gap-4 bg-slate-100/50 dark:bg-white/5 rounded-full px-2 py-1.5 border border-slate-200 dark:border-white/10 backdrop-blur-md transition-colors">
+          <nav className="hidden lg:flex items-center gap-2 lg:gap-4 bg-slate-100/50 dark:bg-white/5 rounded-full px-2 py-1.5 border border-slate-200 dark:border-white/10 backdrop-blur-md transition-colors">
             {navMenuItems.map((link) => (
               <button
                 key={link.id}
@@ -115,7 +115,7 @@ export default function LandingNavbar({
             ))}
           </nav>
 
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-4">
             <button
               onClick={toggleTheme}
               className="p-2 rounded-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 transition-all border border-slate-200 dark:border-white/10"
@@ -133,7 +133,7 @@ export default function LandingNavbar({
             </Link>
           </div>
 
-          <div className="md:hidden flex items-center gap-3">
+          <div className="lg:hidden flex items-center gap-3">
             <button
               onClick={toggleTheme}
               className="p-2 rounded-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white transition-all border border-slate-200 dark:border-white/10"
@@ -158,7 +158,7 @@ export default function LandingNavbar({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="md:hidden overflow-hidden bg-white/95 dark:bg-[#020617]/95 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 px-4 py-4 space-y-2 transition-colors"
+            className="lg:hidden overflow-hidden bg-white/95 dark:bg-[#020617]/95 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 px-4 py-4 space-y-2 transition-colors"
           >
             {navMenuItems.map((link) => (
               <button

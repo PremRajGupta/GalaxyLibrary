@@ -26,7 +26,7 @@ const labelClass = 'block text-xs font-semibold text-[#475569] mb-1';
 const TABS = [
   { id: 'general', label: 'General & Contact' },
   { id: 'announcement', label: 'Announcements & Offers' },
-  { id: 'navbar', label: 'Navbar & Footer' },
+  { id: 'navbar', label: 'Footer' },
   { id: 'hero', label: 'Hero Slider' },
   { id: 'about', label: 'About' },
   { id: 'gallery', label: 'Gallery' },
@@ -512,96 +512,6 @@ export default function WebsiteSettings() {
         {activeTab === 'navbar' && (
           <section className="page-card space-y-6">
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-[#1e293b]">Navbar Menu</h3>
-                  <p className="text-sm text-[#64748b] mt-1">Add, remove, or reorder links shown in the top menu and footer quick links.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={addNavMenuItem}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-[#3b82f6] bg-[#dbeafe] rounded-lg hover:bg-[#bfdbfe]"
-                >
-                  <Plus size={16} /> Add Menu Item
-                </button>
-              </div>
-              <div className="space-y-3">
-                {content.navMenuItems.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className="flex flex-col sm:flex-row sm:items-end gap-3 p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]"
-                  >
-                    <div className="flex-1">
-                      <label className={labelClass}>Link label</label>
-                      <input
-                        className={inputClass}
-                        value={item.label}
-                        onChange={(e) => updateNavMenuItem(index, { label: e.target.value })}
-                        placeholder="e.g. Gallery"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className={labelClass}>Scroll to section</label>
-                      <select
-                        className={inputClass}
-                        value={item.sectionId}
-                        onChange={(e) => updateNavMenuItem(index, { sectionId: e.target.value })}
-                      >
-                        {NAV_SECTION_OPTIONS.map((opt) => (
-                          <option key={opt.id} value={opt.id}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeNavMenuItem(item.id)}
-                      disabled={content.navMenuItems.length <= 1}
-                      className="p-2.5 text-[#ef4444] hover:bg-[#fee2e2] rounded-lg disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-                      title={content.navMenuItems.length <= 1 ? 'At least one menu item required' : 'Remove'}
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 max-w-xs">
-                <label className={labelClass}>Login Button (always shown)</label>
-                <input
-                  className={inputClass}
-                  value={content.pageText.navLogin}
-                  onChange={(e) => updatePageText('navLogin', e.target.value)}
-                />
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Hero Buttons</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div><label className={labelClass}>Visit Button</label><input className={inputClass} value={content.pageText.heroVisitButton} onChange={(e) => updatePageText('heroVisitButton', e.target.value)} /></div>
-                <div><label className={labelClass}>Contact Button</label><input className={inputClass} value={content.pageText.heroContactButton} onChange={(e) => updatePageText('heroContactButton', e.target.value)} /></div>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Stats Section</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                <div className="sm:col-span-2"><label className={labelClass}>Section Title</label><input className={inputClass} value={content.pageText.statsTitle} onChange={(e) => updatePageText('statsTitle', e.target.value)} /></div>
-                <div className="sm:col-span-2"><label className={labelClass}>Section Subtitle</label><input className={inputClass} value={content.pageText.statsSubtitle} onChange={(e) => updatePageText('statsSubtitle', e.target.value)} /></div>
-                <div><label className={labelClass}>Admissions Label</label><input className={inputClass} value={content.pageText.statsAdmissionsLabel} onChange={(e) => updatePageText('statsAdmissionsLabel', e.target.value)} /></div>
-                <div><label className={labelClass}>Visitors Label</label><input className={inputClass} value={content.pageText.statsVisitorsLabel} onChange={(e) => updatePageText('statsVisitorsLabel', e.target.value)} /></div>
-                <div><label className={labelClass}>Study Shifts Label</label><input className={inputClass} value={content.pageText.statsStudyShiftsLabel} onChange={(e) => updatePageText('statsStudyShiftsLabel', e.target.value)} /></div>
-                <div className="sm:col-span-2">
-                  <label className={labelClass}>Footnote (below stats cards)</label>
-                  <textarea
-                    className={`${inputClass} min-h-[88px]`}
-                    value={content.pageText.statsFootnote}
-                    onChange={(e) => updatePageText('statsFootnote', e.target.value)}
-                    placeholder="Small note shown under the stats section"
-                  />
-                </div>
-              </div>
-            </div>
-            <div>
               <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Footer</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className={labelClass}>Quick Links Title</label><input className={inputClass} value={content.pageText.footerQuickLinksTitle} onChange={(e) => updatePageText('footerQuickLinksTitle', e.target.value)} /></div>
@@ -888,27 +798,29 @@ export default function WebsiteSettings() {
             </div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-[#1e293b]">Faculty Profiles</h3>
-              <button
-                type="button"
-                onClick={() =>
-                  setContent((prev) => ({
-                    ...prev,
-                    facultyMembers: [
-                      ...prev.facultyMembers,
-                      {
-                        id: nextItemId(prev.facultyMembers),
-                        photo: DEFAULT_FACULTY_PHOTO_URL,
-                        name: 'New Faculty',
-                        role: 'Role / Designation',
-                        detail: 'Short detail about this faculty member.',
-                      },
-                    ],
-                  }))
-                }
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-[#3b82f6] bg-[#dbeafe] rounded-lg"
-              >
-                <Plus size={16} /> Add Profile
-              </button>
+              {content.facultyMembers.length < 4 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setContent((prev) => ({
+                      ...prev,
+                      facultyMembers: [
+                        ...prev.facultyMembers,
+                        {
+                          id: nextItemId(prev.facultyMembers),
+                          photo: DEFAULT_FACULTY_PHOTO_URL,
+                          name: 'New Faculty',
+                          role: 'Role / Designation',
+                          detail: 'Short detail about this faculty member.',
+                        },
+                      ],
+                    }))
+                  }
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-[#3b82f6] bg-[#dbeafe] rounded-lg hover:bg-blue-200 transition-colors"
+                >
+                  <Plus size={16} /> Add Profile
+                </button>
+              )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {content.facultyMembers.map((member, index) => (
