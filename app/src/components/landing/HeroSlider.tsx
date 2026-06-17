@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
-import type { HeroSlide, PageText } from '../../data/landingContent';
+import type { HeroSlide } from '../../data/landingContent';
 
 const Typewriter = ({ 
   words, 
