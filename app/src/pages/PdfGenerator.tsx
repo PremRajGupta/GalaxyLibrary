@@ -46,7 +46,7 @@ export default function PdfGenerator() {
   const [studentFees, setStudentFees] = useState<Record<string, number>>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [filterAdvanceOnly, setFilterAdvanceOnly] = useState(false);
-  const RECORDS_PER_PAGE = 7;
+  const RECORDS_PER_PAGE = 20;
 
   const fetchValidityData = async (paymentsList: PaymentReceipt[]) => {
     try {
