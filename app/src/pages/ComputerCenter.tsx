@@ -75,27 +75,32 @@ export default function ComputerCenter() {
     };
   }, []);
 
+  const handleScrollToSection = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    setIsSecondaryMenuOpen(false);
+    setTimeout(() => {
+      const element = document.getElementById(id);
+      if (element) {
+        // navHeight is main navbar, plus ~60px for the secondary navbar
+        const y = element.getBoundingClientRect().top + window.scrollY - navHeight - 60;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }, 150);
+  };
+
   const NavLinks = () => (
     <>
       <a href="#" className="flex items-center px-4 py-3 lg:py-2 text-[#ff5c5c] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap">Home</a>
       <a 
         href="#about-us" 
-        onClick={(e) => {
-          e.preventDefault();
-          document.getElementById('about-us')?.scrollIntoView({ behavior: 'smooth' });
-          setIsSecondaryMenuOpen(false);
-        }}
+        onClick={(e) => handleScrollToSection(e, 'about-us')}
         className="flex items-center px-4 py-3 lg:py-2 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap"
       >
         About Us
       </a>
       <a 
         href="#faculty" 
-        onClick={(e) => {
-          e.preventDefault();
-          document.getElementById('faculty')?.scrollIntoView({ behavior: 'smooth' });
-          setIsSecondaryMenuOpen(false);
-        }}
+        onClick={(e) => handleScrollToSection(e, 'faculty')}
         className="flex items-center px-4 py-3 lg:py-2 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap"
       >
         Teachers
@@ -103,11 +108,7 @@ export default function ComputerCenter() {
       {/* <a href="#" className="flex items-center px-4 py-3 lg:py-2 text-[#ff5c5c] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap">Franchise</a> */}
       <a 
         href="#courses-section"
-        onClick={(e) => {
-          e.preventDefault();
-          document.getElementById('courses-section')?.scrollIntoView({ behavior: 'smooth' });
-          setIsSecondaryMenuOpen(false);
-        }}
+        onClick={(e) => handleScrollToSection(e, 'courses-section')}
         className="flex items-center px-4 py-3 lg:py-2 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap"
       >
         Courses
@@ -186,9 +187,52 @@ export default function ComputerCenter() {
         onNavigate={handleNavigate}
       />
 
-      <main className="flex-grow w-full">
+      <main className="flex-grow w-full relative">
+        {/* SECONDARY NAVIGATION BAR */}
+        <div 
+          className="w-full sticky z-40 bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-xl border-y border-slate-200 dark:border-slate-800 shadow-md"
+          style={{ top: `${navHeight}px`, marginTop: `${navHeight}px` }}
+        >
+          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+            
+            {/* Mobile Toggle Button */}
+            <div className="lg:hidden flex items-center justify-between py-3">
+              <span className="font-bold text-slate-800 dark:text-slate-200">Quick Links</span>
+              <button 
+                onClick={() => setIsSecondaryMenuOpen(!isSecondaryMenuOpen)}
+                className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                {isSecondaryMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            </div>
+
+            {/* Desktop Nav */}
+            <div className="hidden lg:flex items-center justify-center py-2.5">
+              <nav className="flex items-center gap-1 sm:gap-2 text-[14px] font-semibold min-w-max">
+                <NavLinks />
+              </nav>
+            </div>
+
+            {/* Mobile Nav Dropdown */}
+            <AnimatePresence>
+              {isSecondaryMenuOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="lg:hidden overflow-hidden"
+                >
+                  <nav className="flex flex-col gap-1 text-[14px] font-semibold pb-4 pt-1">
+                    <NavLinks />
+                  </nav>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
         {/* HERO SECTION */}
-        <section className="relative w-full min-h-screen flex flex-col justify-start overflow-hidden bg-slate-900">
+        <section className="relative w-full min-h-[calc(100vh-140px)] flex flex-col justify-start overflow-hidden bg-slate-900">
           {/* Background Image & Overlay */}
           <div className="absolute inset-0 z-0">
             <img 
@@ -199,49 +243,6 @@ export default function ComputerCenter() {
             {/* Deep gradient overlay to make text readable */}
             <div className="absolute inset-0 bg-gradient-to-r from-[#020617] via-[#020617]/80 to-transparent"></div>
             <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent"></div>
-          </div>
-
-          {/* SECONDARY NAVIGATION BAR */}
-          <div 
-            className="w-full sticky z-40 bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-xl border-y border-slate-200 dark:border-slate-800 shadow-md"
-            style={{ top: `${navHeight}px`, marginTop: `${navHeight}px` }}
-          >
-            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-              
-              {/* Mobile Toggle Button */}
-              <div className="lg:hidden flex items-center justify-between py-3">
-                <span className="font-bold text-slate-800 dark:text-slate-200">Quick Links</span>
-                <button 
-                  onClick={() => setIsSecondaryMenuOpen(!isSecondaryMenuOpen)}
-                  className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                >
-                  {isSecondaryMenuOpen ? <X size={20} /> : <Menu size={20} />}
-                </button>
-              </div>
-
-              {/* Desktop Nav */}
-              <div className="hidden lg:flex items-center justify-center py-2.5">
-                <nav className="flex items-center gap-1 sm:gap-2 text-[14px] font-semibold min-w-max">
-                  <NavLinks />
-                </nav>
-              </div>
-
-              {/* Mobile Nav Dropdown */}
-              <AnimatePresence>
-                {isSecondaryMenuOpen && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="lg:hidden overflow-hidden"
-                  >
-                    <nav className="flex flex-col gap-1 text-[14px] font-semibold pb-4 pt-1">
-                      <NavLinks />
-                    </nav>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
           </div>
 
           <div className="flex-grow flex items-center justify-start w-full relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
