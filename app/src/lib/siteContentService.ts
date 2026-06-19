@@ -121,6 +121,14 @@ export function mergeSiteContent(saved: Partial<SiteContent>): SiteContent {
       saved.facultyMembers && saved.facultyMembers.length > 0
         ? saved.facultyMembers
         : DEFAULT_SITE_CONTENT.facultyMembers,
+    computerCenterTeachers:
+      saved.computerCenterTeachers && saved.computerCenterTeachers.length > 0
+        ? saved.computerCenterTeachers
+        : DEFAULT_SITE_CONTENT.computerCenterTeachers,
+    computerCourses:
+      saved.computerCourses && saved.computerCourses.length > 0
+        ? saved.computerCourses
+        : DEFAULT_SITE_CONTENT.computerCourses,
     updatedAt: saved.updatedAt,
   };
 }
@@ -135,9 +143,11 @@ export function getStoredSiteContent(): SiteContent | null {
   }
 }
 
-export function saveStoredSiteContent(content: SiteContent) {
+export function saveStoredSiteContent(content: SiteContent, dispatch: boolean = true) {
   localStorage.setItem(SITE_CONTENT_STORAGE_KEY, JSON.stringify(content));
-  window.dispatchEvent(new CustomEvent(SITE_CONTENT_UPDATED_EVENT));
+  if (dispatch) {
+    window.dispatchEvent(new CustomEvent(SITE_CONTENT_UPDATED_EVENT));
+  }
 }
 
 export function clearStoredSiteContent() {
@@ -157,6 +167,14 @@ export function prepareSiteContentForSave(content: SiteContent): SiteContent {
   });
 
   const facultyMembers = content.facultyMembers.map((member) => ({
+    ...member,
+    photo: (member.photo ?? '').trim(),
+    name: (member.name ?? '').trim(),
+    role: (member.role ?? '').trim(),
+    detail: (member.detail ?? '').trim(),
+  }));
+
+  const computerCenterTeachers = (content.computerCenterTeachers || []).map((member) => ({
     ...member,
     photo: (member.photo ?? '').trim(),
     name: (member.name ?? '').trim(),
@@ -201,6 +219,7 @@ export function prepareSiteContentForSave(content: SiteContent): SiteContent {
     navMenuItems,
     galleryImages,
     facultyMembers,
+    computerCenterTeachers,
     aboutContent: {
       ...content.aboutContent,
       paragraphs: content.aboutContent.paragraphs.filter((p) => p.trim()),
@@ -219,7 +238,7 @@ export async function loadSiteContent(): Promise<LoadSiteContentResult> {
   try {
     const data = await siteContentApi.get();
     const apiContent = mergeSiteContent(data);
-    saveStoredSiteContent(apiContent);
+    saveStoredSiteContent(apiContent, false);
     return { content: apiContent, fromApi: true };
   } catch (error) {
     console.warn('Could not load site content from API, using local fallback:', error);

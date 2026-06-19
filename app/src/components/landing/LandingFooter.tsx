@@ -27,8 +27,8 @@ export default function LandingFooter({
       {/* Ambient background light */}
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-[90vw] max-w-[800px] h-[45vw] max-h-[300px] bg-blue-100 dark:bg-blue-600/10 blur-[120px] pointer-events-none rounded-full transition-colors duration-300" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-12">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* Logo & About */}
           <div className="flex flex-col items-start lg:col-span-1">
             <div className="mb-6 flex items-center gap-3">
@@ -93,9 +93,12 @@ export default function LandingFooter({
           </div>
         </div>
 
-        <div className="pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-sm font-medium transition-colors">
-          <p>© {year} {libraryInfo.name}. {pageText.footerCopyright}</p>
-          <div className="flex gap-6">
+        <div className="pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-sm font-medium transition-colors">
+          <p className="md:flex-1 text-center md:text-left">&copy; {year} {libraryInfo.name}. {pageText.footerCopyright}</p>
+          <p className="md:flex-1 text-center font-bold text-blue-600 dark:text-blue-400">
+            Developer By: Roy Prem - From Bihar
+          </p>
+          <div className="md:flex-1 flex justify-center md:justify-end gap-6">
             <Link to="/privacypolicy" className="hover:text-slate-600 dark:hover:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Privacy Policy</Link>
             <Link to="/termsofservice" className="hover:text-slate-600 dark:hover:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Terms of Service</Link>
           </div>

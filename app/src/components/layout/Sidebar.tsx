@@ -14,6 +14,7 @@ import {
   LogOut,
   X,
   Globe,
+  Monitor,
 } from 'lucide-react';
 
 import AppLogo from '../AppLogo';
@@ -28,6 +29,7 @@ const menuItems = [
   { path: '/requests', label: S.sidebar.requests, icon: MessageSquare },
   { path: '/students', label: S.sidebar.students, icon: Users },
   { path: '/reports', label: S.sidebar.reports, icon: FileText },
+  { path: '/computer-center-settings', label: 'Computer Center', icon: Monitor },
   { path: '/website-settings', label: S.sidebar.website, icon: Globe },
 ];
 

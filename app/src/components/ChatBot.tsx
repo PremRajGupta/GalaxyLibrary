@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Bot, User, Loader2, Sparkles, MessageCircle } from 'lucide-react';
+import { X, Send, Bot, User, Loader2, Sparkles, MessageCircle, ArrowUp } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Initialize Gemini API
@@ -38,6 +38,7 @@ export default function ChatBot() {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom of chat
@@ -50,6 +51,18 @@ export default function ChatBot() {
       scrollToBottom();
     }
   }, [messages, isOpen]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -112,6 +125,16 @@ export default function ChatBot() {
             <Bot size={28} className="group-hover:rotate-12 transition-transform duration-300" />
             <Sparkles size={14} className="absolute top-2 right-2 text-yellow-300 animate-pulse" />
           </button>
+
+          {showScrollTop && (
+            <button
+              onClick={scrollToTop}
+              className="w-12 h-12 sm:w-14 sm:h-14 mx-auto bg-white/90 dark:bg-[#1e293b]/90 backdrop-blur-xl text-slate-700 dark:text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(59,130,246,0.4)] border border-slate-200/50 dark:border-slate-700/50 hover:bg-gradient-to-tr hover:from-blue-600 hover:to-indigo-600 hover:text-white hover:border-transparent transition-all duration-300 transform hover:-translate-y-1.5 flex items-center justify-center group animate-fade-in"
+              title="Scroll to Top"
+            >
+              <ArrowUp size={24} className="group-hover:-translate-y-1 transition-transform duration-300" />
+            </button>
+          )}
         </div>
       )}
 

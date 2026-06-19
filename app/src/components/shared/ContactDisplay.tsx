@@ -75,84 +75,90 @@ export default function ContactDisplay({
   return (
     <motion.div 
       whileHover={{ y: -5 }}
-      className="relative group p-1 rounded-3xl bg-gradient-to-b from-slate-200 to-slate-100 dark:from-slate-800 dark:to-slate-900 hover:from-blue-200 hover:to-purple-200 dark:hover:from-blue-500/50 dark:hover:to-purple-500/50 transition-all duration-500 shadow-lg dark:shadow-xl hover:shadow-xl dark:hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]"
+      className="relative group p-1 rounded-3xl bg-gradient-to-b from-slate-200 to-slate-100 dark:from-slate-800 dark:to-slate-900 hover:from-blue-200 hover:to-purple-200 dark:hover:from-blue-500/50 dark:hover:to-purple-500/50 transition-all duration-500 shadow-lg dark:shadow-xl hover:shadow-xl dark:hover:shadow-[0_0_30px_rgba(59,130,246,0.2)] h-full"
     >
-      <div className="bg-white dark:bg-[#0a0f1e] rounded-[1.35rem] p-8 sm:p-10 h-full border border-slate-100 dark:border-slate-800 group-hover:border-transparent transition-all duration-500 relative overflow-hidden">
+      <div className="bg-white dark:bg-[#0a0f1e] rounded-[1.35rem] p-6 sm:p-8 h-full border border-slate-100 dark:border-slate-800 group-hover:border-transparent transition-all duration-500 relative overflow-hidden flex flex-col">
         {/* Ambient Glow */}
         <div className="absolute top-0 right-0 w-40 h-40 bg-blue-100 dark:bg-blue-500/10 blur-[50px] pointer-events-none rounded-full transition-colors duration-300" />
         
-        <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 mb-8 transition-colors">{title}</h3>
+        <h3 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 mb-6 transition-colors">{title}</h3>
 
-        <div className="space-y-6 relative z-10">
-          <div className="flex items-start gap-5">
-            <a
-              href={phoneUrl}
-              aria-label={`Call ${contact.phone}`}
-              className="w-12 h-12 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/30 rounded-xl flex items-center justify-center flex-shrink-0 hover:bg-blue-100 dark:hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-400 transition-all group/icon"
-            >
-              <Phone className="text-blue-600 dark:text-blue-400 group-hover/icon:text-blue-700 dark:group-hover/icon:text-blue-300 group-hover/icon:scale-110 transition-all" size={20} />
-            </a>
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 transition-colors">{phoneLabel}</p>
+        <div className="space-y-5 relative z-10 flex-grow">
+          {contact.phone && (
+            <div className="flex items-start gap-4">
               <a
                 href={phoneUrl}
-                className="text-lg text-slate-800 dark:text-slate-200 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                aria-label={`Call ${contact.phone}`}
+                className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/30 rounded-xl flex items-center justify-center flex-shrink-0 hover:bg-blue-100 dark:hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-400 transition-all group/icon"
               >
-                {contact.phone}
+                <Phone className="text-blue-600 dark:text-blue-400 group-hover/icon:text-blue-700 dark:group-hover/icon:text-blue-300 group-hover/icon:scale-110 transition-all" size={20} />
               </a>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-0.5 transition-colors">{phoneLabel}</p>
+                <a
+                  href={phoneUrl}
+                  className="text-base sm:text-lg text-slate-800 dark:text-slate-200 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {contact.phone}
+                </a>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="flex items-start gap-5">
-            <a
-              href={emailUrl}
-              aria-label={`Email ${contact.email}`}
-              className="w-12 h-12 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/30 rounded-xl flex items-center justify-center flex-shrink-0 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-400 transition-all group/icon"
-            >
-              <Mail className="text-emerald-600 dark:text-emerald-400 group-hover/icon:text-emerald-700 dark:group-hover/icon:text-emerald-300 group-hover/icon:scale-110 transition-all" size={20} />
-            </a>
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 transition-colors">{emailLabel}</p>
+          {contact.email && (
+            <div className="flex items-start gap-4">
               <a
                 href={emailUrl}
-                className="text-lg text-slate-800 dark:text-slate-200 font-medium hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors break-all"
+                aria-label={`Email ${contact.email}`}
+                className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/30 rounded-xl flex items-center justify-center flex-shrink-0 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-400 transition-all group/icon"
               >
-                {contact.email}
+                <Mail className="text-emerald-600 dark:text-emerald-400 group-hover/icon:text-emerald-700 dark:group-hover/icon:text-emerald-300 group-hover/icon:scale-110 transition-all" size={20} />
               </a>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-0.5 transition-colors">{emailLabel}</p>
+                <a
+                  href={emailUrl}
+                  className="text-base sm:text-lg text-slate-800 dark:text-slate-200 font-medium hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors break-all"
+                >
+                  {contact.email}
+                </a>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="flex items-start gap-5">
-            <a
-              href={mapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Open ${contact.address} on Google Maps`}
-              className="w-12 h-12 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/30 rounded-xl flex items-center justify-center flex-shrink-0 hover:bg-amber-100 dark:hover:bg-amber-500/20 hover:border-amber-300 dark:hover:border-amber-400 transition-all group/icon"
-            >
-              <MapPin className="text-amber-600 dark:text-amber-400 group-hover/icon:text-amber-700 dark:group-hover/icon:text-amber-300 group-hover/icon:scale-110 transition-all" size={20} />
-            </a>
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 transition-colors">{addressLabel}</p>
+          {contact.address && (
+            <div className="flex items-start gap-4">
               <a
                 href={mapUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-lg text-slate-800 dark:text-slate-200 font-medium hover:text-amber-600 dark:hover:text-amber-400 transition-colors leading-snug block"
+                aria-label={`Open ${contact.address} on Google Maps`}
+                className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/30 rounded-xl flex items-center justify-center flex-shrink-0 hover:bg-amber-100 dark:hover:bg-amber-500/20 hover:border-amber-300 dark:hover:border-amber-400 transition-all group/icon"
               >
-                {contact.address}
+                <MapPin className="text-amber-600 dark:text-amber-400 group-hover/icon:text-amber-700 dark:group-hover/icon:text-amber-300 group-hover/icon:scale-110 transition-all" size={20} />
               </a>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-0.5 transition-colors">{addressLabel}</p>
+                <a
+                  href={mapUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm sm:text-base text-slate-800 dark:text-slate-200 font-medium hover:text-amber-600 dark:hover:text-amber-400 transition-colors leading-snug block"
+                >
+                  {contact.address}
+                </a>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <a
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-10 relative group px-8 py-4 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 text-base font-bold rounded-xl border border-green-200 dark:border-green-500/30 hover:bg-green-500 dark:hover:bg-green-500 hover:text-white dark:hover:text-white hover:border-green-500 dark:hover:border-green-500 transition-all shadow-sm dark:shadow-[0_0_15px_rgba(34,197,94,0.1)] hover:shadow-md dark:hover:shadow-[0_0_25px_rgba(34,197,94,0.4)] flex items-center justify-center gap-3"
+          className="mt-8 mt-auto relative group px-6 py-3.5 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 text-base font-bold rounded-xl border border-green-200 dark:border-green-500/30 hover:bg-green-500 dark:hover:bg-green-500 hover:text-white dark:hover:text-white hover:border-green-500 dark:hover:border-green-500 transition-all shadow-sm dark:shadow-[0_0_15px_rgba(34,197,94,0.1)] hover:shadow-md dark:hover:shadow-[0_0_25px_rgba(34,197,94,0.4)] flex items-center justify-center gap-2"
         >
-          <MessageCircle size={24} className="relative z-10" />
+          <MessageCircle size={22} className="relative z-10" />
           <span className="relative z-10">{whatsappButtonText}</span>
         </a>
       </div>

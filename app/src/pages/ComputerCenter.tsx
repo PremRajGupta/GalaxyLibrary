@@ -1,22 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Monitor, Cpu, Code, BookOpen, Clock, Award, ArrowRight, IndianRupee, Sparkles, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Monitor, Cpu, Code, BookOpen, Clock, Award, ArrowRight, IndianRupee, Sparkles, ChevronRight, Menu, X, GraduationCap, Presentation, Library } from 'lucide-react';
 import LandingNavbar from '../components/landing/LandingNavbar';
 import LandingFooter from '../components/landing/LandingFooter';
+import FacultySection from '../components/landing/FacultySection';
 import ChatBot from '../components/ChatBot';
 import { SEOMeta } from '../components/SEOMeta';
-import { DEFAULT_SITE_CONTENT } from '../data/landingContent';
+import { DEFAULT_SITE_CONTENT, type SiteContent } from '../data/landingContent';
+import { loadSiteContent, getStoredSiteContent, SITE_CONTENT_UPDATED_EVENT } from '../lib/siteContentService';
 
-const topCourses = [
-  { id: 'bcc', title: 'BCC', fullName: 'BASIC COMPUTER COURSE', duration: '2 Months', fee: '1,000.00', color: 'from-slate-900 to-[#0a192f]' },
-  { id: 'dca', title: 'DCA', fullName: 'DIPLOMA IN COMPUTER APPLICATION', duration: '6 Months', fee: '2,000.00', color: 'from-[#0a192f] to-slate-900' },
-  { id: 'adca', title: 'ADCA', fullName: 'ADVANCE DIPLOMA', duration: '6 Months', fee: '2,000.00', color: 'from-slate-950 to-slate-900' },
-  { id: 'dtp', title: 'DTP', fullName: 'DESKTOP PUBLISHING', duration: '3 Months', fee: '1,000.00', color: 'from-[#1e1e2f] to-black' },
-  { id: 'tally', title: 'Tally With Gst', fullName: 'MASTER ACCOUNTING', duration: '3 Months', fee: '1,000.00', color: 'from-slate-900 to-[#0f172a]' },
-  { id: 'network', title: 'Computer Networking', fullName: 'NETWORKING FUNDAMENTALS', duration: '2 Months', fee: '1,500.00', color: 'from-[#0b1b3d] to-slate-900' },
-  { id: 'c', title: 'C Programming', fullName: 'LEARN C PROGRAMMING', duration: '2 Months', fee: '1,000.00', color: 'from-slate-900 to-black' },
-  { id: 'css', title: 'CSS', fullName: 'CSS 3 STYLING', duration: '1 Months', fee: '500.00', color: 'from-[#0d2a52] to-slate-900' },
+const TYPEWRITER_WORDS = [
+  "Start Your Professional Career",
+  "Learn Programming & Coding",
+  "Master Advanced Tech Skills"
 ];
 
 const Typewriter = ({ words }: { words: string[] }) => {
@@ -55,16 +52,121 @@ const Typewriter = ({ words }: { words: string[] }) => {
 
 export default function ComputerCenter() {
   const navigate = useNavigate();
+  const [isSecondaryMenuOpen, setIsSecondaryMenuOpen] = useState(false);
+  const [content, setContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
+  const [navHeight, setNavHeight] = useState(72);
+
+  useEffect(() => {
+    const updateNavHeight = () => {
+      const mainNav = document.getElementById('main-landing-navbar');
+      if (mainNav) {
+        setNavHeight(mainNav.getBoundingClientRect().height);
+      }
+    };
+    updateNavHeight();
+    window.addEventListener('resize', updateNavHeight);
+    
+    // Also run occasionally in case the announcement loads later
+    const interval = setInterval(updateNavHeight, 1000);
+    
+    return () => {
+      window.removeEventListener('resize', updateNavHeight);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const NavLinks = () => (
+    <>
+      <a href="#" className="flex items-center px-4 py-3 lg:py-2 text-[#ff5c5c] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap">Home</a>
+      <a 
+        href="#about-us" 
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById('about-us')?.scrollIntoView({ behavior: 'smooth' });
+          setIsSecondaryMenuOpen(false);
+        }}
+        className="flex items-center px-4 py-3 lg:py-2 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap"
+      >
+        About Us
+      </a>
+      <a 
+        href="#faculty" 
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById('faculty')?.scrollIntoView({ behavior: 'smooth' });
+          setIsSecondaryMenuOpen(false);
+        }}
+        className="flex items-center px-4 py-3 lg:py-2 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap"
+      >
+        Teachers
+      </a>
+      {/* <a href="#" className="flex items-center px-4 py-3 lg:py-2 text-[#ff5c5c] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap">Franchise</a> */}
+      <a 
+        href="#courses-section"
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById('courses-section')?.scrollIntoView({ behavior: 'smooth' });
+          setIsSecondaryMenuOpen(false);
+        }}
+        className="flex items-center px-4 py-3 lg:py-2 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap"
+      >
+        Courses
+      </a>
+      {/* <a href="#" className="flex items-center px-4 py-3 lg:py-2 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap">State Partner</a> */}
+      
+      <div 
+        onClick={() => {
+          navigate('/computercenter/registration');
+          setIsSecondaryMenuOpen(false);
+        }}
+        className="group cursor-pointer flex items-center justify-between lg:justify-start px-4 py-3 lg:py-2 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap gap-1"
+      >
+        <span>Registration</span> 
+      </div>
+      
+      <div className="group cursor-pointer flex items-center justify-between lg:justify-start px-4 py-3 lg:py-2 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap gap-1">
+        <span>Certifications</span> 
+      </div>
+      
+      <a 
+        href="https://trickfastdigital.com/student-verification.php"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group cursor-pointer flex items-center justify-between lg:justify-start px-4 py-3 lg:py-2 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap gap-1"
+      >
+        <span>Verification</span>
+      </a>
+
+      {/* <div className="group cursor-pointer flex items-center justify-between lg:justify-start px-4 py-3 lg:py-2 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap gap-1">
+        <span>Our Projects</span> 
+      </div> */}
+      
+      {/* <div className="group cursor-pointer flex items-center justify-between lg:justify-start px-4 py-3 lg:py-2 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap gap-1">
+        <span>Gallery</span> 
+      </div> */}
+
+      {/* <a href="#" className="flex items-center px-4 py-3 lg:py-2 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl lg:rounded-full transition-all whitespace-nowrap">Blog</a> */}
+    </>
+  );
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    loadSiteContent().then(({ content }) => setContent(content));
+
+    const onUpdate = () => {
+      const stored = getStoredSiteContent();
+      if (stored) setContent(stored);
+    };
+    window.addEventListener(SITE_CONTENT_UPDATED_EVENT, onUpdate);
+    return () => window.removeEventListener(SITE_CONTENT_UPDATED_EVENT, onUpdate);
   }, []);
 
   const handleNavigate = (sectionId: string) => {
     navigate('/', { state: { scrollToSection: sectionId } });
   };
 
-  const { libraryInfo, pageText, navMenuItems } = DEFAULT_SITE_CONTENT;
+  const { libraryInfo, pageText, navMenuItems, computerCourses } = content;
+  const courses = computerCourses || DEFAULT_SITE_CONTENT.computerCourses || [];
   const computerCenterInfo = { ...libraryInfo, name: 'Galaxy Computer Center' };
 
   return (
@@ -86,7 +188,7 @@ export default function ComputerCenter() {
 
       <main className="flex-grow w-full">
         {/* HERO SECTION */}
-        <section className="relative w-full min-h-screen flex items-center justify-start pt-20 overflow-hidden bg-slate-900">
+        <section className="relative w-full min-h-screen flex flex-col justify-start overflow-hidden bg-slate-900">
           {/* Background Image & Overlay */}
           <div className="absolute inset-0 z-0">
             <img 
@@ -99,7 +201,50 @@ export default function ComputerCenter() {
             <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent"></div>
           </div>
 
-          <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* SECONDARY NAVIGATION BAR */}
+          <div 
+            className="w-full sticky z-40 bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-xl border-y border-slate-200 dark:border-slate-800 shadow-md"
+            style={{ top: `${navHeight}px`, marginTop: `${navHeight}px` }}
+          >
+            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+              
+              {/* Mobile Toggle Button */}
+              <div className="lg:hidden flex items-center justify-between py-3">
+                <span className="font-bold text-slate-800 dark:text-slate-200">Quick Links</span>
+                <button 
+                  onClick={() => setIsSecondaryMenuOpen(!isSecondaryMenuOpen)}
+                  className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  {isSecondaryMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                </button>
+              </div>
+
+              {/* Desktop Nav */}
+              <div className="hidden lg:flex items-center justify-center py-2.5">
+                <nav className="flex items-center gap-1 sm:gap-2 text-[14px] font-semibold min-w-max">
+                  <NavLinks />
+                </nav>
+              </div>
+
+              {/* Mobile Nav Dropdown */}
+              <AnimatePresence>
+                {isSecondaryMenuOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="lg:hidden overflow-hidden"
+                  >
+                    <nav className="flex flex-col gap-1 text-[14px] font-semibold pb-4 pt-1">
+                      <NavLinks />
+                    </nav>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          <div className="flex-grow flex items-center justify-start w-full relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -107,18 +252,14 @@ export default function ComputerCenter() {
               className="max-w-3xl"
             >
               {/* Badge */}
-              <div className="inline-flex items-center px-5 py-2.5 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white font-medium text-sm tracking-wide mb-8 shadow-2xl">
-                <span className="w-2 h-2 rounded-full bg-blue-500 mr-2 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></span>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/50 border border-slate-700/50 text-blue-400 font-semibold text-sm mb-6 backdrop-blur-md">
+                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
                 Trusted IT Training Institute
               </div>
               
               {/* Typing Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-5xl font-extrabold text-white mb-4 leading-[1.2] tracking-tight drop-shadow-md">
-                <Typewriter words={[
-                  "Start Your Professional Career",
-                  "Learn Programming & Coding",
-                  "Master Advanced Tech Skills"
-                ]} />
+              <h1 className="text-4xl sm:text-5xl lg:text-5xl font-extrabold text-white mb-4 leading-[1.2] tracking-tight drop-shadow-md min-h-[120px] sm:min-h-[80px] flex items-center">
+                <Typewriter words={TYPEWRITER_WORDS} />
               </h1>
               
               {/* Subtext */}
@@ -149,8 +290,67 @@ export default function ComputerCenter() {
           </div>
         </section>
 
+        {/* ABOUT SECTION */}
+        <section id="about-us" className="relative w-full py-12 lg:py-16 overflow-hidden bg-[#fcfdfa] dark:bg-[#020617] scroll-mt-24">
+          {/* Background Shapes */}
+          <div className="absolute top-0 -left-48 w-[45%] h-full bg-[#0cb8a6] -skew-x-[20deg] z-0 hidden lg:block"></div>
+          <div className="absolute top-1/2 left-4 sm:left-20 lg:left-32 transform -translate-y-1/2 w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] lg:w-[480px] lg:h-[480px] rounded-full bg-[#effacc] dark:bg-[#effacc]/10 z-0"></div>
+
+          <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
+              
+              {/* Image Side */}
+              <div className="w-full lg:w-1/2 flex justify-center lg:justify-start">
+                <img 
+                  src="https://images.unsplash.com/photo-1544717302-de2939b7ef71?q=80&w=1000&auto=format&fit=crop" 
+                  alt="Student smiling" 
+                  className="relative z-10 max-h-[350px] lg:max-h-[500px] object-contain drop-shadow-2xl"
+                />
+              </div>
+
+              {/* Text Side */}
+              <div className="w-full lg:w-1/2 flex flex-col items-start text-left bg-white/60 dark:bg-slate-900/60 lg:bg-transparent backdrop-blur-md lg:backdrop-blur-none p-5 lg:p-0 rounded-3xl mt-6 lg:mt-0">
+                <h3 className="text-[#ff5c5c] font-bold tracking-[0.2em] text-xs sm:text-sm uppercase mb-4">
+                  About Our Galaxy Computer Center
+                </h3>
+                
+                <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed mb-8 max-w-2xl">
+                  Galaxy Computer Center is a renowned company that specializes in providing franchise opportunities to computer institutes and skill development course providers. With a strong focus on education and training, Galaxy Computer Center offers comprehensive courses that cover a wide range of topics in the field of computer science and skill development.
+                </p>
+
+                <div className="flex flex-col gap-5 w-full">
+                  {/* Feature 1 */}
+                  <div className="flex items-center gap-4 group">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[#ffe898] dark:bg-yellow-500/20 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+                      <GraduationCap className="text-yellow-800 dark:text-yellow-500 w-6 h-6 sm:w-8 sm:h-8" />
+                    </div>
+                    <span className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-200">Scholarship Facility</span>
+                  </div>
+
+                  {/* Feature 2 */}
+                  <div className="flex items-center gap-4 group">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[#ffd4d4] dark:bg-red-500/20 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+                      <Presentation className="text-red-800 dark:text-red-500 w-6 h-6 sm:w-8 sm:h-8" />
+                    </div>
+                    <span className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-200">Skilled Lecturers</span>
+                  </div>
+
+                  {/* Feature 3 */}
+                  <div className="flex items-center gap-4 group">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[#d4f2ff] dark:bg-blue-500/20 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+                      <Library className="text-blue-800 dark:text-blue-500 w-6 h-6 sm:w-8 sm:h-8" />
+                    </div>
+                    <span className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-200">Book Library & Store</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* TOP COURSES SECTION */}
-        <section className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-20 relative z-10 bg-slate-50 dark:bg-[#040814]">
+        <section id="courses-section" className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-20 relative z-10 bg-slate-50 dark:bg-[#040814]">
           <div className="text-center mb-12 flex flex-col items-center">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1e293b] dark:text-white flex items-center justify-center gap-3">
               <Sparkles className="text-yellow-500 fill-yellow-500 w-8 h-8" />
@@ -159,7 +359,7 @@ export default function ComputerCenter() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {topCourses.map((course, index) => (
+            {courses.slice(0, 4).map((course, index) => (
               <motion.div 
                 key={course.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -169,9 +369,11 @@ export default function ComputerCenter() {
                 className="bg-white dark:bg-[#0f172a] rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col"
               >
                 {/* Course Banner / Thumbnail */}
-                <div className={`h-40 bg-gradient-to-br ${course.color} relative flex flex-col items-center justify-center p-4 text-center border-b-[3px] border-yellow-400 overflow-hidden group`}>
-                  {/* Background decoration */}
-                  <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent" />
+                <div className={`h-40 relative flex flex-col items-center justify-center p-4 text-center border-b-[3px] border-yellow-400 overflow-hidden group`}>
+                  {/* Background image */}
+                  <img src={course.image} alt={course.title} className="absolute inset-0 w-full h-full object-cover z-0 group-hover:scale-110 transition-transform duration-700" />
+                  {/* Dark overlay for readability */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${course.color} opacity-80 z-0 group-hover:opacity-70 transition-opacity duration-300`}></div>
                   
                   <h3 className="text-4xl sm:text-5xl font-black text-white drop-shadow-md z-10 uppercase tracking-tight">
                     {course.title === 'Tally With Gst' ? 'TALLY' : course.title === 'Computer Networking' ? 'NETWORK' : course.title === 'C Programming' ? 'C PROG' : course.title}
@@ -211,7 +413,10 @@ export default function ComputerCenter() {
           </div>
 
           <div className="mt-12 text-center">
-            <button className="px-8 py-3.5 bg-[#3b82f6] hover:bg-[#2563eb] text-white font-bold rounded-full shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-1 hover:shadow-blue-500/40 text-sm tracking-wide">
+            <button 
+              onClick={() => navigate('/computercenter/courses')}
+              className="px-8 py-3.5 bg-[#3b82f6] hover:bg-[#2563eb] text-white font-bold rounded-full shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-1 hover:shadow-blue-500/40 text-sm tracking-wide"
+            >
               Show All Courses
             </button>
           </div>
@@ -254,27 +459,18 @@ export default function ComputerCenter() {
             ))}
           </div>
 
-          {/* Lead Capture / Interest form section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="max-w-3xl mx-auto bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 sm:p-12 text-center text-white shadow-2xl"
-          >
-            <h2 className="text-3xl font-bold mb-4">Interested in Joining?</h2>
-            <p className="text-blue-100 mb-8 text-lg">
-              Be the first to know when we open! Contact us to pre-register and get early bird benefits.
-            </p>
-            <a
-              href={`https://wa.me/${libraryInfo.phoneRaw}?text=Hi! I want to know more about the upcoming Galaxy Computer Center.`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-colors shadow-lg"
-            >
-              Notify Me on WhatsApp
-            </a>
-          </motion.div>
+          
         </section>
+
+        {/* OUR TEACHER SECTION */}
+        <FacultySection 
+          members={content.computerCenterTeachers || []} 
+          pageText={{
+            ...pageText,
+            facultyTitle: pageText.teacherTitle || 'Our Teacher',
+            facultySubtitle: pageText.teacherSubtitle || 'Meet the expert educators guiding students at Galaxy Computer Center.',
+          }} 
+        />
       </main>
 
       <LandingFooter

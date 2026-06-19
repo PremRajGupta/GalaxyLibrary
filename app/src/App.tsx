@@ -13,6 +13,7 @@ import EditStudent from './pages/EditStudent';
 import Reports from './pages/Reports';
 import PdfGenerator from './pages/PdfGenerator';
 import WebsiteSettings from './pages/WebsiteSettings';
+import ComputerCenterAdmin from './pages/ComputerCenterAdmin';
 import Index from './pages/Index';
 import About from './pages/About';
 import Services from './pages/Services';
@@ -20,6 +21,8 @@ import StudentPortal from './pages/StudentPortal';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import ComputerCenter from './pages/ComputerCenter';
+import AllCourses from './pages/AllCourses';
+import ComputerCenterRegistration from './pages/ComputerCenterRegistration';
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -103,6 +106,8 @@ function AppRoutes() {
       <Route path="/privacypolicy" element={<PrivacyPolicy />} />
       <Route path="/termsofservice" element={<TermsOfService />} />
       <Route path="/computercenter" element={<ComputerCenter />} />
+      <Route path="/computercenter/courses" element={<AllCourses />} />
+      <Route path="/computercenter/registration" element={<ComputerCenterRegistration />} />
       <Route path="/login" element={<PublicLoginRoute />} />
 
       {/* Admin Protected Routes */}
@@ -122,6 +127,7 @@ function AppRoutes() {
         <Route path="/students" element={<StudentRecords />} />
         <Route path="/students/edit/:id" element={<EditStudent />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/computer-center-settings" element={<ComputerCenterAdmin />} />
         <Route path="/website-settings" element={<WebsiteSettings />} />
       </Route>
 

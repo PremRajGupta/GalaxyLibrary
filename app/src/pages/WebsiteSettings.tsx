@@ -24,7 +24,6 @@ const labelClass = 'block text-xs font-semibold text-[#475569] mb-1';
 const TABS = [
   { id: 'general', label: 'General & Contact' },
   { id: 'announcement', label: 'Announcements & Offers' },
-  { id: 'navbar', label: 'Footer' },
   { id: 'hero', label: 'Hero Slider' },
   { id: 'about', label: 'About' },
   { id: 'gallery', label: 'Gallery' },
@@ -475,21 +474,6 @@ export default function WebsiteSettings() {
                 )}
               </div>
             )}
-          </section>
-        )}
-
-        {activeTab === 'navbar' && (
-          <section className="page-card space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Footer</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div><label className={labelClass}>Quick Links Title</label><input className={inputClass} value={content.pageText.footerQuickLinksTitle} onChange={(e) => updatePageText('footerQuickLinksTitle', e.target.value)} /></div>
-                <div><label className={labelClass}>Get Started Title</label><input className={inputClass} value={content.pageText.footerGetStartedTitle} onChange={(e) => updatePageText('footerGetStartedTitle', e.target.value)} /></div>
-                <div className="sm:col-span-2"><label className={labelClass}>Get Started Text</label><input className={inputClass} value={content.pageText.footerGetStartedText} onChange={(e) => updatePageText('footerGetStartedText', e.target.value)} /></div>
-                <div><label className={labelClass}>Footer Login Button</label><input className={inputClass} value={content.pageText.footerLoginButton} onChange={(e) => updatePageText('footerLoginButton', e.target.value)} /></div>
-                <div><label className={labelClass}>Copyright Text</label><input className={inputClass} value={content.pageText.footerCopyright} onChange={(e) => updatePageText('footerCopyright', e.target.value)} /></div>
-              </div>
-            </div>
           </section>
         )}
 

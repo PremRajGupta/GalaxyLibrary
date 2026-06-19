@@ -1,9 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Menu, X, Sun, Moon } from 'lucide-react';
-import AppLogo from '../AppLogo';
-import type { LibraryInfo, NavMenuItem, PageText, Announcement } from '../../data/landingContent';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Menu, X, Sun, Moon } from "lucide-react";
+import AppLogo from "../AppLogo";
+import type {
+  LibraryInfo,
+  NavMenuItem,
+  PageText,
+  Announcement,
+} from "../../data/landingContent";
+import { motion, AnimatePresence } from "framer-motion";
 
 type LandingNavbarProps = {
   libraryInfo: LibraryInfo;
@@ -26,32 +31,38 @@ export default function LandingNavbar({
 
   useEffect(() => {
     // Initialize theme
-    const storedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    if (storedTheme === 'dark' || (!storedTheme && prefersDark) || !storedTheme) {
-      document.documentElement.classList.add('dark');
+    const storedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
+
+    if (
+      storedTheme === "dark" ||
+      (!storedTheme && prefersDark) ||
+      !storedTheme
+    ) {
+      document.documentElement.classList.add("dark");
       setIsDark(true);
     } else {
-      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.remove("dark");
       setIsDark(false);
     }
 
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const toggleTheme = () => {
     if (isDark) {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
       setIsDark(false);
     } else {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
       setIsDark(true);
     }
   };
@@ -68,8 +79,9 @@ export default function LandingNavbar({
     new Date(announcement.endDate).getTime() > Date.now();
 
   return (
-    <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/95 dark:bg-[#020617]/95 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 py-2 ${scrolled ? 'shadow-lg dark:shadow-black/60' : 'shadow-sm dark:shadow-black/40'}`}
+    <header
+      id="main-landing-navbar"
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/95 dark:bg-[#020617]/95 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 py-2 ${scrolled ? "shadow-lg dark:shadow-black/60" : "shadow-sm dark:shadow-black/40"}`}
     >
       {isOfferActive && (
         <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white py-2 px-4 text-center text-xs sm:text-sm font-medium select-none flex items-center justify-center gap-2 border-b border-white/10 shadow-inner">
@@ -84,12 +96,12 @@ export default function LandingNavbar({
           )}
         </div>
       )}
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <button
             type="button"
-            onClick={() => handleNav('home')}
+            onClick={() => handleNav("home")}
             className="flex items-center gap-3 text-slate-800 dark:text-white group"
           >
             <AppLogo
@@ -154,9 +166,9 @@ export default function LandingNavbar({
 
       <AnimatePresence>
         {menuOpen && (
-          <motion.div 
+          <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             className="lg:hidden overflow-hidden bg-white/95 dark:bg-[#020617]/95 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 px-4 py-4 space-y-2 transition-colors"
           >

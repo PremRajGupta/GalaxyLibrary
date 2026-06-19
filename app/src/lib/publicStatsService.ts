@@ -47,7 +47,7 @@ export async function loadPublicStatsForLanding(): Promise<PublicStats> {
   } catch (error) {
     console.warn('Public stats unavailable:', error);
     return {
-      visitorCount: 300,
+      visitorCount: 530,
       totalAdmissions: 300,
       activeStudents: 0,
       availableSeats: 0,

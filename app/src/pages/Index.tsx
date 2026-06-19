@@ -5,6 +5,7 @@ import LandingNavbar from '../components/landing/LandingNavbar';
 import HeroSlider from '../components/landing/HeroSlider';
 import StatsSection from '../components/landing/StatsSection';
 import GallerySection from '../components/landing/GallerySection';
+import ComputerClassCTA from '../components/landing/ComputerClassCTA';
 import OfferBanner from '../components/landing/OfferBanner';
 import FacultySection from '../components/landing/FacultySection';
 import ContactSection from '../components/landing/ContactSection';
@@ -12,7 +13,7 @@ import LandingFooter from '../components/landing/LandingFooter';
 import ChatBot from '../components/ChatBot';
 import { SEOMeta } from '../components/SEOMeta';
 import { DEFAULT_SITE_CONTENT, type SiteContent } from '../data/landingContent';
-import { loadSiteContent, SITE_CONTENT_UPDATED_EVENT } from '../lib/siteContentService';
+import { loadSiteContent, getStoredSiteContent, SITE_CONTENT_UPDATED_EVENT } from '../lib/siteContentService';
 
 export default function Index() {
   const location = useLocation();
@@ -33,7 +34,10 @@ export default function Index() {
 
   useEffect(() => {
     const onUpdated = () => {
-      refreshContent();
+      const stored = getStoredSiteContent();
+      if (stored) {
+        setContent(stored);
+      }
     };
 
     window.addEventListener(SITE_CONTENT_UPDATED_EVENT, onUpdated);
@@ -168,6 +172,7 @@ export default function Index() {
       </section>
 
       <StatsSection pageText={pageText} />
+      <ComputerClassCTA />
       <GallerySection images={galleryImages} pageText={pageText} />
       
       {content.announcement?.show && content.announcement?.text && (

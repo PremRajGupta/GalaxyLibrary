@@ -37,6 +37,8 @@ export type PageText = {
   gallerySubtitle: string;
   facultyTitle: string;
   facultySubtitle: string;
+  teacherTitle: string;
+  teacherSubtitle: string;
   contactTitle: string;
   contactSubtitle: string;
   contactPhoneLabel: string;
@@ -88,6 +90,16 @@ export type GalleryImage = {
   alt: string;
 };
 
+export type ComputerCourse = {
+  id: string;
+  title: string;
+  fullName: string;
+  duration: string;
+  fee: string;
+  color: string;
+  image?: string;
+};
+
 export type FacultyMember = {
   id: number;
   photo: string;
@@ -131,6 +143,8 @@ export type SiteContent = {
   aboutContent: AboutContent;
   galleryImages: GalleryImage[];
   facultyMembers: FacultyMember[];
+  computerCenterTeachers: FacultyMember[];
+  computerCourses?: ComputerCourse[];
   updatedAt?: string;
 };
 
@@ -149,6 +163,9 @@ export const DEFAULT_GALLERY_IMAGE_URL =
 export const DEFAULT_FACULTY_PHOTO_URL =
   'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&q=80';
 
+export const DEFAULT_TEACHER_PHOTO_URL =
+  'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&q=80';
+
 export const DEFAULT_PAGE_TEXT: PageText = {
   navHome: 'Home',
   navAbout: 'About',
@@ -161,6 +178,8 @@ export const DEFAULT_PAGE_TEXT: PageText = {
   gallerySubtitle: 'Take a look at our study space, seating arrangement, and peaceful environment.',
   facultyTitle: 'Faculty Library',
   facultySubtitle: 'Meet the mentors and support team guiding students at Galaxy Library.',
+  teacherTitle: 'Our Teacher',
+  teacherSubtitle: 'Meet the expert educators guiding students at Galaxy Computer Center.',
   contactTitle: 'Contact Us',
   contactSubtitle: 'Reach out to the owner for admission, fees, or any query.',
   contactPhoneLabel: 'Phone',
@@ -217,6 +236,22 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     whatsappMessage: 'Hello! I would like to know about admission and visit details.',
   },
   pageText: DEFAULT_PAGE_TEXT,
+  computerCenterTeachers: [
+    {
+      id: 1,
+      photo: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&q=80',
+      name: 'Prem Raj Gupta',
+      role: 'Lead Instructor',
+      detail: 'Expert in programming and web development courses.',
+    },
+    {
+      id: 2,
+      photo: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&q=80',
+      name: 'Priya Sharma',
+      role: 'IT Trainer',
+      detail: 'Teaches fundamental computer courses and networking.',
+    }
+  ],
   navMenuItems: DEFAULT_NAV_MENU_ITEMS,
   heroSlides: [
     {
@@ -318,6 +353,16 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       role: 'Counsellor',
       detail: 'Supports admissions, queries, and a focused learning environment.',
     },
+  ],
+  computerCourses: [
+    { id: 'bcc', title: 'BCC', fullName: 'BASIC COMPUTER COURSE', duration: '2 Months', fee: '1,000.00', color: 'from-slate-900 to-[#0a192f]', image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=800&auto=format&fit=crop' },
+    { id: 'dca', title: 'DCA', fullName: 'DIPLOMA IN COMPUTER APPLICATION', duration: '6 Months', fee: '2,000.00', color: 'from-[#0a192f] to-slate-900', image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop' },
+    { id: 'adca', title: 'ADCA', fullName: 'ADVANCE DIPLOMA', duration: '6 Months', fee: '2,000.00', color: 'from-slate-950 to-slate-900', image: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=800&auto=format&fit=crop' },
+    { id: 'dtp', title: 'DTP', fullName: 'DESKTOP PUBLISHING', duration: '3 Months', fee: '1,000.00', color: 'from-[#1e1e2f] to-black', image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=800&auto=format&fit=crop' },
+    { id: 'tally', title: 'Tally With Gst', fullName: 'MASTER ACCOUNTING', duration: '3 Months', fee: '1,000.00', color: 'from-slate-900 to-[#0f172a]', image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?q=80&w=800&auto=format&fit=crop' },
+    { id: 'network', title: 'Computer Networking', fullName: 'NETWORKING FUNDAMENTALS', duration: '2 Months', fee: '1,500.00', color: 'from-[#0b1b3d] to-slate-900', image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=800&auto=format&fit=crop' },
+    { id: 'c', title: 'C Programming', fullName: 'LEARN C PROGRAMMING', duration: '2 Months', fee: '1,000.00', color: 'from-slate-900 to-black', image: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=800&auto=format&fit=crop' },
+    { id: 'css', title: 'CSS', fullName: 'CSS 3 STYLING', duration: '1 Months', fee: '500.00', color: 'from-[#0d2a52] to-slate-900', image: 'https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?q=80&w=800&auto=format&fit=crop' },
   ],
 };
 

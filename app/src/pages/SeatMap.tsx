@@ -36,7 +36,7 @@ const generateBaseSeats = (): Seat[] => {
   for (const column of SEAT_COLUMNS) {
     const count = SEAT_CONFIG[column] || 0;
     for (let row = 1; row <= count; row += 1) {
-      const number = `${column}${row}`;
+      const number = column.length > 1 ? `${column} ${row}` : `${column}${row}`;
       baseSeats.push({
         id: `seat-${number}`,
         number,

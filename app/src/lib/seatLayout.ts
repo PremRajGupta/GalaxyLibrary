@@ -1,13 +1,13 @@
-export const SEAT_COLUMNS = ['A', 'B', 'C', 'D', 'G', 'N', 'Ex'] as const;
+export const SEAT_COLUMNS = ['A', 'B', 'C', 'D', 'Girl', 'Night', 'Extra'] as const;
 
 export const SEAT_CONFIG: Record<string, number> = {
   A: 25,
   B: 25,
   C: 20,
   D: 20,
-  G: 20,
-  N: 60,
-  Ex: 30
+  Girl: 20,
+  Night: 60,
+  Extra: 30
 };
 
 export const TOTAL_SEAT_CAPACITY = 200;
@@ -17,7 +17,11 @@ export const generateAllSeatNumbers = (): string[] => {
   for (const column of SEAT_COLUMNS) {
     const count = SEAT_CONFIG[column] || 0;
     for (let row = 1; row <= count; row += 1) {
-      seats.push(`${column}${row}`);
+      if (column.length > 1) {
+        seats.push(`${column} ${row}`);
+      } else {
+        seats.push(`${column}${row}`);
+      }
     }
   }
   return seats;
