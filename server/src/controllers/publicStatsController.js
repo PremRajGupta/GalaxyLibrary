@@ -3,7 +3,7 @@ import PublicStats from '../models/PublicStats.js';
 import PageVisit from '../models/PageVisit.js';
 import { getSeatStats } from '../utils/seatLayout.js';
 
-const DEFAULT_BASE = 300;
+const DEFAULT_BASE = 600;
 
 const getOrCreatePublicStats = async () => {
   let doc = await PublicStats.findOne({ key: 'landing' });
@@ -13,6 +13,13 @@ const getOrCreatePublicStats = async () => {
       visitorCount: DEFAULT_BASE,
       admissionBaseOffset: DEFAULT_BASE,
     });
+  } else if (doc.visitorCount < DEFAULT_BASE) {
+    doc.visitorCount = DEFAULT_BASE;
+    doc.admissionBaseOffset = DEFAULT_BASE;
+    await doc.save();
+    
+    // Clear old page visits from storage to save space
+    await PageVisit.deleteMany({});
   }
   return doc;
 };

@@ -103,7 +103,7 @@ export const createStudent = async (req, res) => {
     // Increment cumulative admissions counter
     const publicStats = await PublicStats.findOne({ key: 'landing' });
     if (publicStats) {
-      publicStats.totalAdmissionsEver = (publicStats.totalAdmissionsEver || 300) + 1;
+      publicStats.totalAdmissionsEver = (publicStats.totalAdmissionsEver || 600) + 1;
       await publicStats.save();
     }
 

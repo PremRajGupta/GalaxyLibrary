@@ -63,7 +63,7 @@ export const defaultSiteContent = {
     statsOccupiedSeatsLabel: 'Seats Occupied',
     statsStudyShiftsLabel: 'Flexible Study Shifts',
     statsOccupancyLabel: 'Seat Occupancy',
-    statsFootnote: 'Admission count includes our legacy students (from 300) plus active members in the system.',
+    statsFootnote: 'Active members in the system.',
   },
   navMenuItems: [
     { id: 1, label: 'Home', sectionId: 'home' },
@@ -161,10 +161,26 @@ export const defaultSiteContent = {
     },
     {
       id: 4,
-      photo: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=600&q=80',
+      photo: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&q=80',
       name: 'Neha Singh',
       role: 'Counsellor',
-      detail: 'Supports admissions, queries, and a focused learning environment.',
+      detail: 'Helps new students with admission process and seating preferences.',
     },
+  ],
+  computerCenterTeachers: [
+    {
+      id: 1,
+      photo: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&q=80',
+      name: 'Prem Raj Gupta',
+      role: 'Lead Instructor',
+      detail: 'Expert in programming and web development courses.',
+    },
+    {
+      id: 2,
+      photo: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&q=80',
+      name: 'Priya Sharma',
+      role: 'IT Trainer',
+      detail: 'Teaches fundamental computer courses and networking.',
+    }
   ],
 };

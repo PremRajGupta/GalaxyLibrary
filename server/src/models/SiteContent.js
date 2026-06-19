@@ -87,6 +87,7 @@ const siteContentSchema = new mongoose.Schema(
     },
     galleryImages: { type: [galleryImageSchema], default: [] },
     facultyMembers: { type: [facultyMemberSchema], default: [] },
+    computerCenterTeachers: { type: [facultyMemberSchema], default: [] },
     navMenuItems: { type: [navMenuItemSchema], default: [] },
     pageText: {
       navHome: { type: String, default: 'Home' },
@@ -100,6 +101,8 @@ const siteContentSchema = new mongoose.Schema(
       gallerySubtitle: { type: String, default: '' },
       facultyTitle: { type: String, default: 'Faculty Library' },
       facultySubtitle: { type: String, default: '' },
+      teacherTitle: { type: String, default: 'Our Teacher' },
+      teacherSubtitle: { type: String, default: 'Meet the expert educators guiding students at Galaxy Computer Center.' },
       contactTitle: { type: String, default: 'Contact Us' },
       contactSubtitle: { type: String, default: '' },
       contactPhoneLabel: { type: String, default: 'Phone' },
