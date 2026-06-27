@@ -26,45 +26,7 @@ const normalizePaymentAmount = (value: string | number) => {
   return Number.isFinite(amount) && amount > 0 ? Number(amount.toFixed(2)) : 0;
 };
 
-/** Generate a unique transaction reference for every payment attempt */
-const generateTransactionRef = () => {
-  const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `GLX${timestamp}${random}`;
-};
 
-const buildUpiPaymentUrl = (amount: number, studentId?: string) => {
-  const tr = generateTransactionRef();
-  const note = studentId ? `${PAYMENT_NOTE} - ${studentId}` : PAYMENT_NOTE;
-
-  // Only use essential UPI parameters. Remove static QR-specific params (aid, hardcoded tr)
-  // that cause "Unable to process" errors in UPI apps.
-  const params = new URLSearchParams({
-    pa: PAYMENT_UPI_ID,
-    pn: PAYMENT_PAYEE_NAME,
-    am: amount.toFixed(2),
-    cu: 'INR',
-    tn: note,
-    tr: tr,
-    mc: '8220',
-  });
-
-  const queryString = params.toString();
-
-  return {
-    generic: `upi://pay?${queryString}`,
-    // App-specific deep links for Android
-    phonePe: `phonepe://pay?${queryString}`,
-    gpay: `tez://upi/pay?${queryString}`,
-    paytm: `paytmmp://upi/pay?${queryString}`,
-    // Android intent URLs
-    androidIntent: `intent://pay?${queryString}#Intent;scheme=upi;end`,
-    androidIntentChooser: `intent://pay?${queryString}#Intent;scheme=upi;action=android.intent.action.VIEW;end`,
-    // iOS universal link style
-    upiUniversal: `https://upi.google.com/pay?${queryString}`,
-    transactionRef: tr,
-  };
-};
 
 export default function StudentPortal() {
   const { logout } = useAuth();
@@ -159,7 +121,6 @@ export default function StudentPortal() {
   const totalPaidAmount = dues?.paidAmount ?? 0;
   const fallbackPayAmount = pendingAmount > 0 ? pendingAmount : (student.feeAmount || 0);
   const selectedPayAmount = normalizePaymentAmount(customPayAmount !== '' ? customPayAmount : fallbackPayAmount);
-  const upiPaymentUrls = selectedPayAmount > 0 ? buildUpiPaymentUrl(selectedPayAmount, student.studentId) : null;
 
   const isInactive = student.status === 'inactive';
   let feeStatus: 'paid' | 'due' | 'inactive' = 'due';
