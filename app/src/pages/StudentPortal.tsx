@@ -591,7 +591,6 @@ export default function StudentPortal() {
 
                   <div className="w-full space-y-3">
                     <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
-
                       <button
                         type="button"
                         onClick={() => {
@@ -609,6 +608,14 @@ export default function StudentPortal() {
                             Copy UPI ID
                           </>
                         )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handlePaymentClick}
+                        className="flex-1 py-3 sm:py-3.5 bg-white text-[#512da8] hover:bg-white/95 border border-white/20 rounded-lg sm:rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all"
+                      >
+                        Pay Now
                       </button>
                     </div>
 
