@@ -68,13 +68,13 @@ export default function GallerySection({ images, pageText }: GallerySectionProps
   const visibleImages = images.filter((img) => img.src?.trim());
 
   return (
-    <section id="gallery" className="py-24 bg-slate-100 dark:bg-[#040814] relative transition-colors duration-300">
+    <section id="gallery" className="py-12 bg-slate-100 dark:bg-[#040814] relative transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-10"
         >
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white mb-4 transition-colors">{pageText.galleryTitle}</h2>
           <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto text-lg transition-colors">{pageText.gallerySubtitle}</p>

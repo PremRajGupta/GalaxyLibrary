@@ -109,7 +109,7 @@ export default function StatsSection({ pageText }: StatsSectionProps) {
     : [];
 
   return (
-    <section id="stats" className="relative py-24 bg-slate-50 dark:bg-[#040814] overflow-hidden transition-colors duration-300">
+    <section id="stats" className="relative py-12 bg-slate-50 dark:bg-[#040814] overflow-hidden transition-colors duration-300">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent transition-colors duration-300" />
       <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent transition-colors duration-300" />
 
@@ -118,7 +118,7 @@ export default function StatsSection({ pageText }: StatsSectionProps) {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-10"
         >
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white mb-4 drop-shadow-sm dark:drop-shadow-md transition-colors">{pageText.statsTitle}</h2>
           <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto text-lg transition-colors">{pageText.statsSubtitle}</p>

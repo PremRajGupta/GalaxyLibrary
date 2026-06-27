@@ -8,6 +8,7 @@ import GallerySection from '../components/landing/GallerySection';
 import ComputerClassCTA from '../components/landing/ComputerClassCTA';
 import OfferBanner from '../components/landing/OfferBanner';
 import FacultySection from '../components/landing/FacultySection';
+import DemoLibraryCTA from '../components/landing/DemoLibraryCTA';
 import ContactSection from '../components/landing/ContactSection';
 import LandingFooter from '../components/landing/LandingFooter';
 import ChatBot from '../components/ChatBot';
@@ -78,11 +79,22 @@ export default function Index() {
       navigate(sectionId);
       return;
     }
+    
+    if (sectionId === 'home') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else if (sectionId === 'home') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const navHeight = 90; // Fixed navbar height offset
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.scrollY - navHeight;
+  
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -124,7 +136,7 @@ export default function Index() {
         slides={heroSlides}
       />
 
-      <section id="about" className="relative py-24 overflow-hidden bg-white dark:bg-transparent transition-colors duration-300">
+      <section id="about" className="relative py-12 overflow-hidden bg-white dark:bg-transparent transition-colors duration-300">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-100 dark:bg-blue-600/10 rounded-full blur-[120px] pointer-events-none transition-colors duration-300" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-100 dark:bg-purple-600/10 rounded-full blur-[120px] pointer-events-none transition-colors duration-300" />
 
@@ -134,7 +146,7 @@ export default function Index() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.8 }}
-            className="max-w-3xl mx-auto text-center mb-16"
+            className="max-w-3xl mx-auto text-center mb-10"
           >
             <h2 className="text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-500 mb-6 pb-2 transition-all">
               {aboutContent.title}
@@ -180,6 +192,7 @@ export default function Index() {
       )}
       
       <FacultySection members={facultyMembers} pageText={pageText} />
+      <DemoLibraryCTA />
       <ContactSection libraryInfo={libraryInfo} admissionContact={admissionContact} pageText={pageText} />
       
       <LandingFooter

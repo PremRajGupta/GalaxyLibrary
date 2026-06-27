@@ -156,7 +156,7 @@ export default function ContactDisplay({
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-8 mt-auto relative group px-6 py-3.5 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 text-base font-bold rounded-xl border border-green-200 dark:border-green-500/30 hover:bg-green-500 dark:hover:bg-green-500 hover:text-white dark:hover:text-white hover:border-green-500 dark:hover:border-green-500 transition-all shadow-sm dark:shadow-[0_0_15px_rgba(34,197,94,0.1)] hover:shadow-md dark:hover:shadow-[0_0_25px_rgba(34,197,94,0.4)] flex items-center justify-center gap-2"
+          className="mt-10 relative group px-6 py-3.5 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 text-base font-bold rounded-xl border border-green-200 dark:border-green-500/30 hover:bg-green-500 dark:hover:bg-green-500 hover:text-white dark:hover:text-white hover:border-green-500 dark:hover:border-green-500 transition-all shadow-sm dark:shadow-[0_0_15px_rgba(34,197,94,0.1)] hover:shadow-md dark:hover:shadow-[0_0_25px_rgba(34,197,94,0.4)] flex items-center justify-center gap-2"
         >
           <MessageCircle size={22} className="relative z-10" />
           <span className="relative z-10">{whatsappButtonText}</span>
