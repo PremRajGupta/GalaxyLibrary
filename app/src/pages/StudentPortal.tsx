@@ -16,9 +16,6 @@ import AppLogo from '../components/AppLogo';
 import ChatBot from '../components/ChatBot';
 
 const RUPEE = '\u20B9';
-const PAYMENT_UPI_ID = '7488252019@okbizaxis';
-const PAYMENT_PAYEE_NAME = 'Galaxy Computer';
-const PAYMENT_NOTE = 'Library Fee';
 const formatRupee = (amount: number) => `${RUPEE}${amount.toLocaleString('en-IN')}`;
 
 const normalizePaymentAmount = (value: string | number) => {
