@@ -179,78 +179,7 @@ export default function StudentPortal() {
   // Get last payment date
   const lastPayment = paymentHistory[0]; // array is sorted by date desc
 
-  const handlePaymentClick = () => {
-    if (selectedPayAmount <= 0) {
-      setPaymentError('Please enter a valid amount greater than 0.');
-      return;
-    }
 
-    setPaymentError('');
-
-    const userAgent = navigator.userAgent || '';
-    const isAndroid = /Android/i.test(userAgent);
-    const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
-    const isMobile = isAndroid || isIOS || /Mobile/i.test(userAgent);
-
-    if (!isMobile) {
-      setPaymentError('Desktop par QR code scan karein phone se payment karne ke liye.');
-      return;
-    }
-
-    if (!upiPaymentUrls) return;
-
-    // Try app-specific deep links first (more reliable than generic upi://)
-    if (isAndroid) {
-      // Strategy: try app-specific schemes first, then generic intent
-      const tryDeepLink = (url: string, delayMs: number) => {
-        setTimeout(() => {
-          window.location.href = url;
-        }, delayMs);
-      };
-
-      // Try PhonePe, GPay, PayTM specific deep links first (0ms)
-      // These have higher success rate than generic upi:// on Android
-      tryDeepLink(upiPaymentUrls.phonePe, 0);
-
-      // Fallback chain: if app-specific fails, generic intent will be tried by OS
-      // We also set a timeout to show fallback UI if nothing opened
-      return;
-    }
-
-    if (isIOS) {
-      // iOS: upi:// works in Safari. In in-app browsers (FB, IG, Telegram),
-      // we try window.open first, then location.href fallback.
-      const url = upiPaymentUrls.generic;
-
-      // Create a hidden iframe trick for iOS in-app browsers
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = url;
-      document.body.appendChild(iframe);
-
-      // Also try window.open as backup
-      setTimeout(() => {
-        const w = window.open(url, '_blank');
-        if (!w || w.closed || typeof w.closed === 'undefined') {
-          window.location.href = url;
-        }
-      }, 100);
-
-      // Cleanup iframe
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 2000);
-
-      // Show fallback UI if app didn't open
-      return;
-    }
-
-    // Generic mobile fallback
-    window.location.href = upiPaymentUrls.generic;
-    setTimeout(() => {
-      setPaymentError('Payment could not be completed automatically. Please try again or use the UPI ID.');
-    }, 4000);
-  };
 
   return (
     <div className="min-h-screen bg-[#eef2f6] relative overflow-hidden">
@@ -610,13 +539,7 @@ export default function StudentPortal() {
                         )}
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={handlePaymentClick}
-                        className="flex-1 py-3 sm:py-3.5 bg-white text-[#512da8] hover:bg-white/95 border border-white/20 rounded-lg sm:rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all"
-                      >
-                        Pay Now
-                      </button>
+
                     </div>
 
                     <p className="text-[10px] sm:text-[11px] text-white/70 font-semibold text-center mt-1">

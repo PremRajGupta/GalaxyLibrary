@@ -68,8 +68,11 @@ export default function LandingNavbar({
   };
 
   const handleNav = (sectionId: string) => {
-    onNavigate(sectionId);
     setMenuOpen(false);
+    // Add a slight delay on mobile so the menu closing animation doesn't interrupt smooth scrolling
+    setTimeout(() => {
+      onNavigate(sectionId);
+    }, 150);
   };
 
   const isOfferActive =
