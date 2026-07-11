@@ -157,7 +157,6 @@ export default function NewAdmission() {
 
   const isOtherShift = formData.timeShift === OTHER_TIME_SHIFT;
   const isPresetShift = isPresetTimeShift(formData.timeShift);
-  const needsParentMobile = formData.timeShift === 'night' || formData.timeShift === '24hours';
 
   const seatSearchQuery = seatSearch.trim().toLowerCase();
   const filteredSeats = availableSeats.filter(

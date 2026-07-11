@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Download, Award, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 

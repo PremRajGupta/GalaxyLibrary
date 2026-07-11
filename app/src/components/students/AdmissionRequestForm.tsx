@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { UserPlus } from 'lucide-react';
 import {
   OTHER_TIME_SHIFT,
@@ -7,8 +6,8 @@ import {
   getFeeForTimeShift,
   isPresetTimeShift,
 } from '../../lib/feeRules';
-import { toDateInputValue, formatJoiningDate } from '../../lib/formatDate';
-import { COURSE_OPTIONS, getCourseLabel } from '../../lib/courseOptions';
+import { toDateInputValue } from '../../lib/formatDate';
+import { COURSE_OPTIONS } from '../../lib/courseOptions';
 import { seatApi, studentApi, requestApi } from '../../lib/apiService';
 import { generateAllSeatNumbers, getAvailableSeatsFromStudents } from '../../lib/seatLayout';
 import { normalizeIndianMobile, validateIndianMobile } from '../../lib/phoneValidation';
