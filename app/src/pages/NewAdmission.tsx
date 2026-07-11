@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import TopHeader from '../components/layout/TopHeader';
 import { UserPlus } from 'lucide-react';
@@ -13,7 +14,7 @@ import {
 } from '../lib/feeRules';
 import { formatJoiningDate, toDateInputValue } from '../lib/formatDate';
 import { COURSE_OPTIONS, getCourseLabel } from '../lib/courseOptions';
-import { seatApi, studentApi } from '../lib/apiService';
+import { seatApi, studentApi, requestApi } from '../lib/apiService';
 import { generateAllSeatNumbers, getAvailableSeatsFromStudents } from '../lib/seatLayout';
 import { normalizeIndianMobile, validateIndianMobile } from '../lib/phoneValidation';
 import { normalizeAadharNumber, validateAadharNumber } from '../lib/aadharValidation';
@@ -23,6 +24,7 @@ const formatRupee = (amount: number) => `${RUPEE}${amount.toLocaleString('en-IN'
 const RequiredMark = () => <span className="text-red-600"> *</span>;
 
 export default function NewAdmission() {
+  const location = useLocation();
   const [formData, setFormData] = useState<AdmissionFormData>({
     name: '',
     fatherName: '',
@@ -61,6 +63,22 @@ export default function NewAdmission() {
   const [seatDropdownOpen, setSeatDropdownOpen] = useState(false);
   const successRef = useRef<HTMLDivElement>(null);
   const seatDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (location.state?.prefillData) {
+      setFormData(prev => ({
+        ...prev,
+        ...location.state.prefillData
+      }));
+      if (location.state.prefillData.seatNumber) {
+        setSeatSearch(
+          location.state.prefillData.seatNumber === 'other'
+            ? 'Other (custom seat)'
+            : location.state.prefillData.seatNumber
+        );
+      }
+    }
+  }, [location.state]);
 
   const loadAvailableSeats = async () => {
     setSeatsLoading(true);
@@ -216,6 +234,17 @@ export default function NewAdmission() {
       setAdmissionResult(result);
       setSuccessMessage(result.message);
       setSubmitted(true);
+      
+      // Update original request if it was an admission request
+      if (location.state?.requestId) {
+        try {
+          await requestApi.updateRequestStatus(location.state.requestId, 'approved');
+        } catch (err) {
+          console.error('Failed to approve original request:', err);
+        }
+      }
+
+      // Reset form
       resetForm({ keepFeedback: true });
       await loadAvailableSeats();
       setTimeout(() => {
@@ -240,11 +269,17 @@ export default function NewAdmission() {
     const mobileError = validateIndianMobile(formData.mobile, { required: true, field: 'Mobile number' });
     if (mobileError) e.mobile = mobileError;
 
-    const parentMobileError = validateIndianMobile(formData.parentMobile || '', {
-      required: needsParentMobile,
-      field: 'Parent mobile number',
-    });
-    if (parentMobileError) e.parentMobile = parentMobileError;
+    const isParentMobileRequired = formData.timeShift === '24hours' || formData.timeShift === 'night';
+    if (isParentMobileRequired && !formData.parentMobile) {
+      e.parentMobile = 'Parent mobile number is required.';
+    } else if (formData.parentMobile) {
+      const parentMobileError = validateIndianMobile(formData.parentMobile, {
+        required: false,
+        field: 'Parent mobile number',
+      });
+      if (parentMobileError) e.parentMobile = parentMobileError;
+    }
+    
     if (!formData.address.trim()) e.address = 'Address is required.';
     if (!formData.course) e.course = 'Please select a course.';
     if (formData.course === 'other' && !formData.customCourse?.trim()) e.customCourse = 'Enter custom course name.';
@@ -486,10 +521,9 @@ export default function NewAdmission() {
                   )}
                 </div>
 
-                <div>
+                <div className="col-span-1">
                   <label className="block text-sm font-medium text-[#1e293b] mb-2">
-                    Parent Mobile Number
-                    {needsParentMobile && <RequiredMark />}
+                    Parent Mobile Number{(formData.timeShift === '24hours' || formData.timeShift === 'night') && <RequiredMark />}
                   </label>
                   <input
                     type="tel"
@@ -502,11 +536,6 @@ export default function NewAdmission() {
                     pattern="\d{10}"
                     className="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/20 transition-all"
                   />
-                  <p className="text-xs text-[#475569] mt-1">
-                    {needsParentMobile
-                      ? 'Required for Night Shift or 24 Hours.'
-                      : 'Optional — you can enter parent mobile for any shift.'}
-                  </p>
                   {errors.parentMobile && <p className="text-xs text-red-600 mt-1">{errors.parentMobile}</p>}
                 </div>
 

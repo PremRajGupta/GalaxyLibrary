@@ -14,6 +14,8 @@ import { generateReceiptPDF, getDefaultReceiptLogo } from '../sections/fees/rece
 import S from '../lib/strings';
 import AppLogo from '../components/AppLogo';
 import ChatBot from '../components/ChatBot';
+import AdmissionRequestForm from '../components/students/AdmissionRequestForm';
+import CertificateTab from '../components/students/CertificateTab';
 
 const RUPEE = '\u20B9';
 const formatRupee = (amount: number) => `${RUPEE}${amount.toLocaleString('en-IN')}`;
@@ -30,7 +32,7 @@ export default function StudentPortal() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'payments' | 'courses' | 'feedback'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'payments' | 'courses' | 'feedback' | 'admission' | 'certificate'>('overview');
   const [customPayAmount, setCustomPayAmount] = useState<string>('');
   const [utrNumber, setUtrNumber] = useState<string>('');
   const [paymentError, setPaymentError] = useState('');
@@ -234,6 +236,18 @@ export default function StudentPortal() {
             className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'feedback' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
           >
             💬 Feedback
+          </button>
+          <button 
+            onClick={() => setActiveTab('admission')}
+            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'admission' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
+          >
+            🤝 Admission
+          </button>
+          <button 
+            onClick={() => setActiveTab('certificate')}
+            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'certificate' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
+          >
+            🏅 Certificate
           </button>
         </div>
 
@@ -796,6 +810,20 @@ export default function StudentPortal() {
                 </button>
               </div>
             </div>
+          </motion.div>
+        )}
+
+        {/* -------------------- TAB 6: ADMISSION REQUEST -------------------- */}
+        {activeTab === 'admission' && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="max-w-4xl mx-auto">
+            <AdmissionRequestForm />
+          </motion.div>
+        )}
+
+        {/* -------------------- TAB 7: CERTIFICATE -------------------- */}
+        {activeTab === 'certificate' && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="max-w-4xl mx-auto">
+            <CertificateTab student={student} />
           </motion.div>
         )}
 

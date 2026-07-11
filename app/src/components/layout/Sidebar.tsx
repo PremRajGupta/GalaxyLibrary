@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSidebar } from '../../context/SidebarContext';
@@ -38,10 +38,34 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { isOpen, close } = useSidebar();
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     close();
   }, [location.pathname, close]);
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const { requestApi } = await import('../../lib/apiService');
+        const data = await requestApi.getRequests();
+        const pending = data.filter((r: any) => r.status === 'pending').length;
+        setPendingCount(pending);
+      } catch (error) {
+        console.error('Failed to fetch pending requests count', error);
+      }
+    };
+    fetchCount();
+
+    const handleRequestsUpdated = () => {
+      fetchCount();
+    };
+
+    window.addEventListener('requestsUpdated', handleRequestsUpdated);
+    return () => {
+      window.removeEventListener('requestsUpdated', handleRequestsUpdated);
+    };
+  }, [location.pathname]); // refetch when navigation happens or event triggered
 
   const isActive = (path: string) => {
     if (path === '/dashboard') {
@@ -97,14 +121,21 @@ export default function Sidebar() {
                 key={item.path}
                 type="button"
                 onClick={() => handleNavigate(item.path)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-150 ${
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-all duration-150 ${
                   active
-                    ? 'bg-[#2a3b5a] text-white border-l-[3px] border-[#3b82f6]'
-                    : 'text-[#8b9bb4] hover:bg-[#2a3b5a] hover:text-white'
+                    ? 'bg-[#2a3b5a] text-white shadow-lg'
+                    : 'text-[#8b9bb4] hover:bg-[#2a3b5a]/50 hover:text-white'
                 }`}
               >
-                <Icon size={20} />
-                <span>{item.label}</span>
+                <div className="flex items-center gap-3">
+                  <Icon size={20} className={active ? 'text-[#3b82f6]' : ''} />
+                  <span>{item.label}</span>
+                </div>
+                {item.path === '/requests' && pendingCount > 0 && (
+                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
+                    {pendingCount}
+                  </span>
+                )}
               </button>
             );
           })}

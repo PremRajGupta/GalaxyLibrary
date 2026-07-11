@@ -95,8 +95,16 @@ export const requestApi = {
     const response = await api.get('/requests');
     return response.data;
   },
+  createRequest: async (data: any) => {
+    const response = await api.post('/requests', data);
+    return response.data;
+  },
   updateRequestStatus: async (id: string, status: string) => {
     const response = await api.put(`/requests/${id}`, { status });
+    return response.data;
+  },
+  deleteRequest: async (id: string) => {
+    const response = await api.delete(`/requests/${id}`);
     return response.data;
   }
 };

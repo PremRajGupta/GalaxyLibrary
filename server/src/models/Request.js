@@ -6,8 +6,9 @@ const requestSchema = new mongoose.Schema({
   studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
   studentDisplayId: { type: String, required: true },
   studentName: { type: String, required: true },
-  requestType: { type: String, enum: ['seat_change', 'leave', 'other'], required: true },
+  requestType: { type: String, enum: ['seat_change', 'leave', 'other', 'admission'], required: true },
   details: { type: String, required: true },
+  admissionData: { type: Object },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   requestDate: { type: Date, default: Date.now }
 }, {

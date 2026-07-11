@@ -1,4 +1,34 @@
 import Request from '../models/Request.js';
+import Student from '../models/Student.js';
+
+export const createRequest = async (req, res) => {
+  try {
+    const { studentId, requestType, details, admissionData } = req.body;
+    
+    // Get student details
+    const student = await Student.findOne({ studentId });
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    const newRequest = new Request({
+      organizationId: student.organizationId,
+      branchId: student.branchId,
+      studentId: student._id,
+      studentDisplayId: student.studentId,
+      studentName: student.name,
+      requestType,
+      details,
+      admissionData,
+      status: 'pending'
+    });
+
+    await newRequest.save();
+    res.status(201).json(newRequest);
+  } catch (error) {
+    res.status(400).json({ message: 'Error creating request', error: error.message });
+  }
+};
 
 export const getRequests = async (req, res) => {
   try {
@@ -21,5 +51,15 @@ export const updateRequestStatus = async (req, res) => {
     res.status(200).json(updatedRequest);
   } catch (error) {
     res.status(400).json({ message: 'Error updating request', error: error.message });
+  }
+};
+
+export const deleteRequest = async (req, res) => {
+  try {
+    const deletedRequest = await Request.findByIdAndDelete(req.params.id);
+    if (!deletedRequest) return res.status(404).json({ message: 'Request not found' });
+    res.status(200).json({ message: 'Request deleted successfully' });
+  } catch (error) {
+    res.status(400).json({ message: 'Error deleting request', error: error.message });
   }
 };

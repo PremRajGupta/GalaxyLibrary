@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import TopHeader from '../components/layout/TopHeader';
-import { MessageSquare, Check, X } from 'lucide-react';
+import { MessageSquare, Check, X, Trash2 } from 'lucide-react';
 import { requestApi } from '../lib/apiService';
 
 interface Request {
@@ -10,8 +10,9 @@ interface Request {
   requestDate: string;
   studentName: string;
   studentId: string;
-  requestType: 'seat_change' | 'leave' | 'other';
+  requestType: 'seat_change' | 'leave' | 'other' | 'admission';
   details: string;
+  admissionData?: any;
   status: 'pending' | 'approved' | 'rejected';
 }
 
@@ -19,12 +20,14 @@ const typeLabels = {
   seat_change: 'Seat Change',
   leave: 'Leave',
   other: 'Other',
+  admission: 'Admission',
 };
 
 const typeColors = {
   seat_change: 'bg-[#dbeafe] text-[#3b82f6]',
   leave: 'bg-[#fef9c3] text-[#eab308]',
   other: 'bg-[#f3f4f6] text-[#6b7280]',
+  admission: 'bg-purple-100 text-purple-600',
 };
 
 const statusConfig: Record<string, any> = {
@@ -35,6 +38,7 @@ const statusConfig: Record<string, any> = {
 
 export default function Requests() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [requests, setRequests] = useState<Request[]>([]);
 
   const fetchRequests = async () => {
@@ -44,8 +48,9 @@ export default function Requests() {
         ...r,
         id: r._id,
         requestDate: new Date(r.createdAt).toISOString().split('T')[0],
-        studentName: r.student?.name || 'Unknown',
-        studentId: r.student?.studentId || 'Unknown'
+        studentName: r.studentName || r.student?.name || 'Unknown',
+        studentId: r.studentDisplayId || r.student?.studentId || 'Unknown',
+        admissionData: r.admissionData
       })));
     } catch (error) {
       console.error("Failed to fetch requests:", error);
@@ -60,6 +65,7 @@ export default function Requests() {
     try {
       await requestApi.updateRequestStatus(id, 'approved');
       fetchRequests();
+      window.dispatchEvent(new Event('requestsUpdated'));
     } catch (error) {
       console.error("Failed to approve request");
     }
@@ -69,8 +75,20 @@ export default function Requests() {
     try {
       await requestApi.updateRequestStatus(id, 'rejected');
       fetchRequests();
+      window.dispatchEvent(new Event('requestsUpdated'));
     } catch (error) {
       console.error("Failed to reject request");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this request?")) return;
+    try {
+      await requestApi.deleteRequest(id);
+      fetchRequests();
+      window.dispatchEvent(new Event('requestsUpdated'));
+    } catch (error) {
+      console.error("Failed to delete request");
     }
   };
 
@@ -137,20 +155,41 @@ export default function Requests() {
                       <td className="py-4">
                         {request.status === 'pending' ? (
                           <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => handleApprove(request.id)}
-                              className="p-1.5 bg-[#dcfce7] text-[#22c55e] rounded-md hover:bg-[#bbf7d0] transition-colors"
-                              title="Approve"
-                            >
-                              <Check size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleReject(request.id)}
-                              className="p-1.5 bg-[#fee2e2] text-[#ef4444] rounded-md hover:bg-[#fecaca] transition-colors"
-                              title="Reject"
-                            >
-                              <X size={16} />
-                            </button>
+                            {request.requestType === 'admission' ? (
+                              <>
+                                <button
+                                  onClick={() => navigate('/admission', { state: { prefillData: request.admissionData, requestId: request.id } })}
+                                  className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors text-sm font-semibold whitespace-nowrap"
+                                  title="Review & Complete"
+                                >
+                                  Review & Complete
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(request.id)}
+                                  className="p-1.5 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors"
+                                  title="Delete Request"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleApprove(request.id)}
+                                  className="p-1.5 bg-[#dcfce7] text-[#22c55e] rounded-md hover:bg-[#bbf7d0] transition-colors"
+                                  title="Approve"
+                                >
+                                  <Check size={16} />
+                                </button>
+                                <button
+                                  onClick={() => handleReject(request.id)}
+                                  className="p-1.5 bg-[#fee2e2] text-[#ef4444] rounded-md hover:bg-[#fecaca] transition-colors"
+                                  title="Reject"
+                                >
+                                  <X size={16} />
+                                </button>
+                              </>
+                            )}
                           </div>
                         ) : (
                           <span className="text-sm text-[#94a3b8]">-</span>
