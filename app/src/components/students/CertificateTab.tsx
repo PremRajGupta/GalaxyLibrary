@@ -129,7 +129,7 @@ export default function CertificateTab({ student, onUpdateStudent }: Certificate
     try {
       const generatedDate = new Date().toISOString();
       const studentId = student.id || student._id;
-      const updated = await studentApi.updateStudent(studentId, { certificateGeneratedDate: generatedDate });
+      await studentApi.updateStudent(studentId, { certificateGeneratedDate: generatedDate });
       
       // Update local student object to re-render
       student.certificateGeneratedDate = generatedDate;

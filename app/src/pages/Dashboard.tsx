@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import TopHeader from '../components/layout/TopHeader';
 import QuickActionCard from '../components/QuickActionCard';
-import { Users, Armchair, IndianRupee, AlertTriangle, Plus, Wallet, Grid3X3, Check, ReceiptText } from 'lucide-react';
+import { Users, Armchair, IndianRupee, AlertTriangle, ReceiptText } from 'lucide-react';
 import { dashboardApi } from '../lib/apiService';
 import { getTimeShiftLabel } from '../lib/feeRules';
 import { getCourseLabel } from '../lib/courseOptions';
