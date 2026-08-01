@@ -168,6 +168,8 @@ export function FeeCollection() {
   // Pagination state
   const RECORDS_PER_PAGE = 7;
   const [duePage, setDuePage] = useState(1);
+  const [filterMonth, setFilterMonth] = useState(new Date().getMonth());
+  const [filterYear] = useState(new Date().getFullYear());
 
   // Mark as Advance states (in Recent Payments)
   const [markAdvancePayment, setMarkAdvancePayment] = useState<PaymentReceipt | null>(null);
@@ -272,7 +274,15 @@ export function FeeCollection() {
   const paginatedRecentPayments = recentPaymentsSorted.slice(0, RECORDS_PER_PAGE);
 
   const totalDue = students.reduce((sum, s) => sum + s.feeDue, 0);
-  const totalCollected = payments.reduce((sum, p) => sum + p.amount, 0);
+  
+  const totalCollected = payments.reduce((sum, p) => {
+    if (!p.date) return sum;
+    const paymentDate = new Date(p.date);
+    if (paymentDate.getMonth() === filterMonth && paymentDate.getFullYear() === filterYear) {
+      return sum + p.amount;
+    }
+    return sum;
+  }, 0);
 
   const openPayModal = (student: StudentFee) => {
     const studentPayments = payments
@@ -521,11 +531,24 @@ export function FeeCollection() {
           </div>
           <div className="bg-white rounded-[10px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#dcfce7] rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-[#dcfce7] rounded-full flex items-center justify-center flex-shrink-0">
                 <Check className="text-[#22c55e]" size={18} />
               </div>
-              <div>
-                <p className="text-xs text-[#64748b]">Total Collected</p>
+              <div className="flex-grow">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-[#64748b]">Total Collected</p>
+                  <select
+                    value={filterMonth}
+                    onChange={(e) => setFilterMonth(Number(e.target.value))}
+                    className="text-xs bg-white border border-slate-200 text-slate-700 rounded-md px-2.5 py-1 outline-none font-semibold cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-slate-300 hover:bg-slate-50 transition-all focus:ring-2 focus:ring-[#22c55e]/20"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <option key={i} value={i}>
+                        {new Date(0, i).toLocaleString('default', { month: 'short' })} {filterYear}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <p className="text-xl font-bold text-[#22c55e]">₹{totalCollected.toLocaleString()}</p>
               </div>
             </div>

@@ -46,7 +46,7 @@ export default function Dashboard() {
   const stats = [
     { label: 'Total Students', value: String(statsData?.totalStudents || 0), icon: Users, color: 'blue' as const },
     { label: 'Seats Occupied', value: String(statsData?.occupiedSeats || 0), icon: Armchair, color: 'green' as const },
-    { label: 'Fees Collected', value: `₹${(statsData?.totalRevenue || 0).toLocaleString()}`, icon: IndianRupee, color: 'yellow' as const },
+    { label: 'Fees (This Month)', value: `₹${(statsData?.monthlyRevenue || 0).toLocaleString()}`, icon: IndianRupee, color: 'yellow' as const },
     { label: 'Available Seats', value: String(statsData?.availableSeats || 0), icon: AlertTriangle, color: 'red' as const },
   ];
   const pendingFees = statsData?.pendingFees || [];

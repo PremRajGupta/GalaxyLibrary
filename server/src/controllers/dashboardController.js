@@ -14,11 +14,15 @@ export const getDashboardStats = async (req, res) => {
     const totalRevenue = fees.reduce((acc, fee) => acc + fee.amount, 0);
 
     const currentDate = new Date();
-    const currentMonth = currentDate.toLocaleString('default', { month: 'long' });
-    const currentMonthYear = currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-    const monthlyRevenue = fees
-      .filter(fee => fee.month === currentMonth || fee.month === currentMonthYear)
-      .reduce((acc, fee) => acc + fee.amount, 0);
+    const currentMonthNum = currentDate.getMonth();
+    const currentYearNum = currentDate.getFullYear();
+    const monthlyRevenue = fees.reduce((acc, fee) => {
+      const pDate = new Date(fee.paymentDate || fee.createdAt);
+      if (pDate.getMonth() === currentMonthNum && pDate.getFullYear() === currentYearNum) {
+        return acc + fee.amount;
+      }
+      return acc;
+    }, 0);
 
     const activeStudents = await Student.find({ status: 'active' })
       .select('name studentId course timeShift customShiftHours feeAmount joiningDate admissionDate');

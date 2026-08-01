@@ -18,6 +18,7 @@ interface Seat {
   studentMobile?: string;
   fatherName?: string;
   studentPhoto?: string;
+  studentDbId?: string;
 }
 
 const statusColors: Record<SeatStatus, string> = {
@@ -54,6 +55,33 @@ export default function SeatMap() {
   const [seats, setSeats] = useState<Seat[]>(generateBaseSeats());
   const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
   const [activeSection, setActiveSection] = useState<string>('A');
+  const [isMakingInactive, setIsMakingInactive] = useState(false);
+
+  const handleMakeInactive = async () => {
+    if (!selectedSeat?.studentDbId) return;
+    if (!window.confirm('Are you sure you want to mark this student as inactive?')) return;
+    
+    setIsMakingInactive(true);
+    try {
+      await studentApi.updateStudent(selectedSeat.studentDbId, { 
+        status: 'inactive',
+        seatNumber: null
+      });
+      
+      setSeats(prev => prev.map(s => {
+        if (s.id === selectedSeat.id) {
+          return { ...s, status: 'available' as SeatStatus, studentName: undefined, studentId: undefined, studentMobile: undefined, fatherName: undefined, studentPhoto: undefined, studentDbId: undefined };
+        }
+        return s;
+      }));
+      setSelectedSeat(null);
+    } catch (error) {
+      console.error('Failed to mark inactive:', error);
+      alert('Failed to mark student as inactive');
+    } finally {
+      setIsMakingInactive(false);
+    }
+  };
 
   useEffect(() => {
     const fetchSeats = async () => {
@@ -63,7 +91,7 @@ export default function SeatMap() {
           studentApi.getStudents(),
         ]);
 
-        const occupiedByStudent = new Map<string, { name: string; studentId?: string; mobile?: string; fatherName?: string, photo?: string }>();
+        const occupiedByStudent = new Map<string, { id: string; name: string; studentId?: string; mobile?: string; fatherName?: string, photo?: string }>();
         students.forEach((student: any) => {
           if (
             student.status === 'active' &&
@@ -72,6 +100,7 @@ export default function SeatMap() {
             student.seatNumber !== 'other'
           ) {
             occupiedByStudent.set(String(student.seatNumber).trim(), {
+              id: student._id || student.id,
               name: student.name,
               studentId: student.studentId,
               mobile: student.mobile,
@@ -93,6 +122,7 @@ export default function SeatMap() {
                 studentMobile: studentOnSeat.mobile,
                 fatherName: studentOnSeat.fatherName,
                 studentPhoto: studentOnSeat.photo,
+                studentDbId: studentOnSeat.id,
               };
             }
 
@@ -262,10 +292,21 @@ export default function SeatMap() {
                   <span className="text-sm text-[#64748b]">Mobile</span>
                   <span className="text-sm font-medium text-[#1e293b]">{selectedSeat.studentMobile || 'N/A'}</span>
                 </div>
-                <div className="flex justify-between py-2">
+                <div className="flex justify-between py-2 border-b border-[#e2e8f0]">
                   <span className="text-sm text-[#64748b]">Father's Name</span>
                   <span className="text-sm font-medium text-[#1e293b]">{selectedSeat.fatherName || 'N/A'}</span>
                 </div>
+                {selectedSeat.studentDbId && (
+                  <div className="pt-2">
+                    <button
+                      onClick={handleMakeInactive}
+                      disabled={isMakingInactive}
+                      className="w-full py-2.5 bg-red-50 text-red-600 hover:bg-red-100 font-medium rounded-lg transition-colors text-sm border border-red-200 disabled:opacity-50"
+                    >
+                      {isMakingInactive ? 'Processing...' : 'Mark Student as Inactive'}
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>

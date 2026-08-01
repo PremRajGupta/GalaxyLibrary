@@ -5,8 +5,10 @@ import TopHeader from '../components/layout/TopHeader';
 import { Users, Search, Eye, EyeOff, Pencil, Trash2, X, Download } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getInitials, getAvatarColor } from '../sections/students/students';
-import { studentApi } from '../lib/apiService';
+import { studentApi, seatApi, feeApi } from '../lib/apiService';
 import { getCourseLabel } from '../lib/courseOptions';
+import { computeStudentFeeDue } from '../lib/feeDues';
+import { getFeeForTimeShift } from '../lib/feeRules';
 import { getStudentDisplayId } from '../lib/studentId';
 import { formatJoiningDate } from '../lib/formatDate';
 
@@ -23,6 +25,10 @@ export default function StudentRecords() {
   const [notification, setNotification] = useState('');
   const [loading, setLoading] = useState(true);
   const [viewingStudent, setViewingStudent] = useState<any>(null);
+  const [reactivateStudent, setReactivateStudent] = useState<any>(null);
+  const [reactivateData, setReactivateData] = useState({ seatNumber: '', joiningDate: '' });
+  const [availableSeats, setAvailableSeats] = useState<any[]>([]);
+  const [reactivateDue, setReactivateDue] = useState<number | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -41,6 +47,40 @@ export default function StudentRecords() {
 
   // Fetch students whenever location changes (e.g., after edit/delete)
   useEffect(() => {
+    if (reactivateStudent) {
+      const fetchData = async () => {
+        try {
+          const data = await seatApi.getAvailableSeats();
+          if (data && Array.isArray(data.seats)) {
+            setAvailableSeats(data.seats);
+          } else if (Array.isArray(data)) {
+            setAvailableSeats(data);
+          }
+
+          // Fetch payments and compute due
+          const payments = await feeApi.getFees();
+          const studentPayments = payments.filter((p: any) => p.studentId === reactivateStudent.studentId);
+          const monthlyFee = Number(reactivateStudent.feeAmount) || getFeeForTimeShift(String(reactivateStudent.timeShift || ''));
+          
+          const dueResult = computeStudentFeeDue({
+            monthlyFee,
+            joiningDate: reactivateStudent.rawJoiningDate,
+            payments: studentPayments
+          });
+          
+          setReactivateDue(dueResult.pendingAmount);
+
+        } catch (error) {
+          console.error("Failed to fetch data for reactivation", error);
+        }
+      };
+      fetchData();
+    } else {
+      setReactivateDue(null);
+    }
+  }, [reactivateStudent]);
+
+  useEffect(() => {
     const fetchStudents = async () => {
       try {
         const data = await studentApi.getStudents();
@@ -53,6 +93,7 @@ export default function StudentRecords() {
           studentId: getStudentDisplayId(s),
           course: getCourseLabel(s.course),
           fatherName: s.fatherName || s.father || 'N/A',
+          rawJoiningDate: s.joiningDate || s.admissionDate,
           joiningDate: formatJoiningDate(s.joiningDate || s.admissionDate),
           inactiveDate: s.inactiveDate ? formatJoiningDate(s.inactiveDate) : null,
         }));
@@ -102,30 +143,72 @@ export default function StudentRecords() {
   const handleToggleInactive = async (student: any) => {
     try {
       const newStatus = student.status === 'inactive' ? 'active' : 'inactive';
-      const updateData: any = { status: newStatus };
-
-      if (newStatus === 'inactive') {
-        updateData['seatNumber'] = null;
+      
+      if (newStatus === 'active') {
+        // Open modal instead of updating immediately
+        let defaultDate = '';
+        if (student.rawJoiningDate) {
+          const d = new Date(student.rawJoiningDate);
+          if (!isNaN(d.getTime())) {
+            defaultDate = d.toISOString().split('T')[0];
+          }
+        }
+        setReactivateStudent(student);
+        setReactivateData({ seatNumber: '', joiningDate: defaultDate });
+        return;
       }
 
-      const res = await studentApi.updateStudent(student.id, updateData);
+      // If marking as inactive, proceed immediately
+      const updateData: any = { status: 'inactive', seatNumber: null };
+      await studentApi.updateStudent(student.id, updateData);
 
       const updated = studentList.map((s) =>
         s.id === student.id
           ? {
               ...s,
-              status: newStatus,
-              seat: newStatus === 'inactive' ? '--' : s.seat,
-              inactiveDate: newStatus === 'inactive' && res?.inactiveDate ? formatJoiningDate(res.inactiveDate) : null
+              status: 'inactive',
+              seat: '--',
+              inactiveDate: formatJoiningDate(new Date().toISOString()) // Approximation as we removed the res object. Wait, it's better to just remove the const res = and just await it. Actually inactiveDate will be updated when re-fetching.
             }
           : s
       );
       setStudentList(updated);
-
-      const action = newStatus === 'inactive' ? 'marked as inactive' : 'marked as active';
-      showNotification(`${student.name} ${action}. Seat freed.`);
+      showNotification(`${student.name} marked as inactive. Seat freed.`);
     } catch (error) {
       showNotification(`Failed to update ${student.name} status`);
+    }
+  };
+
+  const handleReactivateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reactivateStudent) return;
+    try {
+      const updateData: any = { 
+        status: 'active',
+        seatNumber: reactivateData.seatNumber || null,
+        joiningDate: reactivateData.joiningDate || new Date().toISOString()
+      };
+      
+      await studentApi.updateStudent(reactivateStudent.id, updateData);
+      
+      const updated = studentList.map((s) =>
+        s.id === reactivateStudent.id
+          ? {
+              ...s,
+              status: 'active',
+              seat: updateData.seatNumber || '--',
+              rawJoiningDate: updateData.joiningDate,
+              joiningDate: formatJoiningDate(updateData.joiningDate),
+              inactiveDate: null
+            }
+          : s
+      );
+      setStudentList(updated);
+      showNotification(`${reactivateStudent.name} marked as active.`);
+      setReactivateStudent(null);
+    } catch (error: any) {
+      const msg = error.response?.data?.message || 'Failed to reactivate student';
+      alert(msg);
     }
   };
 
@@ -359,6 +442,91 @@ export default function StudentRecords() {
                   </button>
                 </div>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {reactivateStudent && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-[#e2e8f0]"
+            >
+              <div className="px-6 py-4 bg-[#f8fafc] border-b border-[#e2e8f0] flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-[#1e293b]">Reactivate Student</h3>
+                <button
+                  onClick={() => setReactivateStudent(null)}
+                  className="p-2 text-[#94a3b8] hover:bg-[#e2e8f0] hover:text-[#1e293b] rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleReactivateSubmit}>
+                <div className="p-6 space-y-4">
+                  <p className="text-sm text-[#64748b] mb-4">
+                    Marking <strong>{reactivateStudent.name}</strong> as active. Please allocate a seat and confirm their joining date.
+                  </p>
+                  <div>
+                    <label className="block text-sm font-medium text-[#1e293b] mb-1">Seat Number</label>
+                    <select
+                      value={reactivateData.seatNumber}
+                      onChange={(e) => setReactivateData({...reactivateData, seatNumber: e.target.value})}
+                      className="w-full px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/20 transition-all text-sm bg-white text-[#1e293b]"
+                    >
+                      <option value="">-- Select an available seat --</option>
+                      {availableSeats.map((seat: any) => {
+                        const seatNumber = typeof seat === 'string' ? seat : seat.seatNumber;
+                        const key = typeof seat === 'string' ? seat : (seat._id || seat.id || seat.seatNumber);
+                        return <option key={key} value={seatNumber}>{seatNumber}</option>;
+                      })}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#1e293b] mb-1">Joining Date</label>
+                    <input
+                      type="date"
+                      value={reactivateData.joiningDate}
+                      onChange={(e) => setReactivateData({...reactivateData, joiningDate: e.target.value})}
+                      required
+                      className="w-full px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/20 transition-all text-sm bg-white text-[#1e293b]"
+                    />
+                  </div>
+                  {reactivateDue !== null && reactivateDue > 0 && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between mt-4">
+                      <div>
+                        <p className="text-sm font-semibold text-red-700">Pending Fee Due</p>
+                        <p className="text-lg font-bold text-red-600">₹{reactivateDue.toLocaleString()}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/fees', { state: { openPayForStudentId: reactivateStudent.studentId } })}
+                        className="px-4 py-2 bg-red-600 text-white text-sm font-bold rounded-lg hover:bg-red-700 shadow-sm transition-colors"
+                      >
+                        Pay Now
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="px-6 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setReactivateStudent(null)}
+                    className="px-4 py-2 text-sm font-medium text-[#64748b] bg-white border border-[#e2e8f0] rounded-lg hover:bg-[#f8fafc] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-[#3b82f6] rounded-lg hover:bg-[#2563eb] transition-colors"
+                  >
+                    Save & Reactivate
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}

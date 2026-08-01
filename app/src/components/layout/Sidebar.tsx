@@ -91,8 +91,10 @@ export default function Sidebar() {
       )}
 
       <aside
-        className={`fixed left-0 top-0 h-screen w-[100px] flex flex-col items-center z-50 transition-transform duration-300 ease-in-out bg-transparent ${
-          isOpen ? 'translate-x-0 bg-white/90 backdrop-blur-md shadow-2xl' : '-translate-x-full lg:translate-x-0'
+        className={`fixed left-0 top-0 h-screen flex flex-col z-50 transition-all duration-300 ease-in-out ${
+          isOpen 
+            ? 'w-[240px] translate-x-0 bg-white/95 backdrop-blur-md shadow-2xl items-stretch' 
+            : 'w-[100px] -translate-x-full lg:translate-x-0 items-center bg-transparent'
         }`}
       >
         <div className="py-6 flex items-center justify-center w-full relative">
@@ -110,7 +112,7 @@ export default function Sidebar() {
           </button>
         </div>
 
-        <nav className="flex-1 py-4 space-y-5 flex flex-col items-center overflow-y-auto w-full hide-scrollbar">
+        <nav className={`flex-1 py-4 space-y-3 flex flex-col overflow-y-auto w-full hide-scrollbar ${isOpen ? 'px-4 items-stretch' : 'items-center'}`}>
           {menuItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
@@ -119,10 +121,10 @@ export default function Sidebar() {
                 <button
                   type="button"
                   onClick={() => handleNavigate(item.path)}
-                  className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
-                    active
-                      ? 'bg-[#2C3D5A] text-white shadow-[0_4px_12px_rgba(44,61,90,0.3)] scale-110'
-                      : 'bg-white/60 backdrop-blur-md text-[#64748b] hover:bg-white hover:text-[#2C3D5A] hover:shadow-md'
+                  className={`flex items-center transition-all duration-200 ${
+                    isOpen 
+                      ? `w-full h-12 px-4 rounded-xl gap-3 ${active ? 'bg-[#2C3D5A] text-white shadow-md' : 'text-[#64748b] hover:bg-slate-100 hover:text-[#2C3D5A]'}`
+                      : `w-12 h-12 justify-center rounded-full ${active ? 'bg-[#2C3D5A] text-white shadow-[0_4px_12px_rgba(44,61,90,0.3)] scale-110' : 'bg-white/60 backdrop-blur-md text-[#64748b] hover:bg-white hover:text-[#2C3D5A] hover:shadow-md'}`
                   }`}
                   title={item.label}
                 >
@@ -132,11 +134,18 @@ export default function Sidebar() {
                       {pendingCount}
                     </span>
                   )}
+                  {isOpen && (
+                    <span className={`font-medium ${active ? 'text-white' : 'text-slate-600'}`}>
+                      {item.label}
+                    </span>
+                  )}
                 </button>
                 {/* Tooltip for desktop */}
-                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-1.5 bg-white/90 backdrop-blur-sm text-[#0f172a] text-sm font-semibold rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.08)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
-                  {item.label}
-                </div>
+                {!isOpen && (
+                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-1.5 bg-white/90 backdrop-blur-sm text-[#0f172a] text-sm font-semibold rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.08)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
+                    {item.label}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -147,10 +156,15 @@ export default function Sidebar() {
             <button
               type="button"
               onClick={logout}
-              className="w-12 h-12 flex items-center justify-center rounded-full bg-white/60 backdrop-blur-md text-[#ef4444] hover:bg-[#ef4444] hover:text-white hover:shadow-md transition-all duration-200"
+              className={`flex items-center transition-all duration-200 ${
+                isOpen 
+                  ? 'w-full h-12 px-4 rounded-xl gap-3 text-[#ef4444] hover:bg-red-50 hover:text-red-600'
+                  : 'w-12 h-12 justify-center rounded-full bg-white/60 backdrop-blur-md text-[#ef4444] hover:bg-[#ef4444] hover:text-white hover:shadow-md'
+              }`}
               title="Logout"
             >
-              <LogOut size={20} strokeWidth={2} />
+              <LogOut size={22} strokeWidth={2} />
+              {isOpen && <span className="font-medium">Logout</span>}
             </button>
             <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-1.5 bg-white/90 backdrop-blur-sm text-[#0f172a] text-sm font-semibold rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.08)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
               Logout

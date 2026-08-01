@@ -135,6 +135,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('galaxylibrary_token');
   };
 
+  // Auto-logout after 3 minutes of inactivity
+  useEffect(() => {
+    if (!user) return;
+
+    let inactivityTimer: number;
+
+    const resetTimer = () => {
+      window.clearTimeout(inactivityTimer);
+      // 3 minutes = 180000 milliseconds
+      inactivityTimer = window.setTimeout(() => {
+        logout();
+      }, 180000);
+    };
+
+    resetTimer();
+
+    const events = ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'];
+    events.forEach(event => {
+      window.addEventListener(event, resetTimer);
+    });
+
+    return () => {
+      window.clearTimeout(inactivityTimer);
+      events.forEach(event => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [user]); // Only re-run when user state changes
+
   return (
     <AuthContext.Provider value={{ user, loading, login, studentLogin, logout }}>
       {children}
