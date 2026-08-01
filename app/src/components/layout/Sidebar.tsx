@@ -91,7 +91,7 @@ export default function Sidebar() {
       )}
 
       <aside
-        className={`fixed left-0 top-0 h-screen flex flex-col z-50 transition-all duration-300 ease-in-out ${
+        className={`fixed left-0 top-0 h-[100dvh] flex flex-col z-50 transition-all duration-300 ease-in-out ${
           isOpen 
             ? 'w-[240px] translate-x-0 bg-white/95 backdrop-blur-md shadow-2xl items-stretch' 
             : 'w-[100px] -translate-x-full lg:translate-x-0 items-center bg-transparent'

@@ -35,6 +35,14 @@ export default function StudentPortal() {
   const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'payments' | 'courses' | 'feedback' | 'admission' | 'certificate'>('overview');
   const [customPayAmount, setCustomPayAmount] = useState<string>('');
   const [utrNumber, setUtrNumber] = useState<string>('');
+
+  const handleTabClick = (tab: 'overview' | 'profile' | 'payments' | 'courses' | 'feedback' | 'admission' | 'certificate') => {
+    if (student?.status === 'inactive' && tab !== 'overview' && tab !== 'feedback') {
+      alert("Take Admission then access, okay?");
+      return;
+    }
+    setActiveTab(tab);
+  };
   const [paymentError, setPaymentError] = useState('');
   const [copiedUpi, setCopiedUpi] = useState(false);
 
@@ -121,7 +129,7 @@ export default function StudentPortal() {
   const fallbackPayAmount = pendingAmount > 0 ? pendingAmount : (student.feeAmount || 0);
   const selectedPayAmount = normalizePaymentAmount(customPayAmount !== '' ? customPayAmount : fallbackPayAmount);
 
-  const advanceBalance = (validity && validity.monthlyFee > 0 && validity.totalPaid) 
+  const advanceBalance = (validity && validity.monthlyFee > 0 && validity.totalPaid && pendingAmount === 0) 
     ? validity.totalPaid % validity.monthlyFee 
     : 0;
 
@@ -212,47 +220,63 @@ export default function StudentPortal() {
         {/* Tab Navigation Menu */}
         <div className="flex flex-wrap gap-2 sm:gap-2 bg-white/50 backdrop-blur-md p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-white shadow-sm mb-4 sm:mb-5 w-full md:w-fit mx-0 justify-center md:justify-start">
           <button 
-            onClick={() => setActiveTab('overview')}
+            onClick={() => handleTabClick('overview')}
             className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'overview' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
           >
             📊 Overview
           </button>
+          
+          {student?.status !== 'inactive' && (
+            <button 
+              onClick={() => handleTabClick('profile')}
+              className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'profile' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
+            >
+              👤 My Profile
+            </button>
+          )}
+
+          {student?.status !== 'inactive' && (
+            <button 
+              onClick={() => handleTabClick('payments')}
+              className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'payments' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
+            >
+              🧾 Payment History
+            </button>
+          )}
+
+          {student?.status !== 'inactive' && (
+            <button 
+              onClick={() => handleTabClick('courses')}
+              className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'courses' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
+            >
+              📚 Courses
+            </button>
+          )}
+
           <button 
-            onClick={() => setActiveTab('profile')}
-            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'profile' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
-          >
-            👤 My Profile
-          </button>
-          <button 
-            onClick={() => setActiveTab('payments')}
-            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'payments' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
-          >
-            🧾 Payment History
-          </button>
-          <button 
-            onClick={() => setActiveTab('courses')}
-            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'courses' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
-          >
-            📚 Courses
-          </button>
-          <button 
-            onClick={() => setActiveTab('feedback')}
+            onClick={() => handleTabClick('feedback')}
             className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'feedback' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
           >
             💬 Feedback
           </button>
-          <button 
-            onClick={() => setActiveTab('admission')}
-            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'admission' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
-          >
-            🤝 Admission
-          </button>
-          <button 
-            onClick={() => setActiveTab('certificate')}
-            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'certificate' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
-          >
-            🏅 Certificate
-          </button>
+
+          {student?.status !== 'inactive' && (
+            <button 
+              onClick={() => handleTabClick('admission')}
+              className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'admission' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
+            >
+              🤝 Admission
+            </button>
+          )}
+
+          {student?.status !== 'inactive' && (
+            <button 
+              onClick={() => handleTabClick('certificate')}
+              className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'certificate' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
+            >
+              🏅 Certificate
+            </button>
+          )}
         </div>
 
         {/* Advance Payment Banner */}

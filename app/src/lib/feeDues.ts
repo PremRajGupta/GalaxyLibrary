@@ -134,3 +134,77 @@ export const getUnpaidMonthOptions = (
 
   return options;
 };
+
+export const getOldestUnpaidMonthDate = (
+  monthlyFee: number,
+  joiningDate: string | Date | null | undefined,
+  payments: FeePaymentLike[],
+  asOf: Date = new Date(),
+): Date | null => {
+  const joinDate = parseDateInputValue(joiningDate) || asOf;
+  const billingStart = joinDate;
+  const periodCount = getBillablePeriodCount(billingStart, asOf);
+  if (!monthlyFee || monthlyFee <= 0 || periodCount <= 0) return null;
+
+  const paidAmount = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  let remainingPaid = Math.max(0, paidAmount);
+
+  for (let i = 0; i < periodCount; i += 1) {
+    const allocated = Math.min(remainingPaid, monthlyFee);
+    remainingPaid -= allocated;
+    remainingPaid = Math.max(0, remainingPaid);
+
+    if (allocated < monthlyFee) {
+      return addBillingMonths(billingStart, i);
+    }
+  }
+
+  return null;
+};
+
+export const getCoveredMonthsLabel = (
+  monthlyFee: number,
+  joiningDate: string | Date | null | undefined,
+  payments: FeePaymentLike[],
+  creditAmount: number,
+  asOf: Date = new Date(),
+): string | null => {
+  const joinDate = parseDateInputValue(joiningDate) || asOf;
+  const billingStart = joinDate;
+  const periodCount = getBillablePeriodCount(billingStart, asOf);
+  if (!monthlyFee || monthlyFee <= 0 || creditAmount <= 0) return null;
+
+  const paidAmount = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  let remainingPaid = Math.max(0, paidAmount);
+
+  const covered: string[] = [];
+  let remainingCredit = creditAmount;
+
+  for (let i = 0; i < periodCount; i += 1) {
+    const allocated = Math.min(remainingPaid, monthlyFee);
+    remainingPaid -= allocated;
+    remainingPaid = Math.max(0, remainingPaid);
+
+    if (allocated < monthlyFee && remainingCredit > 0) {
+      const needed = monthlyFee - allocated;
+      const creditAllocated = Math.min(remainingCredit, needed);
+      remainingCredit -= creditAllocated;
+      
+      covered.push(formatPeriodLabel(i, billingStart));
+    }
+  }
+
+  // If there's still credit remaining (advance payment)
+  if (remainingCredit > 0) {
+    let advanceMonths = Math.floor(remainingCredit / monthlyFee);
+    if (remainingCredit % monthlyFee > 0) {
+      advanceMonths += 1;
+    }
+    
+    for (let i = 0; i < advanceMonths; i++) {
+       covered.push(formatPeriodLabel(periodCount + i, billingStart));
+    }
+  }
+
+  return covered.length > 0 ? covered.join(', ') : null;
+};

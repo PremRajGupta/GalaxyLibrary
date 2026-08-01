@@ -16,7 +16,7 @@ import {
 import { getStudentDisplayId } from '../lib/studentId';
 import { studentApi, feeApi } from '../lib/apiService';
 import { getFeeForTimeShift, getTimeShiftLabel } from '../lib/feeRules';
-import { addBillingMonths, computeStudentFeeDue, getBillablePeriodCount, getUnpaidMonthOptions } from '../lib/feeDues';
+import { addBillingMonths, computeStudentFeeDue, getBillablePeriodCount, getUnpaidMonthOptions, getOldestUnpaidMonthDate, getCoveredMonthsLabel } from '../lib/feeDues';
 import { formatJoiningDate, parseDateInputValue, toDateInputString, toDateInputValue } from '../lib/formatDate';
 import { Search, Wallet, Check, CreditCard, X, IndianRupee, ArrowRight, RefreshCw, CheckCircle2, Eye, Pencil, Zap } from 'lucide-react';
 
@@ -298,10 +298,16 @@ export function FeeCollection() {
       studentPayments,
     );
 
+    const oldestUnpaidDate = getOldestUnpaidMonthDate(
+      student.monthlyFee,
+      student.joiningDate,
+      studentPayments,
+    );
+
     setSelectedStudent(student);
     setPayAmount(String(student.feeDue));
     setDiscount('');
-    setMonth(toDateInputValue(new Date()));
+    setMonth(toDateInputValue(oldestUnpaidDate || new Date()));
     setPaymentMode('cash');
 
     const pendingMonthsText = monthOptions.length > 0
@@ -392,7 +398,23 @@ export function FeeCollection() {
       return;
     }
 
-    const selectedMonthLabel = getPeriodLabelFromDateValue(month);
+    const studentPayments = payments
+      .filter((payment) => payment.studentId === selectedStudent.studentId)
+      .map((payment) => ({
+        month: payment.month,
+        amount: payment.feeCreditAmount ?? payment.amount,
+        paymentDate: payment.date,
+      }));
+        
+    const coveredMonths = getCoveredMonthsLabel(
+      selectedStudent.monthlyFee,
+      selectedStudent.joiningDate,
+      studentPayments,
+      creditAmount
+    );
+    
+    // Fallback to the date picker's label if for some reason coveredMonths is null
+    const selectedMonthLabel = coveredMonths || getPeriodLabelFromDateValue(month);
     const previousDue = selectedStudent.feeDue;
     const remainingDue = Math.max(0, previousDue - creditAmount);
 
