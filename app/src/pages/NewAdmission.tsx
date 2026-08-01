@@ -222,8 +222,13 @@ export default function NewAdmission() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validation = validateForm();
-    if (!validation) return;
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      const errorList = Object.values(validationErrors).join(' • ');
+      setErrorMessage(`Please fix the following: ${errorList}`);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setSubmitting(true);
     setErrorMessage('');
     setSuccessMessage('');
@@ -315,7 +320,7 @@ export default function NewAdmission() {
     if (aadharNumberError) e.aadharNumber = aadharNumberError;
     if (!formData.photo) e.photo = 'Student photo is required.';
     setErrors(e);
-    return Object.keys(e).length === 0;
+    return e;
   };
 
   const initialForm = {
@@ -388,6 +393,20 @@ export default function NewAdmission() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="flex justify-center w-full mb-8">
+                <div className="w-full">
+                  <ImageCaptureField
+                    previewUrl={photoPreview}
+                    onImageChange={setStudentPhoto}
+                    facingMode="user"
+                    emptyHint=""
+                    error={errors.photo}
+                    shape="circle"
+                    helperText=""
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-[#1e293b] mb-2">
@@ -752,21 +771,6 @@ export default function NewAdmission() {
                 </div>
               </div>
 
-              <div className="max-w-md">
-                <ImageCaptureField
-                  label={
-                    <span className="block text-sm font-medium text-[#1e293b]">
-                      Student Photo<RequiredMark />
-                    </span>
-                  }
-                  previewUrl={photoPreview}
-                  onImageChange={setStudentPhoto}
-                  facingMode="user"
-                  emptyHint="No photo"
-                  error={errors.photo}
-                  helperText="Use front camera for student photo. Gallery or Camera — max ~2MB after compress."
-                />
-              </div>
 
               <div className="mt-4">
                 <h3 className="text-sm font-medium text-[#0f172a] mb-3">

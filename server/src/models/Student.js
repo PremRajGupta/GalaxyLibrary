@@ -47,6 +47,7 @@ const studentSchema = new mongoose.Schema({
   joiningDate: { type: Date, default: Date.now },
   admissionDate: { type: Date, default: Date.now },
   status: { type: String, enum: ['active', 'inactive', 'expired'], default: 'active' },
+  inactiveDate: { type: Date },
   password: { type: String }
 }, {
   timestamps: true

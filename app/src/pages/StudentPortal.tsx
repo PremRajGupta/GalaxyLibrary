@@ -121,6 +121,10 @@ export default function StudentPortal() {
   const fallbackPayAmount = pendingAmount > 0 ? pendingAmount : (student.feeAmount || 0);
   const selectedPayAmount = normalizePaymentAmount(customPayAmount !== '' ? customPayAmount : fallbackPayAmount);
 
+  const advanceBalance = (validity && validity.monthlyFee > 0 && validity.totalPaid) 
+    ? validity.totalPaid % validity.monthlyFee 
+    : 0;
+
   const isInactive = student.status === 'inactive';
   let feeStatus: 'paid' | 'due' | 'inactive' = 'due';
   let statusColor = 'text-red-600 bg-red-50 border-red-200';
@@ -167,10 +171,10 @@ export default function StudentPortal() {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-3 py-4 sm:px-4 sm:py-6 lg:px-8 lg:py-8 relative z-10">
+      <main className="max-w-7xl mx-auto px-3 py-2 sm:px-4 sm:py-3 lg:px-8 lg:py-4 relative z-10">
         
         {/* Welcome greeting card (Glassmorphism) */}
-        <div className="bg-white/70 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 relative overflow-hidden">
+        <div className="bg-white/70 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white p-3 sm:p-4 lg:p-5 mb-4 sm:mb-5 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-100 to-transparent rounded-full blur-3xl opacity-60 pointer-events-none"></div>
           
           <div className="flex items-center gap-3 sm:gap-5 relative z-10">
@@ -180,11 +184,11 @@ export default function StudentPortal() {
                 <img 
                   src={student.photo} 
                   alt={student.name} 
-                  className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover border-2 sm:border-4 border-white shadow-xl relative z-10" 
+                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 sm:border-4 border-white shadow-xl relative z-10" 
                 />
               </div>
             ) : (
-              <div className={`w-14 h-14 sm:w-20 sm:h-20 ${getAvatarColor(student.name)} rounded-full flex items-center justify-center text-xl sm:text-3xl text-white font-black border-2 sm:border-4 border-white shadow-xl relative z-10 flex-shrink-0`}>
+              <div className={`w-12 h-12 sm:w-16 sm:h-16 ${getAvatarColor(student.name)} rounded-full flex items-center justify-center text-xl sm:text-3xl text-white font-black border-2 sm:border-4 border-white shadow-xl relative z-10 flex-shrink-0`}>
                 {getInitials(student.name)}
               </div>
             )}
@@ -206,7 +210,7 @@ export default function StudentPortal() {
         </div>
 
         {/* Tab Navigation Menu */}
-        <div className="flex flex-wrap gap-2 sm:gap-2 bg-white/50 backdrop-blur-md p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-white shadow-sm mb-6 sm:mb-8 w-full md:w-fit mx-0 justify-center md:justify-start">
+        <div className="flex flex-wrap gap-2 sm:gap-2 bg-white/50 backdrop-blur-md p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-white shadow-sm mb-4 sm:mb-5 w-full md:w-fit mx-0 justify-center md:justify-start">
           <button 
             onClick={() => setActiveTab('overview')}
             className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === 'overview' ? 'bg-[#3b82f6] text-white shadow-md' : 'text-[#64748b] hover:bg-white hover:text-[#1e293b]'}`}
@@ -256,7 +260,7 @@ export default function StudentPortal() {
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 sm:mb-8 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-emerald-500 to-teal-600 shadow-[0_10px_30px_rgba(16,185,129,0.2)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 text-white relative overflow-hidden"
+            className="mb-4 sm:mb-5 p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-emerald-500 to-teal-600 shadow-[0_10px_30px_rgba(16,185,129,0.2)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 text-white relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
             <div className="flex items-start gap-3 sm:gap-4 relative z-10">
@@ -286,21 +290,21 @@ export default function StudentPortal() {
         {activeTab === 'overview' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="flex flex-col gap-4 sm:gap-6">
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 sm:gap-6">
               {/* Seat details card */}
               <motion.div 
                 whileHover={{ y: -4 }}
-                className="bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white p-4 sm:p-6 flex flex-col justify-between relative overflow-hidden"
+                className="lg:col-span-3 bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white p-3 sm:p-4 lg:p-5 flex flex-col justify-between relative overflow-hidden"
               >
                 <div className="absolute -right-8 -top-8 w-32 h-32 bg-blue-100/50 rounded-full blur-2xl opacity-60 pointer-events-none"></div>
                 <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
                     <h3 className="font-bold text-sm sm:text-base text-[#1e293b]">Seat Assignment</h3>
                     <span className="p-1.5 sm:p-2 bg-gradient-to-br from-blue-50 to-indigo-50 text-[#3b82f6] rounded-lg sm:rounded-xl shadow-sm"><Clock size={18} className="sm:w-5 sm:h-5" /></span>
                   </div>
-                  <div className="my-4 sm:my-6 text-center">
+                  <div className="my-2 sm:my-4 text-center">
                     <p className="text-[10px] text-[#94a3b8] uppercase font-bold tracking-widest mb-2 sm:mb-3">Your Assigned Seat</p>
-                    <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto rounded-full bg-gradient-to-br from-[#ffffff] to-[#f8fafc] border-4 sm:border-[6px] border-[#eff6ff] shadow-[0_10px_40px_-10px_rgba(59,130,246,0.2)] flex items-center justify-center relative group transition-all duration-300 hover:shadow-[0_10px_40px_-5px_rgba(59,130,246,0.3)] hover:scale-105 cursor-default">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full bg-gradient-to-br from-[#ffffff] to-[#f8fafc] border-4 sm:border-[6px] border-[#eff6ff] shadow-[0_10px_40px_-10px_rgba(59,130,246,0.2)] flex items-center justify-center relative group transition-all duration-300 hover:shadow-[0_10px_40px_-5px_rgba(59,130,246,0.3)] hover:scale-105 cursor-default">
                       <div className="absolute inset-0 rounded-full border border-blue-200/50 scale-[1.15] opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-500 ease-out"></div>
                       <span className="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-[#0f172a] to-[#3b82f6] tracking-tight">
                         {seatNumber}
@@ -308,7 +312,7 @@ export default function StudentPortal() {
                     </div>
                   </div>
                 </div>
-                <div className="border-t border-slate-100/80 pt-3 sm:pt-4 space-y-2 relative z-10">
+                <div className="border-t border-slate-100/80 pt-2 sm:pt-3 space-y-1 relative z-10">
                   <div className="flex justify-between items-center text-xs sm:text-sm">
                     <span className="text-[#64748b] font-semibold">Time Shift:</span>
                     <span className="font-bold text-[#1e293b] bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 text-xs sm:text-sm">{getCourseLabel(shiftText)}</span>
@@ -325,19 +329,19 @@ export default function StudentPortal() {
               {/* Fee details card */}
               <motion.div 
                 whileHover={{ y: -4 }}
-                className="bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white p-4 sm:p-6 flex flex-col justify-between"
+                className="lg:col-span-5 bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white p-3 sm:p-4 lg:p-5 flex flex-col justify-between"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
                     <h3 className="font-bold text-sm sm:text-base text-[#1e293b]">Fee Details</h3>
                     <span className="p-1.5 sm:p-2 bg-[#f0fdf4] text-[#16a34a] rounded-lg sm:rounded-xl"><CreditCard size={18} className="sm:w-5 sm:h-5" /></span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 my-3 sm:my-4">
-                    <div className="bg-slate-50/80 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-100">
+                  <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 sm:gap-3 my-2 sm:my-3">
+                    <div className="sm:col-span-2 bg-slate-50/80 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border border-slate-100">
                       <p className="text-[10px] sm:text-[11px] text-[#94a3b8] font-bold uppercase tracking-wide mb-1">Monthly Fee</p>
                       <p className="text-base sm:text-lg font-black text-[#1e293b] tracking-tight">{formatRupee(student.feeAmount || 0)}</p>
                     </div>
-                    <div className="bg-slate-50/80 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-100">
+                    <div className="sm:col-span-2 bg-slate-50/80 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border border-slate-100">
                       <p className="text-[10px] sm:text-[11px] text-[#94a3b8] font-bold uppercase tracking-wide mb-1">Valid Upto</p>
                       <p className="text-xs sm:text-sm font-bold text-[#1e293b] truncate">
                         {validity?.validUntilDate 
@@ -347,17 +351,23 @@ export default function StudentPortal() {
                             : 'N/A'}
                       </p>
                     </div>
-                    <div className="bg-green-50/80 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-green-100/50 text-[#16a34a]">
+                    <div className="sm:col-span-2 bg-green-50/80 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border border-green-100/50 text-[#16a34a]">
                       <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wide mb-1">Total Paid</p>
                       <p className="text-base sm:text-lg font-black tracking-tight">{formatRupee(totalPaidAmount)}</p>
                     </div>
-                    <div className={`${pendingAmount > 0 ? 'bg-red-50/80 border-red-100/50 text-red-700' : 'bg-slate-50/80 border-slate-100 text-[#1e293b]'} p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border`}>
+                    <div className={`${advanceBalance > 0 ? 'sm:col-span-3' : 'sm:col-span-6'} ${pendingAmount > 0 ? 'bg-red-50/80 border-red-100/50 text-red-700' : 'bg-slate-50/80 border-slate-100 text-[#1e293b]'} p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border`}>
                       <p className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-wide mb-1 ${pendingAmount > 0 ? 'text-red-700' : 'text-[#94a3b8]'}`}>Payment Due</p>
                       <p className="text-base sm:text-lg font-black tracking-tight">{formatRupee(pendingAmount)}</p>
                     </div>
+                    {advanceBalance > 0 && (
+                      <div className="col-span-2 sm:col-span-3 bg-blue-50/80 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border border-blue-100/50 text-[#2563eb]">
+                        <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wide mb-1 text-blue-600">Advance Balance</p>
+                        <p className="text-base sm:text-lg font-black tracking-tight">{formatRupee(advanceBalance)}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="border-t border-slate-100/80 pt-3 sm:pt-4 space-y-2">
+                <div className="border-t border-slate-100/80 pt-2 sm:pt-3 space-y-1">
                   <div className="flex justify-between text-xs sm:text-sm">
                     <span className="text-[#64748b] font-semibold">Payment Mode:</span>
                     <span className="font-bold text-[#1e293b] capitalize">{student.paymentMode || 'Cash'}</span>
@@ -383,17 +393,17 @@ export default function StudentPortal() {
               {/* Quick Support card */}
               <motion.div 
                 whileHover={{ y: -4 }}
-                className="bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white p-4 sm:p-6 flex flex-col justify-between"
+                className="lg:col-span-4 bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white p-3 sm:p-4 lg:p-5 flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between mb-2 sm:mb-3">
                     <h3 className="font-bold text-sm sm:text-base text-[#1e293b]">Help & Support</h3>
                     <span className="p-1.5 sm:p-2 bg-purple-50 text-purple-600 rounded-lg sm:rounded-xl"><ShieldCheck size={18} className="sm:w-5 sm:h-5" /></span>
                   </div>
-                  <p className="text-xs sm:text-[13px] text-[#64748b] mb-2 sm:mb-3 leading-relaxed">
+                  <p className="text-xs sm:text-[13px] text-[#64748b] mb-2 sm:mb-2 leading-relaxed">
                     Need help with seat transfer, shifts, or fee corrections? Contact the admin below.
                   </p>
-                  <div className="bg-emerald-50/80 border border-emerald-200/60 rounded-lg sm:rounded-xl p-2.5 sm:p-3 mb-3 sm:mb-4 shadow-sm">
+                  <div className="bg-emerald-50/80 border border-emerald-200/60 rounded-lg sm:rounded-xl p-2 sm:p-2.5 mb-2 sm:mb-3 shadow-sm">
                     <p className="text-[10px] sm:text-xs text-emerald-800 font-medium leading-snug">
                       <strong className="text-emerald-900 block mb-1 text-xs">📢 Stay Updated!</strong>
                       Join our WhatsApp group for <span className="font-bold">Daily Newspapers</span>, <span className="font-bold">Magazines</span>, Holiday Notices, and special Offers.
@@ -823,7 +833,7 @@ export default function StudentPortal() {
         {/* -------------------- TAB 7: CERTIFICATE -------------------- */}
         {activeTab === 'certificate' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="max-w-4xl mx-auto">
-            <CertificateTab student={student} />
+            <CertificateTab student={student} onUpdateStudent={(updated) => setData((prev: any) => ({ ...prev, student: updated }))} />
           </motion.div>
         )}
 

@@ -185,9 +185,18 @@ const calculateValidityFromAmount = (startDate, amount, monthlyFee) => {
 
   const fullMonthsCovered = Math.floor(safeAmount / safeMonthlyFee);
   const validUntil = addBillingMonths(startDate, fullMonthsCovered);
+  
+  const partialAmount = safeAmount % safeMonthlyFee;
+  if (partialAmount > 0) {
+    const nextMonth = addBillingMonths(startDate, fullMonthsCovered + 1);
+    const msInDay = 1000 * 60 * 60 * 24;
+    const totalDaysInMonth = Math.round((nextMonth - validUntil) / msInDay);
+    const extraDays = Math.round((partialAmount / safeMonthlyFee) * totalDaysInMonth);
+    validUntil.setDate(validUntil.getDate() + extraDays);
+  }
 
   return {
-    monthsCovered: fullMonthsCovered,
+    monthsCovered: Number((safeAmount / safeMonthlyFee).toFixed(2)),
     validUntil,
   };
 };

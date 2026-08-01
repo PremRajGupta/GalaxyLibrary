@@ -1,21 +1,52 @@
 import { useRef, useState, useEffect } from 'react';
-import { Download, Award, Clock } from 'lucide-react';
+import { Download, Award, Clock, FilePlus } from 'lucide-react';
 import { format } from 'date-fns';
+import { feeApi, studentApi } from '../../lib/apiService';
+import { getStudentDisplayId } from '../../lib/studentId';
 
 interface CertificateTabProps {
   student: any;
+  onUpdateStudent?: (updated: any) => void;
 }
 
-export default function CertificateTab({ student }: CertificateTabProps) {
+export default function CertificateTab({ student, onUpdateStudent }: CertificateTabProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isEligible, setIsEligible] = useState(false);
   const [monthsCompleted, setMonthsCompleted] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isFullyPaid, setIsFullyPaid] = useState(false);
+  const [validityLoading, setValidityLoading] = useState(true);
+
+  // Check if certificate was already generated
+  const isCertificateGenerated = !!student?.certificateGeneratedDate;
+  const generationDate = isCertificateGenerated ? new Date(student.certificateGeneratedDate) : new Date();
+
+  useEffect(() => {
+    const checkValidity = async () => {
+      if (!student) return;
+      try {
+        const studentId = getStudentDisplayId(student);
+        if (studentId) {
+          const validity = await feeApi.getStudentPaymentValidity(studentId);
+          if (validity.paymentStatus === 'valid' || validity.paymentStatus === 'expiring-soon') {
+            setIsFullyPaid(true);
+          } else {
+            setIsFullyPaid(false);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to check validity", err);
+      } finally {
+        setValidityLoading(false);
+      }
+    };
+    checkValidity();
+  }, [student]);
 
   useEffect(() => {
     if (!student) return;
     const joinDate = new Date(student.joiningDate || student.admissionDate);
-    const currentDate = new Date();
+    const currentDate = isCertificateGenerated ? generationDate : new Date();
     
     let months = (currentDate.getFullYear() - joinDate.getFullYear()) * 12;
     months -= joinDate.getMonth();
@@ -27,7 +58,7 @@ export default function CertificateTab({ student }: CertificateTabProps) {
 
     setMonthsCompleted(Math.max(0, months));
     setIsEligible(months >= 6);
-  }, [student]);
+  }, [student, isCertificateGenerated, generationDate]);
 
   const drawCertificate = (canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, img: HTMLImageElement) => {
     canvas.width = img.width;
@@ -42,7 +73,7 @@ export default function CertificateTab({ student }: CertificateTabProps) {
 
     const joinDate = new Date(student.joiningDate || student.admissionDate);
     const formattedJoinDate = format(joinDate, 'MMMM d, yyyy');
-    const formattedCurrentDate = format(new Date(), 'MMMM d, yyyy');
+    const formattedCurrentDate = format(generationDate, 'MMMM d, yyyy');
 
     const studyText = `He/She studied at Galaxy Library from ${formattedJoinDate} to ${formattedCurrentDate}.`;
 
@@ -52,16 +83,13 @@ export default function CertificateTab({ student }: CertificateTabProps) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    // Move name closer to the horizontal line
     const nameY = canvas.height * 0.53; 
     ctx.fillText(name, canvas.width / 2, nameY);
 
     // 2. Draw Study Period Text
-    // Smaller font size for study period so it fits better
     ctx.font = '36px "Inter", "Arial", sans-serif';
     ctx.fillStyle = '#333333';
     
-    // Move text closer to the horizontal line (just below it)
     const textY = canvas.height * 0.60;
     ctx.fillText(studyText, canvas.width / 2, textY);
   };
@@ -90,11 +118,31 @@ export default function CertificateTab({ student }: CertificateTabProps) {
   };
 
   useEffect(() => {
-    if (isEligible) {
-      // Need a small timeout to ensure canvas is rendered before trying to get context
+    if (isEligible && isCertificateGenerated) {
       setTimeout(loadAndDrawPreview, 100);
     }
-  }, [isEligible, student]);
+  }, [isEligible, isCertificateGenerated, student]);
+
+  const handleGenerate = async () => {
+    if (!isFullyPaid) return;
+    setIsGenerating(true);
+    try {
+      const generatedDate = new Date().toISOString();
+      const studentId = student.id || student._id;
+      const updated = await studentApi.updateStudent(studentId, { certificateGeneratedDate: generatedDate });
+      
+      // Update local student object to re-render
+      student.certificateGeneratedDate = generatedDate;
+      if (onUpdateStudent) {
+        onUpdateStudent({ ...student, certificateGeneratedDate: generatedDate });
+      }
+    } catch (err) {
+      console.error("Failed to generate certificate record:", err);
+      alert("Failed to generate certificate. You might need admin permissions or there is a network error.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleDownload = () => {
     setIsGenerating(true);
@@ -154,24 +202,51 @@ export default function CertificateTab({ student }: CertificateTabProps) {
             Certificate of Participation
           </h2>
           <p className="text-slate-500 mt-1">Congratulations! You have successfully completed {monthsCompleted} months at Galaxy Library.</p>
+          {!validityLoading && !isFullyPaid && !isCertificateGenerated && (
+            <p className="text-red-500 text-sm font-semibold mt-2">
+              ⚠️ Please clear all pending fee dues to generate the certificate.
+            </p>
+          )}
         </div>
-        <button
-          onClick={handleDownload}
-          disabled={isGenerating}
-          className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
-        >
-          <Download size={18} />
-          {isGenerating ? 'Generating...' : 'Download Certificate'}
-        </button>
+        
+        {!isCertificateGenerated ? (
+          <button
+            onClick={handleGenerate}
+            disabled={isGenerating || (!validityLoading && !isFullyPaid)}
+            className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl font-bold shadow-lg shadow-orange-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            <FilePlus size={18} />
+            {isGenerating ? 'Generating...' : 'Generate Certificate'}
+          </button>
+        ) : (
+          <button
+            onClick={handleDownload}
+            disabled={isGenerating}
+            className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+          >
+            <Download size={18} />
+            {isGenerating ? 'Downloading...' : 'Download Certificate'}
+          </button>
+        )}
       </div>
 
-      <div className="relative border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-slate-50 p-2 sm:p-4 flex justify-center items-center">
-        <canvas 
-          ref={canvasRef} 
-          className="max-w-full h-auto shadow-md rounded-lg"
-          style={{ maxHeight: '70vh' }}
-        />
-      </div>
+      {isCertificateGenerated ? (
+        <div className="relative border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-slate-50 p-2 sm:p-4 flex justify-center items-center">
+          <canvas 
+            ref={canvasRef} 
+            className="max-w-full h-auto shadow-md rounded-lg"
+            style={{ maxHeight: '70vh' }}
+          />
+        </div>
+      ) : (
+        <div className="border border-dashed border-slate-300 rounded-xl p-12 flex flex-col items-center justify-center text-slate-500 bg-slate-50">
+          <FilePlus size={48} className="text-slate-300 mb-4" />
+          <h3 className="text-lg font-semibold text-slate-700 mb-2">Certificate Ready</h3>
+          <p className="text-center max-w-md">
+            You have met the requirements. Click the <strong>Generate Certificate</strong> button above to lock your final dates and view your certificate.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

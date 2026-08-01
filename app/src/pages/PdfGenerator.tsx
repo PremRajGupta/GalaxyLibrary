@@ -9,6 +9,7 @@ import { Download, Search, Eye, X, Pencil, ChevronLeft, ChevronRight, AlertCircl
 import { feeApi, studentApi } from '../lib/apiService';
 import { getStudentDisplayId } from '../lib/studentId';
 import { formatJoiningDate } from '../lib/formatDate';
+import { getInitials, getAvatarColor } from '../sections/fees/feeModels';
 
 interface ReceiptGroup {
   studentId: string;
@@ -44,6 +45,8 @@ export default function PdfGenerator() {
   const [currentPage, setCurrentPage] = useState(1);
   const [validityData, setValidityData] = useState<Record<string, PaymentValidity>>({});
   const [studentFees, setStudentFees] = useState<Record<string, number>>({});
+  const [studentJoiningDates, setStudentJoiningDates] = useState<Record<string, string>>({});
+  const [studentPhotos, setStudentPhotos] = useState<Record<string, string>>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [filterAdvanceOnly, setFilterAdvanceOnly] = useState(false);
   const RECORDS_PER_PAGE = 20;
@@ -78,13 +81,23 @@ export default function PdfGenerator() {
         setPayments(data);
         
         const feeMap: Record<string, number> = {};
+        const joinMap: Record<string, string> = {};
+        const photoMap: Record<string, string> = {};
         studentsList.forEach((s: any) => {
           const sid = getStudentDisplayId(s);
           if (sid) {
             feeMap[sid] = Number(s.feeAmount) || 0;
+            if (s.joiningDate) {
+              joinMap[sid] = formatJoiningDate(s.joiningDate);
+            }
+            if (s.photo) {
+              photoMap[sid] = s.photo;
+            }
           }
         });
         setStudentFees(feeMap);
+        setStudentJoiningDates(joinMap);
+        setStudentPhotos(photoMap);
 
         await fetchValidityData(data);
       } catch (error) {
@@ -104,13 +117,23 @@ export default function PdfGenerator() {
       setPayments(data);
       
       const feeMap: Record<string, number> = {};
+      const joinMap: Record<string, string> = {};
+      const photoMap: Record<string, string> = {};
       studentsList.forEach((s: any) => {
         const sid = getStudentDisplayId(s);
         if (sid) {
           feeMap[sid] = Number(s.feeAmount) || 0;
+          if (s.joiningDate) {
+            joinMap[sid] = formatJoiningDate(s.joiningDate);
+          }
+          if (s.photo) {
+            photoMap[sid] = s.photo;
+          }
         }
       });
       setStudentFees(feeMap);
+      setStudentJoiningDates(joinMap);
+      setStudentPhotos(photoMap);
 
       await fetchValidityData(data);
       showNotification('Data refreshed successfully!', 'success');
@@ -308,6 +331,15 @@ export default function PdfGenerator() {
     }
   };
 
+  const handlePreview = async (payment: PaymentReceipt) => {
+    try {
+      await generateReceiptPDF(payment, getDefaultReceiptLogo(), 'preview');
+    } catch (error) {
+      console.error('Receipt preview failed:', error);
+      showNotification('Failed to preview receipt', 'error');
+    }
+  };
+
   return (
     <div>
       <TopHeader />
@@ -451,6 +483,13 @@ export default function PdfGenerator() {
                             Download
                           </button>
                           <button
+                            onClick={() => handlePreview(payment)}
+                            className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition"
+                          >
+                            <Eye size={14} />
+                            View
+                          </button>
+                          <button
                             onClick={() => {
                               setEditPayment(payment);
                               setEditAmount(String(payment.amount));
@@ -569,14 +608,13 @@ export default function PdfGenerator() {
         </AnimatePresence>
 
         <div className="table-scroll overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <table className="w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.16em] text-slate-500">
               <tr>
                 <th className="px-4 py-3">Student</th>
-                <th className="px-4 py-3">Student ID</th>
                 <th className="px-4 py-3">Monthly Fee</th>
                 <th className="px-4 py-3">Total Paid</th>
-                <th className="px-4 py-3">Last Payment</th>
+                <th className="px-4 py-3">Joining Date</th>
                 <th className="px-4 py-3">Payment Validity</th>
                 <th className="px-4 py-3">Action</th>
               </tr>
@@ -592,23 +630,36 @@ export default function PdfGenerator() {
                 paginatedPayments.map((group) => (
                   <Fragment key={`group-${group.studentId}`}>
                     <tr className="bg-slate-50">
-                      <td className="px-4 py-4 text-slate-900 font-medium">
-                        <div className="flex items-center gap-2">
-                          <span>{group.studentName}</span>
-                          {(validityData[group.studentId]?.hasAdvancePayment || validityData[group.studentId]?.isAdvancePayment) && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full border border-yellow-300">
-                              <Zap size={12} />
-                              Advance
-                            </span>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-3">
+                          {studentPhotos[group.studentId] ? (
+                            <img src={studentPhotos[group.studentId]} alt={group.studentName} className="w-10 h-10 rounded-full object-cover border border-slate-200" />
+                          ) : (
+                            <div className={`w-10 h-10 ${getAvatarColor(group.studentName)} rounded-full flex items-center justify-center`}>
+                              <span className="text-white text-xs font-semibold">{getInitials(group.studentName)}</span>
+                            </div>
                           )}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-slate-900">{group.studentName}</span>
+                              {(validityData[group.studentId]?.hasAdvancePayment || validityData[group.studentId]?.isAdvancePayment) && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full border border-yellow-300">
+                                  <Zap size={10} />
+                                  Advance
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs text-slate-500 font-medium">{group.studentId}</span>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-slate-600">{group.studentId}</td>
                       <td className="px-4 py-4 text-slate-900 font-bold">
                         {studentFees[group.studentId] !== undefined ? `₹${studentFees[group.studentId]}` : 'N/A'}
                       </td>
                       <td className="px-4 py-4 text-slate-900">₹{group.totalAmount.toFixed(2)}</td>
-                      <td className="px-4 py-4 text-slate-600">{group.lastPaymentDate}</td>
+                      <td className="px-4 py-4 text-slate-600">
+                        {studentJoiningDates[group.studentId] || (group.payments[0]?.joiningDate ? formatJoiningDate(group.payments[0].joiningDate) : 'N/A')}
+                      </td>
                       <td className="px-4 py-4">
                         {getValidityBadge(group.studentId)}
                       </td>

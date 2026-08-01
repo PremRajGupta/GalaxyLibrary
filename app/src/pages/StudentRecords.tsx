@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import jsPDF from 'jspdf';
 import TopHeader from '../components/layout/TopHeader';
-import { Users, Search, Eye, Pencil, Trash2, X, Download } from 'lucide-react';
+import { Users, Search, Eye, EyeOff, Pencil, Trash2, X, Download } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getInitials, getAvatarColor } from '../sections/students/students';
 import { studentApi } from '../lib/apiService';
@@ -28,6 +28,16 @@ export default function StudentRecords() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
+  const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
+
+  const togglePasswordVisibility = (id: string) => {
+    setVisiblePasswords(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   // Fetch students whenever location changes (e.g., after edit/delete)
   useEffect(() => {
@@ -42,7 +52,9 @@ export default function StudentRecords() {
           parentContact: s.parentMobile || 'N/A',
           studentId: getStudentDisplayId(s),
           course: getCourseLabel(s.course),
+          fatherName: s.fatherName || s.father || 'N/A',
           joiningDate: formatJoiningDate(s.joiningDate || s.admissionDate),
+          inactiveDate: s.inactiveDate ? formatJoiningDate(s.inactiveDate) : null,
         }));
         mappedData.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
         setStudentList(mappedData);
@@ -55,10 +67,12 @@ export default function StudentRecords() {
     fetchStudents();
   }, [location]);
 
+  const [shiftFilter, setShiftFilter] = useState('');
+
   // Reset to first page when search or filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter]);
+  }, [searchTerm, statusFilter, shiftFilter]);
 
   const showNotification = (msg: string) => {
     setNotification(msg);
@@ -94,14 +108,15 @@ export default function StudentRecords() {
         updateData['seatNumber'] = null;
       }
 
-      await studentApi.updateStudent(student.id, updateData);
+      const res = await studentApi.updateStudent(student.id, updateData);
 
       const updated = studentList.map((s) =>
         s.id === student.id
           ? {
               ...s,
               status: newStatus,
-              seat: newStatus === 'inactive' ? '--' : s.seat
+              seat: newStatus === 'inactive' ? '--' : s.seat,
+              inactiveDate: newStatus === 'inactive' && res?.inactiveDate ? formatJoiningDate(res.inactiveDate) : null
             }
           : s
       );
@@ -174,11 +189,16 @@ export default function StudentRecords() {
   };
 
   const filteredStudents = studentList.filter((s) => {
-    const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          s.studentId.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = s.name.toLowerCase().includes(searchLower) || 
+                          s.studentId.toLowerCase().includes(searchLower) ||
+                          (s.fatherName && s.fatherName.toLowerCase().includes(searchLower));
     const matchesStatus = statusFilter ? s.status === statusFilter : true;
-    return matchesSearch && matchesStatus;
+    const matchesShift = shiftFilter ? (s.timeShift === shiftFilter || s.shift === shiftFilter) : true;
+    return matchesSearch && matchesStatus && matchesShift;
   });
+
+  const uniqueShifts = Array.from(new Set(studentList.map(s => s.timeShift || s.shift).filter(Boolean))).sort();
 
   const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
   const paginatedStudents = filteredStudents.slice(
@@ -368,10 +388,21 @@ export default function StudentRecords() {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by name or ID..."
+                placeholder="Search by Name, ID, or Father's Name..."
                 className="w-full pl-9 pr-4 py-2.5 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/20 transition-all text-sm"
               />
             </div>
+            
+            <select
+              value={shiftFilter}
+              onChange={(e) => setShiftFilter(e.target.value)}
+              className="w-full sm:w-auto px-4 py-2.5 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#3b82f6] transition-all text-sm bg-white"
+            >
+              <option value="">All Shifts</option>
+              {uniqueShifts.map((shift, idx) => (
+                <option key={idx} value={String(shift)}>{shift}</option>
+              ))}
+            </select>
             
             <select
               value={statusFilter}
@@ -391,10 +422,11 @@ export default function StudentRecords() {
                 <tr className="text-left border-b border-[#e2e8f0]">
                   <th className="pb-3 text-sm font-medium text-[#64748b]">Student</th>
                   <th className="pb-3 text-sm font-medium text-[#64748b]">Portal Password</th>
-                  <th className="pb-3 text-sm font-medium text-[#64748b]">Course</th>
+                  <th className="pb-3 text-sm font-medium text-[#64748b]">Father's Name</th>
                   <th className="pb-3 text-sm font-medium text-[#64748b]">Seat</th>
                   <th className="pb-3 text-sm font-medium text-[#64748b]">Contact</th>
                   <th className="pb-3 text-sm font-medium text-[#64748b]">Joining Date</th>
+                  <th className="pb-3 text-sm font-medium text-[#64748b]">Time Shift</th>
                   <th className="pb-3 text-sm font-medium text-[#64748b]">Status</th>
                   <th className="pb-3 text-sm font-medium text-[#64748b] text-center">Mark Inactive</th>
                   <th className="pb-3 text-sm font-medium text-[#64748b]">Actions</th>
@@ -403,7 +435,7 @@ export default function StudentRecords() {
               <tbody>
                 {paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-6 text-center text-sm text-[#64748b]">
+                    <td colSpan={10} className="py-6 text-center text-sm text-[#64748b]">
                       No students found.
                     </td>
                   </tr>
@@ -420,24 +452,47 @@ export default function StudentRecords() {
                       >
                         <td className="py-4">
                           <div className="flex items-center gap-3">
-                            <div className={`w-9 h-9 ${getAvatarColor(student.name)} rounded-full flex items-center justify-center`}>
-                              <span className="text-white text-xs font-semibold">{getInitials(student.name)}</span>
-                            </div>
+                            {student.photo ? (
+                              <img src={student.photo} alt={student.name} className="w-9 h-9 rounded-full object-cover border border-slate-200" />
+                            ) : (
+                              <div className={`w-9 h-9 ${getAvatarColor(student.name)} rounded-full flex items-center justify-center`}>
+                                <span className="text-white text-xs font-semibold">{getInitials(student.name)}</span>
+                              </div>
+                            )}
                             <div>
                               <p className="text-sm font-medium text-[#1e293b]">{student.name}</p>
                               <p className="text-xs text-[#94a3b8]">{student.studentId}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="py-4 text-sm font-mono font-medium text-[#3b82f6]">{student.password || 'N/A'}</td>
-                        <td className="py-4 text-sm text-[#1e293b]">{student.course}</td>
+                        <td className="py-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-mono font-medium text-[#3b82f6]">
+                              {student.password ? (visiblePasswords.has(student.id) ? student.password : '••••••••') : 'N/A'}
+                            </span>
+                            {student.password && (
+                              <button
+                                onClick={() => togglePasswordVisibility(student.id)}
+                                className="text-[#64748b] hover:text-[#3b82f6] transition-colors"
+                                title={visiblePasswords.has(student.id) ? "Hide Password" : "Show Password"}
+                              >
+                                {visiblePasswords.has(student.id) ? <EyeOff size={14} /> : <Eye size={14} />}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-4 text-sm text-[#1e293b]">{student.fatherName}</td>
                         <td className="py-4 text-sm text-[#64748b]">{student.seat}</td>
                         <td className="py-4 text-sm text-[#64748b]">{student.contact}</td>
                         <td className="py-4 text-sm text-[#64748b]">{student.joiningDate}</td>
+                        <td className="py-4 text-sm font-medium text-[#0ea5e9]">{student.timeShift || 'N/A'}</td>
                         <td className="py-4">
                           <span className={`px-2.5 py-1 ${status?.bg || ''} ${status?.text || ''} text-xs font-semibold rounded-md`}>
                             {status?.label || student.status || 'N/A'}
                           </span>
+                          {student.status === 'inactive' && student.inactiveDate && (
+                            <p className="text-xs text-[#94a3b8] mt-1.5">{student.inactiveDate}</p>
+                          )}
                         </td>
                         <td className="py-4 text-center">
                           <input

@@ -52,7 +52,7 @@ const normalizeReceiptText = (text?: string) => {
   return normalized.trim();
 };
 
-export const generateReceiptPDF = async (payment: PaymentReceipt, logoUrl?: string) => {
+export const generateReceiptPDF = async (payment: PaymentReceipt, logoUrl?: string, action: 'download' | 'preview' = 'download') => {
   const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -168,7 +168,11 @@ export const generateReceiptPDF = async (payment: PaymentReceipt, logoUrl?: stri
   doc.setFont('helvetica', 'normal');
   doc.text(S.receiptThankYou, margin, cursorY);
 
-  doc.save(S.receiptFileName(payment.studentId, payment.id));
+  if (action === 'preview') {
+    window.open(doc.output('bloburl'), '_blank');
+  } else {
+    doc.save(S.receiptFileName(payment.studentId, payment.id));
+  }
 };
 
 export const getDefaultReceiptLogo = () => APP_LOGO_SRC;

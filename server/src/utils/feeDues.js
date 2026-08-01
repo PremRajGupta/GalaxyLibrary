@@ -37,6 +37,7 @@ export const computeStudentFeeDue = ({
   joiningDate,
   payments,
   asOf = new Date(),
+  inactiveDate,
 }) => {
   const empty = {
     pendingAmount: 0,
@@ -51,7 +52,16 @@ export const computeStudentFeeDue = ({
   const joinDate = parseDateInputValue(joiningDate) || asOf;
   // Advance billing: the first 30-day period starts immediately from joiningDate.
   const billingStart = joinDate;
-  const periodCount = getBillablePeriodCount(billingStart, asOf);
+  
+  let effectiveAsOf = asOf;
+  if (inactiveDate) {
+    const parsedInactiveDate = parseDateInputValue(inactiveDate);
+    if (parsedInactiveDate && parsedInactiveDate < effectiveAsOf) {
+      effectiveAsOf = parsedInactiveDate;
+    }
+  }
+
+  const periodCount = getBillablePeriodCount(billingStart, effectiveAsOf);
   if (periodCount <= 0) return empty;
 
   const paymentsWithDate = (payments || [])

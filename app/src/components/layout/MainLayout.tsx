@@ -7,9 +7,9 @@ import MobileHeader from './MobileHeader';
 export default function MainLayout() {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen bg-[#f1f5f9]">
+      <div className="flex min-h-screen mesh-bg">
         <Sidebar />
-        <div className="flex flex-col flex-1 min-w-0 lg:ml-[260px]">
+        <div className="flex flex-col flex-1 min-w-0 lg:ml-[100px]">
           <MobileHeader />
           <main className="flex-1 p-4 sm:p-6 lg:p-8">
             <motion.div

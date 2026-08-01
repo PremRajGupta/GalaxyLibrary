@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, User, Phone, FileText, UploadCloud, CheckCircle, Loader2, Award, CreditCard } from 'lucide-react';
 import LandingNavbar from '../components/landing/LandingNavbar';
@@ -9,9 +9,11 @@ import { loadSiteContent, getStoredSiteContent, SITE_CONTENT_UPDATED_EVENT } fro
 
 export default function ComputerCenterRegistration() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [content, setContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(location.state?.selectedCourse || '');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -108,6 +110,20 @@ export default function ComputerCenterRegistration() {
                   <User size={20} className="text-blue-500" /> Personal Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Select Course</label>
+                    <select 
+                      required 
+                      value={selectedCourse}
+                      onChange={(e) => setSelectedCourse(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white"
+                    >
+                      <option value="" disabled>Select a course</option>
+                      {content.computerCourses?.map(course => (
+                        <option key={course.id} value={course.id}>{course.title} - {course.fullName}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Full Name</label>
                     <input type="text" required placeholder="Enter your full name" className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white" />

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { LogOut, ChevronDown } from 'lucide-react';
+import AppLogo from '../AppLogo';
 
 export default function TopHeader() {
   const { user, logout } = useAuth();
@@ -14,12 +15,13 @@ export default function TopHeader() {
   };
 
   return (
-    <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
-      <div className="min-w-0">
-        <h1 className="text-xl sm:text-2xl font-bold text-[#1e293b] truncate">
-          Welcome, {user?.displayName || 'Admin'}
+    <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-8">
+      <div className="min-w-0 flex items-center gap-4">
+        <h1 className="text-xl sm:text-2xl text-[#1e293b] truncate">
+          <span className="font-normal text-[#64748b]">Welcome, </span>
+          <span className="font-bold text-[#1e293b]">{user?.displayName || 'Admin'}</span>
         </h1>
-        <span className="inline-block mt-1 px-3 py-1 bg-[#dbeafe] text-[#3b82f6] text-[10px] font-semibold uppercase tracking-wider rounded-md">
+        <span className="inline-flex items-center px-4 py-1.5 bg-[#e9ecef] shadow-inner text-[#475569] text-xs font-bold uppercase tracking-widest rounded-full">
           MANAGER
         </span>
       </div>
@@ -28,12 +30,12 @@ export default function TopHeader() {
         <button
           type="button"
           onClick={() => setShowDropdown(!showDropdown)}
-          className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-[#1a2b4a] text-white hover:bg-[#2a3b5a] transition-colors"
+          className="flex items-center gap-2 p-1.5 sm:pr-4 rounded-full bg-[#f4f5f7] shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)] border border-[#e2e8f0] hover:bg-[#e9ecef] transition-all text-[#1e293b]"
         >
-          <div className="w-8 h-8 bg-white/20 rounded flex items-center justify-center text-sm font-semibold flex-shrink-0">
-            {user?.displayName?.charAt(0).toUpperCase() || 'A'}
+          <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#2C3D5A] overflow-hidden">
+            <AppLogo size="sm" showName={false} />
           </div>
-          <ChevronDown size={16} className={`transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+          <ChevronDown size={16} className={`hidden sm:block text-[#64748b] transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
         </button>
 
         {showDropdown && (

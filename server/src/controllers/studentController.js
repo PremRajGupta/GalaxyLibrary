@@ -173,7 +173,7 @@ export const updateStudent = async (req, res) => {
     const student = await Student.findById(req.params.id);
     if (!student) return res.status(404).json({ message: 'Student not found' });
 
-    // Handle seat clearing when marking as inactive
+    // Handle status changes (seat clearing and inactive date)
     if (studentData.status === 'inactive' && student.status !== 'inactive') {
       if (student.seatNumber && student.seatNumber !== '--') {
         await Seat.findOneAndUpdate(
@@ -182,6 +182,10 @@ export const updateStudent = async (req, res) => {
         );
       }
       studentData.seatNumber = null;
+      studentData.inactiveDate = new Date();
+    } else if (studentData.status === 'active' && student.status !== 'active') {
+      // Clear inactive date if they become active again
+      studentData.inactiveDate = null;
     }
 
     const updatedStudent = await Student.findByIdAndUpdate(req.params.id, studentData, { new: true });

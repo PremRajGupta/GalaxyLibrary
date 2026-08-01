@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, ImagePlus, X, SwitchCamera } from 'lucide-react';
+import { Camera, ImagePlus, X, SwitchCamera, Upload, User } from 'lucide-react';
 import { processCapturedImage, processImageFile } from '../lib/imageCapture';
 
 type FacingMode = 'user' | 'environment';
 
 type ImageCaptureFieldProps = {
-  label: React.ReactNode;
+  label?: React.ReactNode;
   previewUrl: string | null;
   onImageChange: (dataUrl: string | null) => void;
   facingMode?: FacingMode;
@@ -14,6 +14,7 @@ type ImageCaptureFieldProps = {
   emptyHint?: string;
   error?: string;
   helperText?: string;
+  shape?: 'circle' | 'rectangle';
 };
 
 export default function ImageCaptureField({
@@ -25,6 +26,7 @@ export default function ImageCaptureField({
   emptyHint = 'No image',
   error,
   helperText = 'Upload from gallery or take a photo with camera.',
+  shape = 'rectangle',
 }: ImageCaptureFieldProps) {
   const inputId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -65,20 +67,31 @@ export default function ImageCaptureField({
   };
 
   return (
-    <div>
-      <div className="mb-2">{label}</div>
-      <div className="border border-dashed border-[#e6eef8] rounded-lg p-3 flex items-center justify-center min-h-[120px] bg-[#f8fafc]">
-        {previewUrl ? (
-          <img src={previewUrl} alt="Preview" className={`${previewClassName} rounded-md object-cover`} />
-        ) : (
-          <div className="flex flex-col items-center text-[#64748b] py-2">
-            <Camera size={28} className="opacity-60" />
-            <p className="text-sm mt-2">{emptyHint}</p>
-          </div>
-        )}
-      </div>
+    <div className={shape === 'circle' ? 'flex flex-col items-center' : ''}>
+      {label && <div className={`mb-3 ${shape === 'circle' ? 'text-center' : ''}`}>{label}</div>}
+      
+      {shape === 'circle' ? (
+        <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full border-2 border-dashed border-[#cbd5e1] flex items-center justify-center bg-[#f8fafc] overflow-hidden shadow-sm">
+          {previewUrl ? (
+            <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+          ) : (
+            <User size={56} className="text-[#94a3b8]" />
+          )}
+        </div>
+      ) : (
+        <div className="border border-dashed border-[#e6eef8] rounded-lg p-3 flex items-center justify-center min-h-[120px] bg-[#f8fafc]">
+          {previewUrl ? (
+            <img src={previewUrl} alt="Preview" className={`${previewClassName} rounded-md object-cover`} />
+          ) : (
+            <div className="flex flex-col items-center text-[#64748b] py-2">
+              <Camera size={28} className="opacity-60" />
+              <p className="text-sm mt-2">{emptyHint}</p>
+            </div>
+          )}
+        </div>
+      )}
 
-      <div className="flex flex-wrap gap-2 mt-3">
+      <div className={`flex flex-wrap gap-3 mt-4 ${shape === 'circle' ? 'justify-center' : ''}`}>
         <input
           ref={fileRef}
           id={inputId}
@@ -90,33 +103,45 @@ export default function ImageCaptureField({
         />
         <label
           htmlFor={inputId}
-          className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-[#e2e8f0] bg-white text-[#1e293b] hover:bg-[#f8fafc] cursor-pointer ${processing ? 'opacity-50 pointer-events-none' : ''}`}
+          className={
+            shape === 'circle'
+              ? `inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold rounded-full bg-[#1a2b4a] text-white hover:bg-[#2a3b5a] cursor-pointer shadow-md transition-transform active:scale-95 ${processing ? 'opacity-50 pointer-events-none' : ''}`
+              : `inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-[#e2e8f0] bg-white text-[#1e293b] hover:bg-[#f8fafc] cursor-pointer ${processing ? 'opacity-50 pointer-events-none' : ''}`
+          }
         >
-          <ImagePlus size={16} />
-          Gallery
+          {shape === 'circle' ? <Upload size={16} /> : <ImagePlus size={16} />}
+          {shape === 'circle' ? 'Upload' : 'Gallery'}
         </label>
         <button
           type="button"
           onClick={() => setCameraOpen(true)}
           disabled={processing}
-          className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-[#0369a1] text-white hover:bg-[#075985] disabled:opacity-50"
+          className={
+            shape === 'circle'
+              ? `inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold rounded-full bg-[#f1f5f9] border border-[#e2e8f0] text-[#1a2b4a] hover:bg-[#e2e8f0] disabled:opacity-50 shadow-sm transition-transform active:scale-95`
+              : `inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-[#0369a1] text-white hover:bg-[#075985] disabled:opacity-50`
+          }
         >
           <Camera size={16} />
-          {processing ? 'Processing…' : 'Camera'}
+          {processing ? '...' : 'Camera'}
         </button>
         {previewUrl && (
           <button
             type="button"
             onClick={() => onImageChange(null)}
             disabled={processing}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-[#fecaca] text-[#dc2626] hover:bg-[#fef2f2] disabled:opacity-50"
+            className={
+              shape === 'circle'
+                ? `inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-full border border-[#fecaca] text-[#dc2626] hover:bg-[#fef2f2] disabled:opacity-50 transition-transform active:scale-95`
+                : `inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-[#fecaca] text-[#dc2626] hover:bg-[#fef2f2] disabled:opacity-50`
+            }
           >
             Remove
           </button>
         )}
       </div>
 
-      <p className="text-xs text-[#94a3b8] mt-2">{helperText}</p>
+      {helperText && <p className={`text-xs text-[#94a3b8] mt-3 ${shape === 'circle' ? 'text-center max-w-[250px]' : ''}`}>{helperText}</p>}
       {(error || localError) && (
         <p className="text-xs text-red-600 mt-1">{error || localError}</p>
       )}

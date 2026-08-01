@@ -108,7 +108,10 @@ export default function AllCourses() {
                   </div>
                 </div>
                 
-                <button className="mt-auto px-6 py-2.5 bg-[#4f46e5] hover:bg-[#4338ca] text-white text-sm font-bold rounded-full transition-all shadow-md shadow-indigo-500/20 w-full max-w-[160px] hover:-translate-y-0.5">
+                <button 
+                  onClick={() => navigate('/computercenter/registration', { state: { selectedCourse: course.id } })}
+                  className="mt-auto px-6 py-2.5 bg-[#4f46e5] hover:bg-[#4338ca] text-white text-sm font-bold rounded-full transition-all shadow-md shadow-indigo-500/20 w-full max-w-[160px] hover:-translate-y-0.5"
+                >
                   View Details
                 </button>
               </div>

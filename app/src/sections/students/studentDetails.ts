@@ -7,6 +7,7 @@ export interface Student {
   contact: string;
   admissionDate: string;
   joiningDate?: string;
+  timeShift?: string;
   status: 'active' | 'inactive' | 'expired';
   photo?: string; // data URL
   aadharNumber?: string;

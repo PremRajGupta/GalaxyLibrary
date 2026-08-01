@@ -17,11 +17,12 @@ interface Seat {
   studentId?: string;
   studentMobile?: string;
   fatherName?: string;
+  studentPhoto?: string;
 }
 
 const statusColors: Record<SeatStatus, string> = {
   available: 'bg-[#dcfce7] border-[#22c55e] text-[#22c55e]',
-  occupied: 'bg-[#fee2e2] border-[#ef4444] text-[#ef4444]',
+  occupied: 'bg-[#fef2f2] border-[#ef4444] text-[#ef4444]',
   reserved: 'bg-[#fef9c3] border-[#eab308] text-[#eab308]',
 };
 
@@ -62,7 +63,7 @@ export default function SeatMap() {
           studentApi.getStudents(),
         ]);
 
-        const occupiedByStudent = new Map<string, { name: string; studentId?: string; mobile?: string; fatherName?: string }>();
+        const occupiedByStudent = new Map<string, { name: string; studentId?: string; mobile?: string; fatherName?: string, photo?: string }>();
         students.forEach((student: any) => {
           if (
             student.status === 'active' &&
@@ -75,6 +76,7 @@ export default function SeatMap() {
               studentId: student.studentId,
               mobile: student.mobile,
               fatherName: student.fatherName,
+              photo: student.photo,
             });
           }
         });
@@ -90,6 +92,7 @@ export default function SeatMap() {
                 studentId: studentOnSeat.studentId,
                 studentMobile: studentOnSeat.mobile,
                 fatherName: studentOnSeat.fatherName,
+                studentPhoto: studentOnSeat.photo,
               };
             }
 
@@ -169,7 +172,7 @@ export default function SeatMap() {
 
           {/* Seat Grid */}
           <div className="pb-8">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 max-w-6xl mx-auto">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3 sm:gap-4 max-w-7xl mx-auto">
               {seats
                 .filter((seat) => seat.column === activeSection)
                 .map((seat, index) => {
@@ -182,12 +185,32 @@ export default function SeatMap() {
                       whileHover={seat.status !== 'available' ? { scale: 1.03 } : {}}
                       whileTap={seat.status !== 'available' ? { scale: 0.97 } : {}}
                       onClick={() => (seat.status === 'occupied' || seat.status === 'reserved') && setSelectedSeat(seat as any)}
-                      className={`h-14 sm:h-16 rounded-xl border-2 flex items-center justify-between px-4 sm:px-5 transition-all duration-150 shadow-sm ${
+                      className={`relative min-h-[5.5rem] sm:min-h-[7rem] rounded-2xl border-2 flex flex-col justify-center transition-all duration-150 shadow-sm overflow-hidden ${
                         statusColors[seat.status]
-                      } ${seat.status !== 'available' ? 'cursor-pointer hover:shadow-md' : 'cursor-default'}`}
+                      } ${seat.status !== 'available' ? 'cursor-pointer hover:shadow-md' : 'cursor-default flex-row items-center justify-between px-4 sm:px-5'}`}
                     >
-                      <Armchair className="w-5 h-5 sm:w-6 sm:h-6 opacity-70" />
-                      <span className="text-sm sm:text-base font-black">{seat.number}</span>
+                      {seat.status === 'occupied' ? (
+                        <div className="flex flex-col items-center w-full h-full p-1.5 pt-2">
+                          <span className="absolute top-1.5 right-2 text-[10px] sm:text-xs font-black opacity-90 text-red-500">{seat.number}</span>
+                          <div className="flex-1 flex items-center justify-center mt-1">
+                            {seat.studentPhoto ? (
+                              <img src={seat.studentPhoto} alt={seat.studentName} className="w-12 h-12 sm:w-16 sm:h-16 rounded-[0.9rem] object-cover shadow-sm" />
+                            ) : (
+                              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-[0.9rem] bg-red-100 flex items-center justify-center text-red-600 font-bold text-xl shadow-sm">
+                                {seat.studentName?.charAt(0)?.toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-[11px] sm:text-xs font-extrabold text-center leading-tight line-clamp-1 w-full px-1 text-slate-800 mt-1.5 pb-0.5">
+                            {seat.studentName}
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          <Armchair className="w-5 h-5 sm:w-6 sm:h-6 opacity-70" />
+                          <span className="text-sm sm:text-base font-black">{seat.number}</span>
+                        </>
+                      )}
                     </motion.button>
                   );
                 })}

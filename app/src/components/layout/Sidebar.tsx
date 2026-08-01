@@ -91,65 +91,71 @@ export default function Sidebar() {
       )}
 
       <aside
-        className={`fixed left-0 top-0 h-screen w-[260px] max-w-[85vw] bg-[#1a2b4a] flex flex-col z-50 transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        className={`fixed left-0 top-0 h-screen w-[100px] flex flex-col items-center z-50 transition-transform duration-300 ease-in-out bg-transparent ${
+          isOpen ? 'translate-x-0 bg-white/90 backdrop-blur-md shadow-2xl' : '-translate-x-full lg:translate-x-0'
         }`}
       >
-        <div className="px-6 py-6 flex items-center justify-between gap-3">
+        <div className="py-6 flex items-center justify-center w-full relative">
           <AppLogo
             size="md"
-            showName
-            name={S.appName}
-            nameClassName="text-white font-semibold text-xl"
+            showName={false}
           />
           <button
             type="button"
             onClick={close}
-            className="lg:hidden p-1.5 text-[#8b9bb4] hover:text-white hover:bg-[#2a3b5a] rounded-lg transition-colors"
+            className="lg:hidden absolute right-2 top-6 p-1.5 text-[#64748b] hover:text-[#0f172a] bg-white rounded-full shadow-sm"
             aria-label="Close menu"
           >
-            <X size={20} />
+            <X size={16} />
           </button>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 py-4 space-y-5 flex flex-col items-center overflow-y-auto w-full hide-scrollbar">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
             return (
-              <button
-                key={item.path}
-                type="button"
-                onClick={() => handleNavigate(item.path)}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-all duration-150 ${
-                  active
-                    ? 'bg-[#2a3b5a] text-white shadow-lg'
-                    : 'text-[#8b9bb4] hover:bg-[#2a3b5a]/50 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon size={20} className={active ? 'text-[#3b82f6]' : ''} />
-                  <span>{item.label}</span>
+              <div key={item.path} className="relative group flex justify-center w-full">
+                <button
+                  type="button"
+                  onClick={() => handleNavigate(item.path)}
+                  className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
+                    active
+                      ? 'bg-[#2C3D5A] text-white shadow-[0_4px_12px_rgba(44,61,90,0.3)] scale-110'
+                      : 'bg-white/60 backdrop-blur-md text-[#64748b] hover:bg-white hover:text-[#2C3D5A] hover:shadow-md'
+                  }`}
+                  title={item.label}
+                >
+                  <Icon size={22} strokeWidth={active ? 2.5 : 2} />
+                  {item.path === '/requests' && pendingCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm border-2 border-white">
+                      {pendingCount}
+                    </span>
+                  )}
+                </button>
+                {/* Tooltip for desktop */}
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-1.5 bg-white/90 backdrop-blur-sm text-[#0f172a] text-sm font-semibold rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.08)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
+                  {item.label}
                 </div>
-                {item.path === '/requests' && pendingCount > 0 && (
-                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
-                    {pendingCount}
-                  </span>
-                )}
-              </button>
+              </div>
             );
           })}
         </nav>
 
-        <div className="px-3 py-4">
-          <button
-            type="button"
-            onClick={logout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-[#ef4444] hover:bg-[#2a3b5a] transition-all duration-150"
-          >
-            <LogOut size={20} />
-            <span>Logout</span>
-          </button>
+        <div className="py-6 flex flex-col items-center w-full">
+          <div className="relative group flex justify-center w-full">
+            <button
+              type="button"
+              onClick={logout}
+              className="w-12 h-12 flex items-center justify-center rounded-full bg-white/60 backdrop-blur-md text-[#ef4444] hover:bg-[#ef4444] hover:text-white hover:shadow-md transition-all duration-200"
+              title="Logout"
+            >
+              <LogOut size={20} strokeWidth={2} />
+            </button>
+            <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-1.5 bg-white/90 backdrop-blur-sm text-[#0f172a] text-sm font-semibold rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.08)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
+              Logout
+            </div>
+          </div>
         </div>
       </aside>
     </>
