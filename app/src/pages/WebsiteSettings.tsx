@@ -40,7 +40,9 @@ import {
 } from '../lib/siteContentService';
 
 const inputClass =
-  'w-full pl-9.5 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/10 focus:border-blue-600 text-sm font-medium text-slate-800 transition-all placeholder:text-slate-400 shadow-xs';
+  'w-full pl-11 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/10 focus:border-blue-600 text-sm font-medium text-slate-800 transition-all placeholder:text-slate-400 shadow-xs';
+const textareaWithIconClass =
+  'w-full pl-11 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/10 focus:border-blue-600 text-sm font-medium text-slate-800 transition-all placeholder:text-slate-400 shadow-xs resize-none';
 const rawInputClass =
   'w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/10 focus:border-blue-600 text-sm font-medium text-slate-800 transition-all placeholder:text-slate-400 shadow-xs';
 const labelClass = 'block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5';
@@ -266,7 +268,7 @@ export default function WebsiteSettings() {
                 <div>
                   <label className={labelClass}>Library Name</label>
                   <div className="relative">
-                    <Building2 size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Building2 size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
                       type="text"
                       className={inputClass}
@@ -280,7 +282,7 @@ export default function WebsiteSettings() {
                 <div>
                   <label className={labelClass}>Tagline / Catchphrase</label>
                   <div className="relative">
-                    <Sparkles size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Sparkles size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
                       type="text"
                       className={inputClass}
@@ -294,7 +296,7 @@ export default function WebsiteSettings() {
                 <div>
                   <label className={labelClass}>Left Card Title / Owner Name</label>
                   <div className="relative">
-                    <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
                       type="text"
                       className={inputClass}
@@ -308,7 +310,7 @@ export default function WebsiteSettings() {
                 <div>
                   <label className={labelClass}>Phone (display format)</label>
                   <div className="relative">
-                    <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
                       type="text"
                       className={inputClass}
@@ -322,7 +324,7 @@ export default function WebsiteSettings() {
                 <div>
                   <label className={labelClass}>WhatsApp Number (digits only)</label>
                   <div className="relative">
-                    <MessageSquare size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <MessageSquare size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
                       type="text"
                       className={inputClass}
@@ -336,7 +338,7 @@ export default function WebsiteSettings() {
                 <div>
                   <label className={labelClass}>Official Email Address</label>
                   <div className="relative">
-                    <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
                       type="email"
                       className={inputClass}
@@ -350,10 +352,10 @@ export default function WebsiteSettings() {
                 <div className="md:col-span-2">
                   <label className={labelClass}>Physical Address</label>
                   <div className="relative">
-                    <MapPin size={16} className="absolute left-3.5 top-3 text-slate-400" />
+                    <MapPin size={16} className="absolute left-3.5 top-3.5 text-slate-400 pointer-events-none" />
                     <textarea
                       rows={2}
-                      className="w-full pl-9.5 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/10 focus:border-blue-600 text-sm font-medium text-slate-800 transition-all placeholder:text-slate-400 shadow-xs resize-none"
+                      className={textareaWithIconClass}
                       value={content.libraryInfo.address}
                       onChange={(e) => updateLibraryInfo('address', e.target.value)}
                       placeholder="e.g. DhiraBigha, Sugaon Road, Tehta, Jehanabad, Bihar 804427"
@@ -364,7 +366,7 @@ export default function WebsiteSettings() {
                 <div className="md:col-span-2">
                   <label className={labelClass}>Google Maps Share Link (Optional)</label>
                   <div className="relative">
-                    <Globe size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Globe size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
                       type="text"
                       className={inputClass}
@@ -378,10 +380,10 @@ export default function WebsiteSettings() {
                 <div className="md:col-span-2">
                   <label className={labelClass}>WhatsApp Click-to-Chat Message</label>
                   <div className="relative">
-                    <MessageSquare size={16} className="absolute left-3.5 top-3 text-slate-400" />
+                    <MessageSquare size={16} className="absolute left-3.5 top-3.5 text-slate-400 pointer-events-none" />
                     <textarea
                       rows={2}
-                      className="w-full pl-9.5 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/10 focus:border-blue-600 text-sm font-medium text-slate-800 transition-all placeholder:text-slate-400 shadow-xs resize-none"
+                      className={textareaWithIconClass}
                       value={content.libraryInfo.whatsappMessage}
                       onChange={(e) => updateLibraryInfo('whatsappMessage', e.target.value)}
                       placeholder="Hello! I would like to know more about Galaxy Library."
@@ -409,10 +411,10 @@ export default function WebsiteSettings() {
                 <div>
                   <label className={labelClass}>Library Registration Fee (₹)</label>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₹</span>
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm pointer-events-none">₹</span>
                     <input
                       type="number"
-                      className="w-full pl-8 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/10 focus:border-blue-600 text-sm font-medium text-slate-800 transition-all shadow-xs"
+                      className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/10 focus:border-blue-600 text-sm font-medium text-slate-800 transition-all shadow-xs"
                       value={content.admissionFees?.library ?? 5}
                       onChange={(e) =>
                         setContent((prev) => ({
@@ -430,10 +432,10 @@ export default function WebsiteSettings() {
                 <div>
                   <label className={labelClass}>Computer Center Registration Fee (₹)</label>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₹</span>
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm pointer-events-none">₹</span>
                     <input
                       type="number"
-                      className="w-full pl-8 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/10 focus:border-blue-600 text-sm font-medium text-slate-800 transition-all shadow-xs"
+                      className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/10 focus:border-blue-600 text-sm font-medium text-slate-800 transition-all shadow-xs"
                       value={content.admissionFees?.computerCenter ?? 50}
                       onChange={(e) =>
                         setContent((prev) => ({
@@ -468,7 +470,7 @@ export default function WebsiteSettings() {
                 <div>
                   <label className={labelClass}>Right Card Title</label>
                   <div className="relative">
-                    <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
                       className={inputClass}
                       value={content.admissionContact.title}
@@ -481,7 +483,7 @@ export default function WebsiteSettings() {
                 <div>
                   <label className={labelClass}>Phone (display format)</label>
                   <div className="relative">
-                    <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
                       className={inputClass}
                       value={content.admissionContact.phone}
@@ -493,7 +495,7 @@ export default function WebsiteSettings() {
                 <div>
                   <label className={labelClass}>WhatsApp Number (digits only)</label>
                   <div className="relative">
-                    <MessageSquare size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <MessageSquare size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
                       className={inputClass}
                       value={content.admissionContact.phoneRaw}
@@ -505,7 +507,7 @@ export default function WebsiteSettings() {
                 <div>
                   <label className={labelClass}>Support Email</label>
                   <div className="relative">
-                    <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
                       type="email"
                       className={inputClass}
@@ -518,10 +520,10 @@ export default function WebsiteSettings() {
                 <div className="md:col-span-2">
                   <label className={labelClass}>Office Address</label>
                   <div className="relative">
-                    <MapPin size={16} className="absolute left-3.5 top-3 text-slate-400" />
+                    <MapPin size={16} className="absolute left-3.5 top-3.5 text-slate-400 pointer-events-none" />
                     <textarea
                       rows={2}
-                      className="w-full pl-9.5 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/10 focus:border-blue-600 text-sm font-medium text-slate-800 transition-all placeholder:text-slate-400 shadow-xs resize-none"
+                      className={textareaWithIconClass}
                       value={content.admissionContact.address}
                       onChange={(e) => updateAdmissionContact('address', e.target.value)}
                     />
@@ -531,7 +533,7 @@ export default function WebsiteSettings() {
                 <div className="md:col-span-2">
                   <label className={labelClass}>Google Maps Share Link (Optional)</label>
                   <div className="relative">
-                    <Globe size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Globe size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
                       className={inputClass}
                       value={content.admissionContact.mapUrl}
@@ -543,10 +545,10 @@ export default function WebsiteSettings() {
                 <div className="md:col-span-2">
                   <label className={labelClass}>WhatsApp Message</label>
                   <div className="relative">
-                    <MessageSquare size={16} className="absolute left-3.5 top-3 text-slate-400" />
+                    <MessageSquare size={16} className="absolute left-3.5 top-3.5 text-slate-400 pointer-events-none" />
                     <textarea
                       rows={2}
-                      className="w-full pl-9.5 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/10 focus:border-blue-600 text-sm font-medium text-slate-800 transition-all placeholder:text-slate-400 shadow-xs resize-none"
+                      className={textareaWithIconClass}
                       value={content.admissionContact.whatsappMessage}
                       onChange={(e) => updateAdmissionContact('whatsappMessage', e.target.value)}
                     />
