@@ -3,14 +3,16 @@ import SiteContent from '../models/SiteContent.js';
 
 export const getAdminProfile = async (req, res) => {
   try {
-    const adminEmail = (req.user?.email || process.env.ADMIN_EMAIL || 'admin@library.com').toLowerCase().trim();
+    const adminEmail = (req.query?.email || req.user?.email || process.env.ADMIN_EMAIL || 'admin@library.com').toLowerCase().trim();
 
-    let admin = await Admin.findOne({ 
-      $or: [
-        { email: adminEmail },
-        { role: 'admin' }
-      ]
-    }).lean();
+    // Find the primary admin document
+    let admin = await Admin.findOne({ role: 'admin' }).lean();
+    if (!admin) {
+      admin = await Admin.findOne({ email: adminEmail }).lean();
+    }
+    if (!admin) {
+      admin = await Admin.findOne().lean();
+    }
 
     if (!admin) {
       // Create initial profile if not exists
@@ -43,52 +45,61 @@ export const getAdminProfile = async (req, res) => {
 
 export const updateAdminProfile = async (req, res) => {
   try {
-    const adminEmail = (req.user?.email || process.env.ADMIN_EMAIL || 'admin@library.com').toLowerCase().trim();
-    const { displayName, phone, photoURL, libraryName, address, bio } = req.body;
+    const adminEmail = (req.body?.email || req.user?.email || process.env.ADMIN_EMAIL || 'admin@library.com').toLowerCase().trim();
+    const { displayName, phone, photoURL, libraryName, address, bio, email } = req.body;
 
-    let admin = await Admin.findOne({
-      $or: [
-        { email: adminEmail },
-        { role: 'admin' }
-      ]
-    });
+    // Find primary admin profile
+    let admin = await Admin.findOne({ role: 'admin' });
+    if (!admin) {
+      admin = await Admin.findOne({ email: adminEmail });
+    }
+    if (!admin) {
+      admin = await Admin.findOne();
+    }
 
     if (!admin) {
       admin = new Admin({
-        email: adminEmail,
+        email: email ? email.toLowerCase().trim() : adminEmail,
         role: 'admin'
       });
     }
 
-    if (displayName !== undefined) admin.displayName = displayName;
-    if (phone !== undefined) admin.phone = phone;
+    if (displayName !== undefined && displayName !== null) admin.displayName = displayName.trim();
+    if (phone !== undefined && phone !== null) admin.phone = phone.trim();
     if (photoURL !== undefined) admin.photoURL = photoURL;
-    if (libraryName !== undefined) admin.libraryName = libraryName;
-    if (address !== undefined) admin.address = address;
-    if (bio !== undefined) admin.bio = bio;
+    if (libraryName !== undefined && libraryName !== null) admin.libraryName = libraryName.trim();
+    if (address !== undefined && address !== null) admin.address = address.trim();
+    if (bio !== undefined && bio !== null) admin.bio = bio.trim();
+    if (email && email.trim()) admin.email = email.toLowerCase().trim();
 
     await admin.save();
 
-    // Optionally sync with SiteContent libraryInfo
+    // Sync with SiteContent landing config
     try {
-      const site = await SiteContent.findOne({ key: 'landing' });
+      let site = await SiteContent.findOne({ key: 'landing' });
       if (site) {
+        if (!site.libraryInfo) site.libraryInfo = {};
         let changed = false;
-        if (displayName && site.libraryInfo.ownerName !== displayName) {
-          site.libraryInfo.ownerName = displayName;
+
+        if (displayName && site.libraryInfo.ownerName !== displayName.trim()) {
+          site.libraryInfo.ownerName = displayName.trim();
           changed = true;
         }
-        if (phone && site.libraryInfo.phone !== phone) {
-          site.libraryInfo.phone = phone;
-          site.libraryInfo.phoneRaw = phone.replace(/[^0-9]/g, '');
+        if (phone && site.libraryInfo.phone !== phone.trim()) {
+          site.libraryInfo.phone = phone.trim();
+          site.libraryInfo.phoneRaw = phone.trim().replace(/[^0-9]/g, '');
           changed = true;
         }
-        if (address && site.libraryInfo.address !== address) {
-          site.libraryInfo.address = address;
+        if (address && site.libraryInfo.address !== address.trim()) {
+          site.libraryInfo.address = address.trim();
           changed = true;
         }
-        if (libraryName && site.libraryInfo.name !== libraryName) {
-          site.libraryInfo.name = libraryName;
+        if (libraryName && site.libraryInfo.name !== libraryName.trim()) {
+          site.libraryInfo.name = libraryName.trim();
+          changed = true;
+        }
+        if (email && site.libraryInfo.email !== email.trim()) {
+          site.libraryInfo.email = email.trim();
           changed = true;
         }
         if (changed) {

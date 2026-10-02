@@ -38,18 +38,35 @@ const getErrorMessage = (error: unknown): string => {
 
 const mapFirebaseUser = (firebaseUser: FirebaseUser): User => {
   let cachedPhoto = null;
+  let cachedName = null;
+  let cachedPhone = null;
+
   try {
     const stored = localStorage.getItem('galaxylibrary_user');
     if (stored) {
-      cachedPhoto = JSON.parse(stored).photoURL;
+      const parsed = JSON.parse(stored);
+      cachedPhoto = parsed.photoURL;
+      cachedName = parsed.displayName;
+      cachedPhone = parsed.phone;
+    }
+  } catch (e) {}
+
+  try {
+    const storedAdmin = localStorage.getItem('galaxylibrary_admin_profile');
+    if (storedAdmin) {
+      const parsedAdmin = JSON.parse(storedAdmin);
+      if (parsedAdmin.displayName) cachedName = parsedAdmin.displayName;
+      if (parsedAdmin.photoURL) cachedPhoto = parsedAdmin.photoURL;
+      if (parsedAdmin.phone) cachedPhone = parsedAdmin.phone;
     }
   } catch (e) {}
 
   return {
     uid: firebaseUser.uid,
     email: firebaseUser.email,
-    displayName: firebaseUser.displayName || 'Admin',
+    displayName: firebaseUser.displayName || cachedName || 'Admin',
     photoURL: firebaseUser.photoURL || cachedPhoto || null,
+    phone: cachedPhone || null,
     role: 'admin'
   };
 };
@@ -94,6 +111,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const appUser = mapFirebaseUser(firebaseUser);
         setUser(appUser);
         saveAppUser(appUser);
+
+        // Fetch remote admin profile from MongoDB to ensure consistency
+        axios.get(apiUrl('/api/admin/profile'), {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 15000
+        }).then((res) => {
+          const p = res.data?.profile || res.data;
+          if (p) {
+            try {
+              localStorage.setItem('galaxylibrary_admin_profile', JSON.stringify(p));
+            } catch (e) {}
+            setUser(prev => {
+              if (!prev || prev.role !== 'admin') return prev;
+              const updated = {
+                ...prev,
+                displayName: p.displayName || prev.displayName,
+                photoURL: p.photoURL || prev.photoURL,
+                phone: p.phone || prev.phone
+              };
+              saveAppUser(updated);
+              return updated;
+            });
+          }
+        }).catch(() => {});
       } else {
         setUser(null);
         localStorage.removeItem('galaxylibrary_user');

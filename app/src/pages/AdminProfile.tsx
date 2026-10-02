@@ -18,7 +18,6 @@ import {
   EyeOff, 
   Clock,
   ExternalLink,
-  Sliders,
   Check,
   X,
   FileText,
@@ -53,7 +52,7 @@ export default function AdminProfile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'system'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'security'>('profile');
 
   // Profile Form State
   const [profile, setProfile] = useState<ProfileData>(() => {
@@ -210,14 +209,27 @@ export default function AdminProfile() {
     setSavingProfile(true);
 
     try {
-      await adminApi.updateProfile({
+      const updatedProfile = await adminApi.updateProfile({
         displayName: profile.displayName.trim(),
         phone: profile.phone.trim(),
         photoURL: profile.photoURL,
         libraryName: profile.libraryName.trim(),
         address: profile.address.trim(),
-        bio: profile.bio.trim()
+        bio: profile.bio.trim(),
+        email: profile.email.trim()
       });
+
+      if (updatedProfile) {
+        setProfile((prev) => ({
+          ...prev,
+          displayName: updatedProfile.displayName || prev.displayName,
+          phone: updatedProfile.phone || prev.phone,
+          photoURL: updatedProfile.photoURL !== undefined ? updatedProfile.photoURL : prev.photoURL,
+          libraryName: updatedProfile.libraryName || prev.libraryName,
+          address: updatedProfile.address || prev.address,
+          bio: updatedProfile.bio !== undefined ? updatedProfile.bio : prev.bio
+        }));
+      }
 
       if (auth.currentUser) {
         try {
@@ -477,19 +489,6 @@ export default function AdminProfile() {
           <Lock size={15} />
           <span>Password & Security</span>
         </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('system')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            activeTab === 'system'
-              ? 'bg-white text-slate-900 shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-          }`}
-        >
-          <Sliders size={15} />
-          <span>System & Organization</span>
-        </button>
       </div>
 
       {/* TAB CONTENT */}
@@ -643,38 +642,6 @@ export default function AdminProfile() {
 
             {/* Sidebar Summary & Shortcuts (1 col) */}
             <div className="space-y-6">
-              {/* Account Overview Card */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#2C3D5A] flex items-center justify-center font-bold">
-                    <ShieldCheck size={18} />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900">Account Overview</h4>
-                    <p className="text-xs text-slate-500">System credentials & status</p>
-                  </div>
-                </div>
-
-                <div className="divide-y divide-slate-100 text-xs">
-                  <div className="py-2.5 flex items-center justify-between">
-                    <span className="text-slate-500 font-medium">Access Tier</span>
-                    <span className="font-bold text-slate-900">Administrator</span>
-                  </div>
-                  <div className="py-2.5 flex items-center justify-between">
-                    <span className="text-slate-500 font-medium">Authentication</span>
-                    <span className="font-semibold text-blue-600">Firebase Auth</span>
-                  </div>
-                  <div className="py-2.5 flex items-center justify-between">
-                    <span className="text-slate-500 font-medium">Database</span>
-                    <span className="font-semibold text-emerald-600">MongoDB Atlas</span>
-                  </div>
-                  <div className="py-2.5 flex items-center justify-between">
-                    <span className="text-slate-500 font-medium">Session Protection</span>
-                    <span className="font-semibold text-slate-700">3 Min Inactivity</span>
-                  </div>
-                </div>
-              </div>
-
               {/* Administrative Shortcuts Card */}
               <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-3">
                 <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Quick Management</h4>
@@ -896,65 +863,6 @@ export default function AdminProfile() {
                     <span>Active sessions will automatically re-verify on your next login.</span>
                   </li>
                 </ul>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* TAB 3: System & Organization */}
-        {activeTab === 'system' && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6"
-          >
-            {/* Auto Lock Feature */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center">
-                  <Clock size={20} />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">Session Security & Timeout</h3>
-                  <p className="text-xs text-slate-500">Automatic inactivity protection</p>
-                </div>
-              </div>
-
-              <p className="text-xs text-slate-600 leading-relaxed">
-                To safeguard student records and fee data, the portal automatically signs out after <strong>3 minutes of inactivity</strong> (no mouse movements, clicks, or keyboard strokes).
-              </p>
-
-              <div className="p-3 bg-emerald-50/80 border border-emerald-200/60 rounded-xl flex items-center gap-2 text-xs font-semibold text-emerald-800">
-                <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0" />
-                <span>Inactivity lock protection is active</span>
-              </div>
-            </div>
-
-            {/* Cloud Platform Status */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
-                  <Globe size={20} />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">Cloud Infrastructure</h3>
-                  <p className="text-xs text-slate-500">Live operational microservices</p>
-                </div>
-              </div>
-
-              <div className="space-y-2 text-xs">
-                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <span className="font-medium text-slate-600">Frontend Hosting</span>
-                  <span className="font-bold text-slate-900">Vercel Production</span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <span className="font-medium text-slate-600">Backend API</span>
-                  <span className="font-bold text-slate-900">Render Cloud Node.js</span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <span className="font-medium text-slate-600">Database Engine</span>
-                  <span className="font-bold text-emerald-600">MongoDB Atlas Cluster</span>
-                </div>
               </div>
             </div>
           </motion.div>

@@ -296,16 +296,34 @@ export const adminApi = {
   getProfile: async () => {
     return cachedFetch('admin:profile', async () => {
       const response = await api.get('/admin/profile');
-      return response.data?.profile || response.data;
-    }, 30000);
+      const profile = response.data?.profile || response.data;
+      if (profile) {
+        try {
+          localStorage.setItem('galaxylibrary_admin_profile', JSON.stringify(profile));
+        } catch (e) {}
+      }
+      return profile;
+    }, 15000);
   },
   getCachedProfile: () => {
-    return getCachedData<any>('admin:profile');
+    const memory = getCachedData<any>('admin:profile');
+    if (memory) return memory;
+    try {
+      const stored = localStorage.getItem('galaxylibrary_admin_profile');
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return null;
   },
   updateProfile: async (data: Record<string, unknown>) => {
     const response = await api.put('/admin/profile', data);
+    const profile = response.data?.profile || response.data;
+    if (profile) {
+      try {
+        localStorage.setItem('galaxylibrary_admin_profile', JSON.stringify(profile));
+      } catch (e) {}
+    }
     invalidateCacheTags(['admin:profile', 'site-content']);
-    return response.data?.profile || response.data;
+    return profile;
   }
 };
 
