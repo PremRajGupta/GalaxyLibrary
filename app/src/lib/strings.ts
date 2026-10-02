@@ -38,6 +38,7 @@ const S = {
     students: 'Students',
     reports: 'Reports',
     website: 'Website',
+    profile: 'Admin Profile',
   }
 } as const;
 

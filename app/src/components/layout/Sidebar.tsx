@@ -17,6 +17,7 @@ import {
   Monitor,
   ChevronLeft,
   ChevronRight,
+  UserCog,
 } from 'lucide-react';
 
 import AppLogo from '../AppLogo';
@@ -34,6 +35,7 @@ const menuItems = [
   { path: '/reports', label: S.sidebar.reports, icon: FileText },
   { path: '/computer-center-settings', label: 'Computer Center', icon: Monitor },
   { path: '/website-settings', label: S.sidebar.website, icon: Globe },
+  { path: '/profile', label: S.sidebar.profile, icon: UserCog },
 ];
 
 export default function Sidebar() {

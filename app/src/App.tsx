@@ -14,6 +14,7 @@ import Reports from './pages/Reports';
 import PdfGenerator from './pages/PdfGenerator';
 import WebsiteSettings from './pages/WebsiteSettings';
 import ComputerCenterAdmin from './pages/ComputerCenterAdmin';
+import AdminProfile from './pages/AdminProfile';
 import Index from './pages/Index';
 import About from './pages/About';
 import Services from './pages/Services';
@@ -131,6 +132,8 @@ function AppRoutes() {
         <Route path="/reports" element={<Reports />} />
         <Route path="/computer-center-settings" element={<ComputerCenterAdmin />} />
         <Route path="/website-settings" element={<WebsiteSettings />} />
+        <Route path="/profile" element={<AdminProfile />} />
+        <Route path="/admin-profile" element={<AdminProfile />} />
       </Route>
 
       {/* Student Protected Route */}

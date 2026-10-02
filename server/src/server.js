@@ -13,6 +13,7 @@ import requestRoutes from './routes/requestRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import cashfreeRoutes from './routes/cashfreeRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import { getSiteContent, updateSiteContent } from './controllers/siteContentController.js';
 import { getPublicStats, recordPublicVisit } from './controllers/publicStatsController.js';
 
@@ -404,6 +405,7 @@ app.use('/api/v1/seats', seatRoutes);
 app.use('/api/v1/requests', requestRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/reports', reportRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 // ===== API Routes (Legacy) =====
 app.use('/api/students', studentRoutes);
@@ -412,6 +414,7 @@ app.use('/api/seats', seatRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ===== Error Handling Middleware =====
 app.use((err, req, res, next) => {

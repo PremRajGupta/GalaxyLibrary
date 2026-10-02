@@ -292,3 +292,20 @@ export const studentPortalApi = {
   }
 };
 
+export const adminApi = {
+  getProfile: async () => {
+    return cachedFetch('admin:profile', async () => {
+      const response = await api.get('/admin/profile');
+      return response.data?.profile || response.data;
+    }, 30000);
+  },
+  getCachedProfile: () => {
+    return getCachedData<any>('admin:profile');
+  },
+  updateProfile: async (data: Record<string, unknown>) => {
+    const response = await api.put('/admin/profile', data);
+    invalidateCacheTags(['admin:profile', 'site-content']);
+    return response.data?.profile || response.data;
+  }
+};
+

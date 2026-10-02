@@ -8,6 +8,8 @@ interface User {
   uid: string;
   email: string | null;
   displayName: string | null;
+  photoURL?: string | null;
+  phone?: string | null;
   role: string;
   studentId?: string; // Optional student display ID
 }
@@ -18,6 +20,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   studentLogin: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateUserContext: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,12 +36,23 @@ const getErrorMessage = (error: unknown): string => {
   return 'An error occurred. Please try again.';
 };
 
-const mapFirebaseUser = (firebaseUser: FirebaseUser): User => ({
-  uid: firebaseUser.uid,
-  email: firebaseUser.email,
-  displayName: firebaseUser.displayName,
-  role: 'admin'
-});
+const mapFirebaseUser = (firebaseUser: FirebaseUser): User => {
+  let cachedPhoto = null;
+  try {
+    const stored = localStorage.getItem('galaxylibrary_user');
+    if (stored) {
+      cachedPhoto = JSON.parse(stored).photoURL;
+    }
+  } catch (e) {}
+
+  return {
+    uid: firebaseUser.uid,
+    email: firebaseUser.email,
+    displayName: firebaseUser.displayName || 'Admin',
+    photoURL: firebaseUser.photoURL || cachedPhoto || null,
+    role: 'admin'
+  };
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -164,8 +178,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [user]); // Only re-run when user state changes
 
+  const updateUserContext = (updates: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const updated = { ...prev, ...updates };
+      saveAppUser(updated);
+      return updated;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, studentLogin, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, studentLogin, logout, updateUserContext }}>
       {children}
     </AuthContext.Provider>
   );
