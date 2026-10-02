@@ -1065,24 +1065,6 @@ export default function ChatBot() {
 
           {/* Clean Bottom Navigation Bar (No manual typing bar) */}
           <div className="p-3 bg-white dark:bg-[#0f172a] border-t border-slate-200/80 dark:border-slate-800 flex items-center gap-2">
-            {currentMenu !== 'main' && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (currentMenu === 'answered' && lastCategory !== 'main') {
-                    setCurrentMenu(lastCategory);
-                  } else {
-                    setCurrentMenu('main');
-                  }
-                }}
-                className="py-2.5 px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 flex-shrink-0"
-                title="Go back"
-              >
-                <ArrowLeft size={14} />
-                <span>Back</span>
-              </button>
-            )}
-
             <button
               type="button"
               onClick={() => {
