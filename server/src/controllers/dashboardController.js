@@ -13,16 +13,32 @@ export const getDashboardStats = async (req, res) => {
       studentQuery.registrationType = registrationType;
     }
 
-    const totalStudents = await Student.countDocuments(studentQuery);
-    const { totalSeats, occupiedSeats, availableSeats } = await getSeatStats();
+    // Run all independent queries concurrently in parallel with .lean()
+    const [totalStudents, seatStats, activeStudents, allFees, recentAdmissions] = await Promise.all([
+      Student.countDocuments(studentQuery),
+      getSeatStats(),
+      Student.find(studentQuery)
+        .select('name studentId course timeShift customShiftHours feeAmount joiningDate admissionDate registrationType')
+        .lean(),
+      Fee.find()
+        .select('studentDisplayId studentId amount month paymentDate createdAt')
+        .lean(),
+      Student.find()
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .select('name studentId course joiningDate admissionDate status')
+        .lean(),
+    ]);
 
-    // Populate studentId to filter fees by registrationType
-    const fees = await Fee.find().populate('studentId', 'registrationType');
-    const filteredFees = (registrationType && registrationType !== 'all') 
-      ? fees.filter(f => f.studentId && f.studentId.registrationType === registrationType)
-      : fees;
+    const { totalSeats, occupiedSeats, availableSeats } = seatStats;
 
-    const totalRevenue = filteredFees.reduce((acc, fee) => acc + fee.amount, 0);
+    // Fast mapping for registrationType filtering without heavy Mongoose .populate()
+    const activeStudentIdSet = new Set(activeStudents.map(s => s.studentId));
+    const filteredFees = (registrationType && registrationType !== 'all')
+      ? allFees.filter(f => activeStudentIdSet.has(f.studentDisplayId))
+      : allFees;
+
+    const totalRevenue = filteredFees.reduce((acc, fee) => acc + (fee.amount || 0), 0);
 
     const currentDate = new Date();
     const currentMonthNum = currentDate.getMonth();
@@ -30,13 +46,10 @@ export const getDashboardStats = async (req, res) => {
     const monthlyRevenue = filteredFees.reduce((acc, fee) => {
       const pDate = new Date(fee.paymentDate || fee.createdAt);
       if (pDate.getMonth() === currentMonthNum && pDate.getFullYear() === currentYearNum) {
-        return acc + fee.amount;
+        return acc + (fee.amount || 0);
       }
       return acc;
     }, 0);
-
-    const activeStudents = await Student.find(studentQuery)
-      .select('name studentId course timeShift customShiftHours feeAmount joiningDate admissionDate registrationType');
 
     const paymentsByStudent = filteredFees.reduce((acc, fee) => {
       const key = fee.studentDisplayId;
@@ -78,11 +91,6 @@ export const getDashboardStats = async (req, res) => {
       .sort((a, b) => b.pendingAmount - a.pendingAmount);
 
     const pendingFeeTotal = pendingFees.reduce((acc, student) => acc + student.pendingAmount, 0);
-
-    const recentAdmissions = await Student.find()
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .select('name studentId course joiningDate admissionDate status');
 
     res.status(200).json({
       totalStudents,

@@ -21,6 +21,7 @@ import {
 
 import AppLogo from '../AppLogo';
 import S from '../../lib/strings';
+import { requestApi } from '../../lib/apiService';
 
 const menuItems = [
   { path: '/dashboard', label: S.sidebar.dashboard, icon: LayoutDashboard },
@@ -40,34 +41,45 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { isOpen, close, isExpanded, toggleExpanded } = useSidebar();
-  const [pendingCount, setPendingCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState<number>(() => {
+    const cached = requestApi.getCachedRequests();
+    return cached ? cached.filter((r: any) => r.status === 'pending').length : 0;
+  });
 
   useEffect(() => {
     close();
   }, [location.pathname, close]);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchCount = async () => {
       try {
-        const { requestApi } = await import('../../lib/apiService');
         const data = await requestApi.getRequests();
-        const pending = data.filter((r: any) => r.status === 'pending').length;
-        setPendingCount(pending);
+        if (isMounted && Array.isArray(data)) {
+          const pending = data.filter((r: any) => r.status === 'pending').length;
+          setPendingCount(pending);
+        }
       } catch (error) {
         console.error('Failed to fetch pending requests count', error);
       }
     };
+
     fetchCount();
 
     const handleRequestsUpdated = () => {
       fetchCount();
     };
 
+    // Poll every 45 seconds to keep badge fresh without burdening navigation
+    const interval = setInterval(fetchCount, 45000);
     window.addEventListener('requestsUpdated', handleRequestsUpdated);
+
     return () => {
+      isMounted = false;
+      clearInterval(interval);
       window.removeEventListener('requestsUpdated', handleRequestsUpdated);
     };
-  }, [location.pathname]);
+  }, []);
 
   const isActive = (path: string) => {
     if (path === '/dashboard') {

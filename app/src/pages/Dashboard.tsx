@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import TopHeader from '../components/layout/TopHeader';
 import QuickActionCard from '../components/QuickActionCard';
@@ -17,17 +17,33 @@ const quickActions = [
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [statsData, setStatsData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [notification] = useState('');
   const [registrationType, setRegistrationType] = useState('all');
+  const [statsData, setStatsData] = useState<any>(() => {
+    const mem = dashboardApi.getCachedStats?.({ registrationType });
+    if (mem) return mem;
+    try {
+      const saved = localStorage.getItem(`galaxy_stats_${registrationType}`);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return null;
+  });
+  const [loading, setLoading] = useState(() => {
+    const mem = dashboardApi.getCachedStats?.({ registrationType });
+    if (mem) return false;
+    try {
+      if (localStorage.getItem(`galaxy_stats_${registrationType}`)) return false;
+    } catch {}
+    return true;
+  });
+  const [notification] = useState('');
 
   const fetchStats = async () => {
     try {
-      setLoading(true);
       const data = await dashboardApi.getStats({ registrationType });
       setStatsData(data);
+      try {
+        localStorage.setItem(`galaxy_stats_${registrationType}`, JSON.stringify(data));
+      } catch {}
     } catch (error) {
       console.error("Error fetching stats:", error);
     } finally {
@@ -37,13 +53,23 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchStats();
-  }, [location, registrationType]);
+  }, [registrationType]);
 
   const openFeesPayModal = (studentId: string) => {
     navigate('/fees', { state: { openPayForStudentId: studentId } });
   };
 
-  if (loading) return <div className="p-8 text-center">Loading Dashboard...</div>;
+  if (loading && !statsData) {
+    return (
+      <div>
+        <TopHeader />
+        <div className="p-12 text-center text-[#64748b]">
+          <div className="inline-block animate-spin w-8 h-8 border-4 border-[#3b82f6] border-t-transparent rounded-full mb-3"></div>
+          <p className="font-medium text-sm">Loading Dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   const stats = [
     { label: 'Total Students', value: String(statsData?.totalStudents || 0), icon: Users, color: 'blue' as const },

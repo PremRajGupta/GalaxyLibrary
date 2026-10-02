@@ -12,6 +12,7 @@ import {
   saveFeePayment,
   getStoredPayments,
   mapStudentToFeeRow,
+  mapFeeToPaymentReceipt,
 } from '../sections/fees/collectionService';
 import { getStudentDisplayId } from '../lib/studentId';
 import { studentApi, feeApi } from '../lib/apiService';
@@ -87,11 +88,65 @@ const isAdmissionPayment = (payment: PaymentReceipt) => {
   return note.includes('admission') && !note.includes('pending fee') && !note.includes('due');
 };
 
+const processFeeData = (studentData: any[], paymentData: PaymentReceipt[]) => {
+  const paymentsByStudent = paymentData.reduce((acc: Record<string, Array<{ month: string; amount: number; paymentDate?: string }>>, payment: PaymentReceipt) => {
+    const studentId = payment.studentId;
+    if (!studentId) return acc;
+    if (!acc[studentId]) acc[studentId] = [];
+    acc[studentId].push({
+      month: payment.month,
+      amount: Number(payment.feeCreditAmount ?? payment.amount) || 0,
+      paymentDate: payment.date,
+    });
+    return acc;
+  }, {});
+
+  const lastPaidByStudent = paymentData.reduce((acc: Record<string, string>, payment: PaymentReceipt) => {
+    const studentId = payment.studentId;
+    const paymentDate = payment.date;
+    if (!studentId || !paymentDate) return acc;
+    if (!acc[studentId] || paymentDate > acc[studentId]) {
+      acc[studentId] = paymentDate;
+    }
+    return acc;
+  }, {});
+
+  return studentData.map((s: Record<string, unknown>) => {
+    const row = mapStudentToFeeRow(s);
+    const displayId = getStudentDisplayId(s);
+    const monthlyFee = Number(s.feeAmount) || getFeeForTimeShift(String(s.timeShift || ''));
+    const studentPayments = paymentsByStudent[displayId] || [];
+    const due = computeStudentFeeDue({
+      monthlyFee,
+      joiningDate: row.joiningDate,
+      payments: studentPayments,
+    });
+
+    return {
+      ...row,
+      monthlyFee,
+      feeDue: due.pendingAmount,
+      overdueMonths: due.overdueMonths,
+      lastPaid: lastPaidByStudent[displayId] || '-',
+    };
+  });
+};
+
 export function FeeCollection() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [students, setStudents] = useState<StudentFee[]>([]);
-  const [payments, setPayments] = useState<PaymentReceipt[]>([]);
+  const [payments, setPayments] = useState<PaymentReceipt[]>(() => {
+    const cachedFees = feeApi.getCachedFees?.();
+    return cachedFees ? cachedFees.map(mapFeeToPaymentReceipt) : [];
+  });
+  const [students, setStudents] = useState<StudentFee[]>(() => {
+    const cachedStudents = studentApi.getCachedStudents?.();
+    const cachedFees = feeApi.getCachedFees?.();
+    if (cachedStudents && cachedFees) {
+      return processFeeData(cachedStudents, cachedFees.map(mapFeeToPaymentReceipt));
+    }
+    return [];
+  });
   
   const loadData = async () => {
     try {
@@ -100,48 +155,7 @@ export function FeeCollection() {
         getStoredPayments(),
       ]);
 
-      const paymentsByStudent = paymentData.reduce((acc: Record<string, Array<{ month: string; amount: number; paymentDate?: string }>>, payment: PaymentReceipt) => {
-        const studentId = payment.studentId;
-        if (!studentId) return acc;
-        if (!acc[studentId]) acc[studentId] = [];
-        acc[studentId].push({
-          month: payment.month,
-          amount: Number(payment.feeCreditAmount ?? payment.amount) || 0,
-          paymentDate: payment.date,
-        });
-        return acc;
-      }, {});
-
-      const lastPaidByStudent = paymentData.reduce((acc: Record<string, string>, payment: PaymentReceipt) => {
-        const studentId = payment.studentId;
-        const paymentDate = payment.date;
-        if (!studentId || !paymentDate) return acc;
-        if (!acc[studentId] || paymentDate > acc[studentId]) {
-          acc[studentId] = paymentDate;
-        }
-        return acc;
-      }, {});
-
-      const mappedStudents = studentData.map((s: Record<string, unknown>) => {
-        const row = mapStudentToFeeRow(s);
-        const displayId = getStudentDisplayId(s);
-        const monthlyFee = Number(s.feeAmount) || getFeeForTimeShift(String(s.timeShift || ''));
-        const studentPayments = paymentsByStudent[displayId] || [];
-        const due = computeStudentFeeDue({
-          monthlyFee,
-          joiningDate: row.joiningDate,
-          payments: studentPayments,
-        });
-
-        return {
-          ...row,
-          monthlyFee,
-          feeDue: due.pendingAmount,
-          overdueMonths: due.overdueMonths,
-          lastPaid: lastPaidByStudent[displayId] || '-',
-        };
-      });
-
+      const mappedStudents = processFeeData(studentData, paymentData);
       setStudents(mappedStudents);
       setPayments(paymentData);
     } catch (error) {
@@ -151,7 +165,7 @@ export function FeeCollection() {
 
   useEffect(() => {
     loadData();
-  }, [location]);
+  }, [location.key]);
   
   const [registrationTypeFilter, setRegistrationTypeFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');

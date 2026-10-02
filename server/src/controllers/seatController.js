@@ -14,7 +14,7 @@ export const getAvailableSeats = async (req, res) => {
 
 export const getSeats = async (req, res) => {
   try {
-    const seats = await Seat.find();
+    const seats = await Seat.find().lean();
     res.status(200).json(seats);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching seats', error: error.message });

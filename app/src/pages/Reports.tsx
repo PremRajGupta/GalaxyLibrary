@@ -131,22 +131,25 @@ const getMonthYear = (dateVal: string | Date | undefined) => {
 export default function Reports() {
   const [dateRange, setDateRange] = useState('thisMonth');
   const [notification, setNotification] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [feeData, setFeeData] = useState<{ month: string; collected: number; discount?: number; pending?: number }[]>([]);
-  const [feeCollectionDetails, setFeeCollectionDetails] = useState<FeeCollectionRecord[]>([]);
-  const [studentPayments, setStudentPayments] = useState<StudentPaymentRecord[]>([]);
-  const [expiredStudents, setExpiredStudents] = useState<ExpiredStudentRecord[]>([]);
-  const [admissionData, setAdmissionData] = useState<{ name: string; value: number; color: string }[]>([]);
-  const [admissionDetails, setAdmissionDetails] = useState<AdmissionDetail[]>([]);
-  const [reportCards, setReportCards] = useState<any[]>([]);
-  const [summary, setSummary] = useState<ReportSummary>(defaultSummary);
+  const [feeData, setFeeData] = useState<{ month: string; collected: number; discount?: number; pending?: number }[]>(() => reportApi.getCachedReportsData?.('thisMonth')?.feeData || []);
+  const [feeCollectionDetails, setFeeCollectionDetails] = useState<FeeCollectionRecord[]>(() => reportApi.getCachedReportsData?.('thisMonth')?.feeCollectionDetails || []);
+  const [studentPayments, setStudentPayments] = useState<StudentPaymentRecord[]>(() => reportApi.getCachedReportsData?.('thisMonth')?.studentPayments || []);
+  const [expiredStudents, setExpiredStudents] = useState<ExpiredStudentRecord[]>(() => reportApi.getCachedReportsData?.('thisMonth')?.expiredStudents || []);
+  const [admissionData, setAdmissionData] = useState<{ name: string; value: number; color: string }[]>(() => reportApi.getCachedReportsData?.('thisMonth')?.admissionData || []);
+  const [admissionDetails, setAdmissionDetails] = useState<AdmissionDetail[]>(() => reportApi.getCachedReportsData?.('thisMonth')?.admissionDetails || []);
+  const [reportCards, setReportCards] = useState<any[]>(() => reportApi.getCachedReportsData?.('thisMonth')?.reportCards || []);
+  const [summary, setSummary] = useState<ReportSummary>(() => reportApi.getCachedReportsData?.('thisMonth')?.summary || defaultSummary);
+  const [loading, setLoading] = useState(() => !reportApi.getCachedReportsData?.('thisMonth'));
 
   useEffect(() => {
     fetchData();
   }, [dateRange]);
 
   const fetchData = async () => {
-    setLoading(true);
+    const cached = reportApi.getCachedReportsData(dateRange);
+    if (!cached) {
+      setLoading(true);
+    }
     try {
       const data = await reportApi.getReportsData(dateRange);
       setFeeData(data.feeData || []);

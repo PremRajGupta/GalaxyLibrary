@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import TopHeader from '../components/layout/TopHeader';
 import { Monitor, Save, Plus, Trash2 } from 'lucide-react';
 import {
@@ -100,38 +100,45 @@ export default function ComputerCenterAdmin() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-[#f8fafc]">
+    <div>
       <TopHeader />
 
-      <main className="flex-1 overflow-auto p-4 lg:p-6">
-        <div className="max-w-5xl mx-auto">
-          {/* Header */}
-          <div className="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-4 lg:p-6 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-xl font-bold text-[#0f172a] flex items-center gap-2">
-                <Monitor className="text-[#3b82f6]" size={24} />
-                Computer Center Settings
-              </h1>
-              <p className="text-sm text-[#64748b] mt-1">
-                Manage the courses and teachers displayed on the Computer Center page.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              {notification && (
-                <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full animate-fade-in">
-                  {notification}
-                </span>
-              )}
-              <button
-                onClick={handleSave}
-                disabled={saving || loading}
-                className="flex items-center gap-2 px-6 py-2 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
-              >
-                <Save size={16} />
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
+      <AnimatePresence>
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-4 left-4 right-4 sm:left-auto sm:right-6 sm:top-6 z-50 px-4 py-3 bg-[#3b82f6] text-white text-sm font-medium rounded-lg shadow-lg"
+          >
+            {notification}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="w-full">
+        {/* Header */}
+        <div className="page-card mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-[#0f172a] flex items-center gap-2">
+              <Monitor className="text-[#3b82f6]" size={24} />
+              Computer Center Settings
+            </h1>
+            <p className="text-sm text-[#64748b] mt-1">
+              Manage the courses and teachers displayed on the Computer Center page.
+            </p>
           </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSave}
+              disabled={saving || loading}
+              className="flex items-center gap-2 px-6 py-2.5 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 shadow-sm"
+            >
+              <Save size={16} />
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </div>
 
           <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-max mb-6">
             <button
@@ -439,7 +446,6 @@ export default function ComputerCenterAdmin() {
             </>
           )}
         </div>
-      </main>
     </div>
   );
 }

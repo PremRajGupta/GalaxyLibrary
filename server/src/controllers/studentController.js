@@ -8,17 +8,19 @@ import { generateUniqueStudentId } from '../utils/studentId.js';
 
 export const getStudents = async (req, res) => {
   try {
-    const students = await Student.find().sort({ createdAt: -1 });
-    // Migrate any students that don't have a password yet
-    const migratedStudents = await Promise.all(students.map(async (student) => {
-      if (!student.password) {
-        const randomPin = Math.floor(1000 + Math.random() * 9000);
-        student.password = `Galaxy@${randomPin}`;
-        await student.save();
-      }
-      return student;
-    }));
-    res.status(200).json(migratedStudents);
+    const students = await Student.find().sort({ createdAt: -1 }).lean();
+    res.status(200).json(students);
+
+    // Asynchronous background check for any missing passwords without delaying HTTP response
+    const missingPassword = students.filter((s) => !s.password);
+    if (missingPassword.length > 0) {
+      Promise.all(
+        missingPassword.map((s) => {
+          const randomPin = Math.floor(1000 + Math.random() * 9000);
+          return Student.updateOne({ _id: s._id }, { $set: { password: `Galaxy@${randomPin}` } });
+        })
+      ).catch((err) => console.error('Background password migration error:', err));
+    }
   } catch (error) {
     res.status(500).json({ message: 'Error fetching students', error: error.message });
   }

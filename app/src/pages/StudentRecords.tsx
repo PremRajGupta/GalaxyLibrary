@@ -18,19 +18,40 @@ const statusConfig = {
   expired: { bg: 'bg-[#fee2e2]', text: 'text-[#ef4444]', label: 'Expired' },
 };
 
+const mapRawStudents = (data: any[]) => {
+  const mapped = data.map((s: any) => ({
+    ...s,
+    id: s._id || s.id,
+    seat: s.seatNumber || '--',
+    contact: s.mobile,
+    parentContact: s.parentMobile || 'N/A',
+    studentId: getStudentDisplayId(s),
+    course: getCourseLabel(s.course),
+    fatherName: s.fatherName || s.father || 'N/A',
+    rawJoiningDate: s.joiningDate || s.admissionDate,
+    joiningDate: formatJoiningDate(s.joiningDate || s.admissionDate),
+    inactiveDate: s.inactiveDate ? formatJoiningDate(s.inactiveDate) : null,
+  }));
+  mapped.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+  return mapped;
+};
+
 interface StudentRecordsProps {
   defaultRegistrationType?: string;
   hideRegistrationFilter?: boolean;
 }
 
 export default function StudentRecords({ defaultRegistrationType, hideRegistrationFilter }: StudentRecordsProps = {}) {
-  const [studentList, setStudentList] = useState<any[]>([]);
+  const [studentList, setStudentList] = useState<any[]>(() => {
+    const cached = studentApi.getCachedStudents();
+    return cached ? mapRawStudents(cached) : [];
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [shiftFilter, setShiftFilter] = useState('');
   const [registrationTypeFilter, setRegistrationTypeFilter] = useState(defaultRegistrationType || 'all');
   const [notification, setNotification] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !studentApi.getCachedStudents());
   const [viewingStudent, setViewingStudent] = useState<any>(null);
   const [reactivateStudent, setReactivateStudent] = useState<any>(null);
   const [reactivateData, setReactivateData] = useState({ seatNumber: '', joiningDate: '' });
@@ -88,32 +109,22 @@ export default function StudentRecords({ defaultRegistrationType, hideRegistrati
   }, [reactivateStudent]);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchStudents = async () => {
       try {
         const data = await studentApi.getStudents();
-        const mappedData = data.map((s: any) => ({
-          ...s,
-          id: s._id,
-          seat: s.seatNumber || '--',
-          contact: s.mobile,
-          parentContact: s.parentMobile || 'N/A',
-          studentId: getStudentDisplayId(s),
-          course: getCourseLabel(s.course),
-          fatherName: s.fatherName || s.father || 'N/A',
-          rawJoiningDate: s.joiningDate || s.admissionDate,
-          joiningDate: formatJoiningDate(s.joiningDate || s.admissionDate),
-          inactiveDate: s.inactiveDate ? formatJoiningDate(s.inactiveDate) : null,
-        }));
-        mappedData.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-        setStudentList(mappedData);
+        if (isMounted && Array.isArray(data)) {
+          setStudentList(mapRawStudents(data));
+        }
       } catch (error) {
         console.error("Error fetching students:", error);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     fetchStudents();
-  }, [location]);
+    return () => { isMounted = false; };
+  }, [location.key]);
 
 
   // Reset to first page when search or filter changes

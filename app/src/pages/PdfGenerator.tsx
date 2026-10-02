@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import TopHeader from '../components/layout/TopHeader';
 import { generateReceiptPDF, getDefaultReceiptLogo } from '../sections/fees/receiptService';
 import type { PaymentReceipt } from '../sections/fees/receiptService';
+import { ReceiptDetailModal } from '../sections/fees/ReceiptDetailModal';
 import S from '../lib/strings';
 import { getStoredPayments } from '../sections/fees/collectionService';
 import { Download, Search, Eye, X, Pencil, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, RefreshCw, Zap } from 'lucide-react';
@@ -49,6 +50,7 @@ export default function PdfGenerator() {
   const [studentPhotos, setStudentPhotos] = useState<Record<string, string>>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [filterAdvanceOnly, setFilterAdvanceOnly] = useState(false);
+  const [viewingReceipt, setViewingReceipt] = useState<PaymentReceipt | null>(null);
   const RECORDS_PER_PAGE = 20;
 
   const fetchValidityData = async (paymentsList: PaymentReceipt[]) => {
@@ -331,13 +333,8 @@ export default function PdfGenerator() {
     }
   };
 
-  const handlePreview = async (payment: PaymentReceipt) => {
-    try {
-      await generateReceiptPDF(payment, getDefaultReceiptLogo(), 'preview');
-    } catch (error) {
-      console.error('Receipt preview failed:', error);
-      showNotification('Failed to preview receipt', 'error');
-    }
+  const handlePreview = (payment: PaymentReceipt) => {
+    setViewingReceipt(payment);
   };
 
   return (
@@ -726,6 +723,15 @@ export default function PdfGenerator() {
           )}
         </div>
       </motion.div>
+
+      {/* Payment Receipt Detail Modal (Image 1 style) */}
+      <ReceiptDetailModal
+        isOpen={!!viewingReceipt}
+        onClose={() => setViewingReceipt(null)}
+        payment={viewingReceipt}
+        studentPhoto={viewingReceipt ? studentPhotos[viewingReceipt.studentId] : undefined}
+        onDownloaded={() => showNotification(S.receiptDownloadSuccess, 'success')}
+      />
     </div>
   );
 }

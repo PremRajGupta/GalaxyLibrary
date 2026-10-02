@@ -36,22 +36,31 @@ const statusConfig: Record<string, any> = {
   rejected: { bg: 'bg-[#fee2e2]', text: 'text-[#ef4444]', label: 'Rejected' },
 };
 
+const mapRequests = (data: any[]): Request[] => {
+  return data.map((r: any) => ({
+    ...r,
+    id: r._id || r.id,
+    requestDate: r.createdAt ? new Date(r.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    studentName: r.studentName || r.student?.name || 'Unknown',
+    studentId: r.studentDisplayId || r.student?.studentId || 'Unknown',
+    admissionData: r.admissionData
+  }));
+};
+
 export default function Requests() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [requests, setRequests] = useState<Request[]>([]);
+  const [requests, setRequests] = useState<Request[]>(() => {
+    const cached = requestApi.getCachedRequests();
+    return cached ? mapRequests(cached) : [];
+  });
 
   const fetchRequests = async () => {
     try {
       const data = await requestApi.getRequests();
-      setRequests(data.map((r: any) => ({
-        ...r,
-        id: r._id,
-        requestDate: new Date(r.createdAt).toISOString().split('T')[0],
-        studentName: r.studentName || r.student?.name || 'Unknown',
-        studentId: r.studentDisplayId || r.student?.studentId || 'Unknown',
-        admissionData: r.admissionData
-      })));
+      if (Array.isArray(data)) {
+        setRequests(mapRequests(data));
+      }
     } catch (error) {
       console.error("Failed to fetch requests:", error);
     }
@@ -59,7 +68,7 @@ export default function Requests() {
 
   useEffect(() => {
     fetchRequests();
-  }, [location]);
+  }, [location.key]);
 
   const handleApprove = async (id: string) => {
     try {

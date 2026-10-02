@@ -50,9 +50,66 @@ const generateBaseSeats = (): Seat[] => {
   return baseSeats;
 };
 
+const computeSeatsWithOccupancy = (baseSeats: Seat[], data: any[], students: any[]): Seat[] => {
+  const occupiedByStudent = new Map<string, { id: string; name: string; studentId?: string; mobile?: string; fatherName?: string, photo?: string }>();
+  students.forEach((student: any) => {
+    if (
+      student.status === 'active' &&
+      student.seatNumber &&
+      student.seatNumber !== '--' &&
+      student.seatNumber !== 'other'
+    ) {
+      occupiedByStudent.set(String(student.seatNumber).trim(), {
+        id: student._id || student.id,
+        name: student.name,
+        studentId: student.studentId,
+        mobile: student.mobile,
+        fatherName: student.fatherName,
+        photo: student.photo,
+      });
+    }
+  });
+
+  return baseSeats.map((baseSeat) => {
+    const studentOnSeat = occupiedByStudent.get(baseSeat.number);
+    if (studentOnSeat) {
+      return {
+        ...baseSeat,
+        status: 'occupied' as SeatStatus,
+        studentName: studentOnSeat.name,
+        studentId: studentOnSeat.studentId,
+        studentMobile: studentOnSeat.mobile,
+        fatherName: studentOnSeat.fatherName,
+        studentPhoto: studentOnSeat.photo,
+        studentDbId: studentOnSeat.id,
+      };
+    }
+
+    const apiSeat = (data || []).find((s: any) => s.seatNumber === baseSeat.number);
+    if (apiSeat?.status === 'reserved') {
+      return {
+        ...baseSeat,
+        status: 'reserved' as SeatStatus,
+        studentName: apiSeat.studentName || undefined,
+        studentId: apiSeat.studentId ? String(apiSeat.studentId) : undefined,
+      };
+    }
+
+    return { ...baseSeat, status: 'available' as SeatStatus };
+  });
+};
+
 export default function SeatMap() {
   const location = useLocation();
-  const [seats, setSeats] = useState<Seat[]>(generateBaseSeats());
+  const [seats, setSeats] = useState<Seat[]>(() => {
+    const base = generateBaseSeats();
+    const cachedSeats = seatApi.getCachedSeats();
+    const cachedStudents = studentApi.getCachedStudents();
+    if (cachedSeats && cachedStudents) {
+      return computeSeatsWithOccupancy(base, cachedSeats, cachedStudents);
+    }
+    return base;
+  });
   const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
   const [activeSection, setActiveSection] = useState<string>('A');
   const [isMakingInactive, setIsMakingInactive] = useState(false);
@@ -84,6 +141,7 @@ export default function SeatMap() {
   };
 
   useEffect(() => {
+    let isMounted = true;
     const fetchSeats = async () => {
       try {
         const [data, students] = await Promise.all([
@@ -91,60 +149,16 @@ export default function SeatMap() {
           studentApi.getStudents(),
         ]);
 
-        const occupiedByStudent = new Map<string, { id: string; name: string; studentId?: string; mobile?: string; fatherName?: string, photo?: string }>();
-        students.forEach((student: any) => {
-          if (
-            student.status === 'active' &&
-            student.seatNumber &&
-            student.seatNumber !== '--' &&
-            student.seatNumber !== 'other'
-          ) {
-            occupiedByStudent.set(String(student.seatNumber).trim(), {
-              id: student._id || student.id,
-              name: student.name,
-              studentId: student.studentId,
-              mobile: student.mobile,
-              fatherName: student.fatherName,
-              photo: student.photo,
-            });
-          }
-        });
-
-        setSeats((prevSeats) =>
-          prevSeats.map((baseSeat) => {
-            const studentOnSeat = occupiedByStudent.get(baseSeat.number);
-            if (studentOnSeat) {
-              return {
-                ...baseSeat,
-                status: 'occupied' as SeatStatus,
-                studentName: studentOnSeat.name,
-                studentId: studentOnSeat.studentId,
-                studentMobile: studentOnSeat.mobile,
-                fatherName: studentOnSeat.fatherName,
-                studentPhoto: studentOnSeat.photo,
-                studentDbId: studentOnSeat.id,
-              };
-            }
-
-            const apiSeat = data.find((s: any) => s.seatNumber === baseSeat.number);
-            if (apiSeat?.status === 'reserved') {
-              return {
-                ...baseSeat,
-                status: 'reserved' as SeatStatus,
-                studentName: apiSeat.studentName || undefined,
-                studentId: apiSeat.studentId ? String(apiSeat.studentId) : undefined,
-              };
-            }
-
-            return { ...baseSeat, status: 'available' as SeatStatus };
-          })
-        );
+        if (isMounted) {
+          setSeats(computeSeatsWithOccupancy(generateBaseSeats(), data, students));
+        }
       } catch (error) {
         console.error('Failed to fetch seats:', error);
       }
     };
     fetchSeats();
-  }, [location]);
+    return () => { isMounted = false; };
+  }, [location.key]);
 
   const stats = {
     available: seats.filter((s) => s.status === 'available').length,
