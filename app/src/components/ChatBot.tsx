@@ -1005,7 +1005,19 @@ export default function ChatBot() {
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentMenu('main');
+                  scrollToBottom();
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition-all border border-white/20 shadow-xs cursor-pointer active:scale-95"
+                title="Open Topics Menu"
+              >
+                <Menu size={13} />
+                <span>Menu</span>
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -1018,7 +1030,7 @@ export default function ChatBot() {
                   ]);
                 }}
                 className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                title="Reset to Main Menu"
+                title="Reset Chat"
               >
                 <RotateCcw size={16} />
               </button>
@@ -1198,22 +1210,9 @@ export default function ChatBot() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input & Quick Navigation Bar */}
-          <div className="p-3 bg-white dark:bg-[#0f172a] border-t border-slate-200/80 dark:border-slate-800 space-y-2">
+          {/* Input Area */}
+          <div className="p-3 bg-white dark:bg-[#0f172a] border-t border-slate-200/80 dark:border-slate-800">
             <form onSubmit={handleSend} className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setCurrentMenu('main');
-                  scrollToBottom();
-                }}
-                className="h-10 px-3 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 text-xs font-bold transition-colors flex items-center gap-1.5 flex-shrink-0 border border-slate-200/70 dark:border-slate-700 cursor-pointer"
-                title="Show Main Topics Menu"
-              >
-                <Menu size={14} />
-                <span className="hidden sm:inline">Menu</span>
-              </button>
-
               <input
                 type="text"
                 value={input}
@@ -1226,7 +1225,7 @@ export default function ChatBot() {
               <button
                 type="submit"
                 disabled={!input.trim() || isLoading}
-                className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs cursor-pointer"
+                className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs cursor-pointer active:scale-95"
                 title="Send Message"
               >
                 <Send size={16} className="ml-0.5" />
