@@ -2,10 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   X,
-  Send,
   Bot,
   User,
-  Loader2,
   Sparkles,
   MessageCircle,
   ArrowUp,
@@ -25,13 +23,8 @@ import {
   CheckCircle2,
   Menu,
 } from 'lucide-react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { loadSiteContent } from '../lib/siteContentService';
 import { DEFAULT_SITE_CONTENT, type SiteContent, type ComputerCourse } from '../data/landingContent';
-
-// Initialize Gemini API
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-const genAI = new GoogleGenerativeAI(apiKey);
 
 interface ActionBtn {
   label: string;
@@ -63,37 +56,6 @@ interface MenuItem {
   icon: React.ComponentType<{ size?: number; className?: string }>;
 }
 
-const SYSTEM_PROMPT = `You are the official AI Assistant for Galaxy Library & Galaxy Computer Center.
-Be helpful, polite, and concise.
-IMPORTANT FORMATTING: Do NOT use markdown symbols like ** or * or # in excessive ways. Use clean bullet points and plain text.
-IMPORTANT LANGUAGE RULE: ALWAYS reply in the exact language the user uses. If the user asks in pure English, reply strictly in English. If the user asks in Hindi or Hinglish (e.g. "kaise ho"), reply in friendly Hinglish.
-Here is the official information you know:
-- Organization: Galaxy Library & Galaxy Computer Center
-- Address: Dhirabigha Sugaon Road, Tehta, Jehanabad, Bihar
-- Timings: Open 24 Hours, 365 Days
-- Primary Contact Number: +91 7488252019
-- Support WhatsApp: 917488252019
-- Email: galaxy.library@gmail.com
-- Services & Facilities: High-speed Wi-Fi, Full AC hall, RO drinking water, Solar & Inverter power backup, Individual desk charging sockets, Daily newspapers and magazines, Silent disciplined study ambience, 24x7 CCTV security.
-- Library Shift Plans:
-  * 4 Hours: ₹300/month
-  * 6 Hours: ₹400/month
-  * 8 Hours: ₹500/month
-  * 12 Hours: ₹600/month
-  * 24 Hours: ₹800/month
-  * Night Shift: ₹350/month
-- Admission Fees: Library Registration ₹5, Computer Center Registration ₹50.
-- Computer Center Courses:
-  * BCC (Basic Computer Course) - 2 Months (₹1,000)
-  * DCA (Diploma in Computer Application) - 6 Months (₹2,000)
-  * ADCA (Advance Diploma in Computer Application) - 6 Months (₹2,000)
-  * Tally With GST - 3 Months (₹1,000)
-  * DTP (Desktop Publishing) - 3 Months (₹1,000)
-  * Computer Networking - 2 Months (₹1,500)
-  * C Programming - 2 Months (₹1,000)
-  * CSS & Web Design - 1 Month (₹500)
-Do not fabricate information. If you don't know, ask the user to call +91 7488252019 or visit the front desk.`;
-
 export default function ChatBot() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
@@ -101,12 +63,10 @@ export default function ChatBot() {
   const [currentMenu, setCurrentMenu] = useState<MenuCategory>('main');
   const [messages, setMessages] = useState<Message[]>([
     {
-      text: '👋 **Welcome to Galaxy Library & Computer Center!**\n\nHow can I help you today? Please choose a topic below for instant details, or feel free to type any question:',
+      text: '👋 **Welcome to Galaxy Library & Computer Center!**\n\nHow can I help you today? Please choose a topic below for instant details:',
       isBot: true,
     },
   ]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -843,67 +803,6 @@ export default function ChatBot() {
     }
   };
 
-  // ==================== MANUAL CHAT INPUT HANDLER ====================
-  const handleSend = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!input.trim() || isLoading) return;
-
-    const userText = input.trim();
-    setInput('');
-    setMessages((prev) => [...prev, { text: userText, isBot: false }]);
-    setIsLoading(true);
-
-    try {
-      if (!apiKey) {
-        // Fallback intelligent offline matcher if no Gemini key configured
-        const lower = userText.toLowerCase();
-        let fallbackReply =
-          'Thank you for reaching out! For instant help, you can use the topic options below or call our helpline at ' +
-          phone +
-          '.';
-
-        if (lower.includes('fee') || lower.includes('shift') || lower.includes('price')) {
-          fallbackReply = `Library shifts start from ₹300/month (4 Hours) up to ₹800/month (24 Hours VIP). Every shift includes Free Wi-Fi, AC, and RO water. Click "Library Fees & Shift Plans" above for full details!`;
-        } else if (lower.includes('course') || lower.includes('computer') || lower.includes('adca')) {
-          fallbackReply = `We offer ADCA, DCA, Tally with GST, BCC, C Programming and more! Check the "Computer Center Courses" menu above to see duration & fees.`;
-        } else if (lower.includes('timing') || lower.includes('time') || lower.includes('open')) {
-          fallbackReply = `Galaxy Library is open 24 Hours a day, 7 days a week, 365 days a year!`;
-        } else if (lower.includes('address') || lower.includes('location') || lower.includes('kahan')) {
-          fallbackReply = `Galaxy Library is located at Dhirabigha Sugaon Road, Tehta, Jehanabad, Bihar (Near Tehta High School).`;
-        } else if (lower.includes('admission') || lower.includes('join') || lower.includes('apply')) {
-          fallbackReply = `You can apply online via the website (/apply) with a nominal ₹${libAdmissionFee} registration fee!`;
-        }
-
-        setMessages((prev) => [...prev, { text: fallbackReply, isBot: true }]);
-        return;
-      }
-
-      const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
-      const historyText = messages
-        .slice(-6)
-        .map((m) => `${m.isBot ? 'Assistant' : 'User'}: ${m.text}`)
-        .join('\n');
-      const fullPrompt = `${SYSTEM_PROMPT}\n\nChat History:\n${historyText}\nUser: ${userText}\nAssistant:`;
-
-      const result = await model.generateContent(fullPrompt);
-      const response = await result.response;
-      const botText = response.text();
-
-      setMessages((prev) => [...prev, { text: botText, isBot: true }]);
-    } catch (error) {
-      console.error('Chat error:', error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          text: `I'm having a little trouble connecting to the network right now. You can use the instant topic buttons below or call our desk at ${phone}.`,
-          isBot: true,
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Helper to render bold markdown formatting smoothly without extra dependencies
   const formatMessageText = (text: string) => {
     return text.split('\n').map((line, lineIdx) => {
@@ -934,7 +833,6 @@ export default function ChatBot() {
   const handleActionClick = (action: ActionBtn) => {
     if (action.path) {
       navigate(action.path);
-      // On mobile we can minimize, or keep open
     } else if (action.url) {
       window.open(action.url, '_blank');
     }
@@ -996,11 +894,11 @@ export default function ChatBot() {
                 <div className="flex items-center gap-1.5">
                   <h3 className="font-bold text-sm tracking-tight">Galaxy Assistant</h3>
                   <span className="text-[10px] px-1.5 py-0.2 bg-blue-500/20 text-blue-200 rounded border border-blue-400/30">
-                    24x7 AI
+                    Interactive Guide
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-300">
-                  Instant Guided Help & Answers
+                  Instant Answers & Shift Information
                 </p>
               </div>
             </div>
@@ -1010,21 +908,9 @@ export default function ChatBot() {
                 type="button"
                 onClick={() => {
                   setCurrentMenu('main');
-                  scrollToBottom();
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition-all border border-white/20 shadow-xs cursor-pointer active:scale-95"
-                title="Open Topics Menu"
-              >
-                <Menu size={13} />
-                <span>Menu</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setCurrentMenu('main');
                   setMessages([
                     {
-                      text: '👋 **Welcome to Galaxy Library & Computer Center!**\n\nHow can I help you today? Please choose a topic below for instant details, or feel free to type any question:',
+                      text: '👋 **Welcome to Galaxy Library & Computer Center!**\n\nHow can I help you today? Please choose a topic below for instant details:',
                       isBot: true,
                     },
                   ]);
@@ -1050,7 +936,7 @@ export default function ChatBot() {
             {messages.map((msg, index) => (
               <div
                 key={index}
-                className={`flex gap-2.5 max-w-[90%] ${
+                className={`flex gap-2.5 max-w-[92%] ${
                   msg.isBot ? 'mr-auto' : 'ml-auto flex-row-reverse'
                 }`}
               >
@@ -1099,52 +985,12 @@ export default function ChatBot() {
                       </div>
                     )}
                   </div>
-
-                  {/* Quick Back to Menu navigation pill when answering */}
-                  {msg.isBot && index > 0 && (
-                    <div className="flex items-center gap-2 px-1">
-                      {currentMenu !== 'main' && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCurrentMenu('main');
-                            setMessages((prev) => [
-                              ...prev,
-                              {
-                                text: 'Here are the main categories. What would you like to explore?',
-                                isBot: true,
-                              },
-                            ]);
-                          }}
-                          className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          <Menu size={12} />
-                          <span>Main Menu</span>
-                        </button>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
 
-            {/* Loading Indicator */}
-            {isLoading && (
-              <div className="flex gap-2.5 max-w-[85%] mr-auto">
-                <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center bg-blue-600 text-white shadow-xs">
-                  <Bot size={16} />
-                </div>
-                <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-tl-sm shadow-xs flex items-center gap-2">
-                  <Loader2 size={16} className="animate-spin text-blue-600" />
-                  <span className="text-xs text-slate-500 font-medium">
-                    Finding answer...
-                  </span>
-                </div>
-              </div>
-            )}
-
             {/* ==================== INTERACTIVE GUIDED OPTIONS LIST (Matches Reference Image) ==================== */}
-            {!isLoading && menuItems.length > 0 && (
+            {menuItems.length > 0 && (
               <div className="pt-2 space-y-2">
                 <div className="flex items-center justify-between px-1">
                   <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
@@ -1163,7 +1009,7 @@ export default function ChatBot() {
                   )}
                 </div>
 
-                <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1">
+                <div className="space-y-1.5 max-h-[350px] overflow-y-auto pr-1">
                   {menuItems.map((item) => {
                     const Icon = item.icon;
                     return (
@@ -1210,27 +1056,45 @@ export default function ChatBot() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Area */}
-          <div className="p-3 bg-white dark:bg-[#0f172a] border-t border-slate-200/80 dark:border-slate-800">
-            <form onSubmit={handleSend} className="flex items-center gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask any question or choose above..."
-                className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm rounded-full px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all border border-transparent"
-                disabled={isLoading}
-              />
-
+          {/* Clean Bottom Navigation Bar (No manual typing bar) */}
+          <div className="p-3 bg-white dark:bg-[#0f172a] border-t border-slate-200/80 dark:border-slate-800 flex items-center gap-2">
+            {currentMenu !== 'main' && (
               <button
-                type="submit"
-                disabled={!input.trim() || isLoading}
-                className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs cursor-pointer active:scale-95"
-                title="Send Message"
+                type="button"
+                onClick={() => {
+                  setCurrentMenu('main');
+                  scrollToBottom();
+                }}
+                className="py-2.5 px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 flex-shrink-0"
+                title="Go back"
               >
-                <Send size={16} className="ml-0.5" />
+                <ArrowLeft size={14} />
+                <span>Back</span>
               </button>
-            </form>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setCurrentMenu('main');
+                scrollToBottom();
+              }}
+              className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm shadow-blue-500/20 active:scale-98"
+            >
+              <Menu size={16} />
+              <span>Browse All Topics (Menu)</span>
+            </button>
+
+            <a
+              href={`https://wa.me/91${phoneRaw}?text=Hi! I want to know more about Galaxy Library.`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="py-2.5 px-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 flex-shrink-0"
+              title="Chat on WhatsApp"
+            >
+              <MessageCircle size={15} />
+              <span className="hidden sm:inline">WhatsApp</span>
+            </a>
           </div>
         </div>
       )}
