@@ -89,14 +89,20 @@ app.use((req, res, next) => {
   next();
 });
 
-// ===== Health Check Route (No Auth Required) =====
-app.get('/api/health', (req, res) => {
+// ===== Health & Keep-Alive Routes (Root & Health Check - No Auth Required) =====
+// Supports root URL (https://xxxx.onrender.com), /health, /api/health, /ping for Render keep-alive & cron-job.org
+app.get(['/', '/health', '/api/health', '/ping', '/api/ping'], (req, res) => {
   res.status(200).json({ 
     status: 'ok', 
-    message: 'Library Management System API is running',
+    message: 'Galaxy Library API is running and active',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    uptime: Math.floor(process.uptime()),
+    environment: process.env.NODE_ENV || 'production'
   });
+});
+
+app.head(['/', '/health', '/api/health', '/ping', '/api/ping'], (req, res) => {
+  res.status(200).end();
 });
 
 // ===== Authentication Route =====
@@ -465,6 +471,19 @@ if (process.env.NODE_ENV !== 'test') {
   };
 
   connectDB();
+
+  // Automatic Self-Ping Keep-Alive for Render Free Tier (pings every 10 mins)
+  const externalUrl = process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL;
+  if (externalUrl) {
+    const keepAliveUrl = `${externalUrl.replace(/\/$/, '')}/health`;
+    const PING_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+    setInterval(() => {
+      fetch(keepAliveUrl)
+        .then(() => console.log(`✓ [Keep-Alive] Pinged ${keepAliveUrl} at ${new Date().toLocaleTimeString()}`))
+        .catch((err) => console.warn(`⚠ [Keep-Alive] Ping failed: ${err.message}`));
+    }, PING_INTERVAL_MS);
+    console.log(`✓ Self keep-alive scheduled for ${keepAliveUrl} every 10 minutes\n`);
+  }
 }
 
 // ===== Graceful Shutdown =====
