@@ -212,7 +212,7 @@ export default function AdminProfile() {
         phone: profile.phone.trim()
       });
 
-      showToast('success', 'Admin profile successfully updated! (प्रोफ़ाइल सुरक्षित हो गई)');
+      showToast('success', 'Admin profile successfully updated!');
     } catch (err: any) {
       console.error('Save profile error:', err);
       showToast('error', err.response?.data?.message || err.message || 'Failed to update profile');
@@ -226,22 +226,22 @@ export default function AdminProfile() {
     e.preventDefault();
 
     if (!currentPassword) {
-      showToast('error', 'Please enter your current password (वर्तमान पासवर्ड डालें)');
+      showToast('error', 'Please enter your current password.');
       return;
     }
 
     if (!newPassword || newPassword.length < 6) {
-      showToast('error', 'New password must be at least 6 characters (नया पासवर्ड कम से कम 6 अक्षरों का होना चाहिए)');
+      showToast('error', 'New password must be at least 6 characters.');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      showToast('error', 'New password and confirm password do not match (पासवर्ड मैच नहीं कर रहा है)');
+      showToast('error', 'New password and confirm password do not match.');
       return;
     }
 
     if (newPassword === currentPassword) {
-      showToast('error', 'New password must be different from current password');
+      showToast('error', 'New password must be different from current password.');
       return;
     }
 
@@ -266,13 +266,13 @@ export default function AdminProfile() {
       setNewPassword('');
       setConfirmPassword('');
 
-      showToast('success', 'Password successfully changed! Please remember your new password. (पासवर्ड सफलतापूर्वक बदल दिया गया)');
+      showToast('success', 'Password successfully changed! Please remember your new password.');
     } catch (err: any) {
       console.error('Password change error:', err);
       let errMsg = 'Failed to change password. Please check your current password.';
 
       if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        errMsg = 'Current password is incorrect (वर्तमान पासवर्ड गलत है). Please re-enter.';
+        errMsg = 'Current password is incorrect. Please re-enter.';
       } else if (err.code === 'auth/weak-password') {
         errMsg = 'New password is too weak. Please use letters and numbers.';
       } else if (err.code === 'auth/requires-recent-login') {
@@ -474,7 +474,7 @@ export default function AdminProfile() {
             {/* Form Column */}
             <div className="lg:col-span-2 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
               <div className="border-b border-slate-100 pb-4 mb-6">
-                <h3 className="text-lg font-bold text-slate-800">Admin Information (व्यक्तिगत विवरण)</h3>
+                <h3 className="text-lg font-bold text-slate-800">Admin Information</h3>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Update your display name, official contact number, and library details shown to students.
                 </p>
@@ -485,7 +485,7 @@ export default function AdminProfile() {
                   {/* Full Name */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                      Display Name (नाम)
+                      Display Name
                     </label>
                     <div className="relative">
                       <User size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -503,7 +503,7 @@ export default function AdminProfile() {
                   {/* Email */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                      Admin Email (ईमेल)
+                      Admin Email
                     </label>
                     <div className="relative">
                       <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -523,7 +523,7 @@ export default function AdminProfile() {
                   {/* Contact / Phone */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                      Contact / WhatsApp Phone (मोबाइल नंबर)
+                      Contact / Phone Number
                     </label>
                     <div className="relative">
                       <Phone size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -540,7 +540,7 @@ export default function AdminProfile() {
                   {/* Library / Center Name */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                      Library / Center Name (लाइब्रेरी का नाम)
+                      Library / Center Name
                     </label>
                     <div className="relative">
                       <Building2 size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -558,7 +558,7 @@ export default function AdminProfile() {
                 {/* Address */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                    Address / Location (पता)
+                    Address / Location
                   </label>
                   <div className="relative">
                     <MapPin size={18} className="absolute left-3.5 top-3 text-slate-400" />
@@ -575,7 +575,7 @@ export default function AdminProfile() {
                 {/* Bio / Description */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                    Bio / Admin Note (विवरण)
+                    Bio / Notes
                   </label>
                   <textarea
                     rows={2}
@@ -644,7 +644,7 @@ export default function AdminProfile() {
                 <div className="mt-5 p-3 rounded-2xl bg-white/10 backdrop-blur-md flex items-start gap-2.5 text-[11px] text-slate-200">
                   <Info size={16} className="text-blue-300 flex-shrink-0 mt-0.5" />
                   <span>
-                    Aapka naam aur photo top header aur fee receipts par synchronize ho jayega.
+                    Your profile name and avatar will synchronize across the top header and fee receipts.
                   </span>
                 </div>
               </div>
@@ -686,7 +686,7 @@ export default function AdminProfile() {
                   <KeyRound size={20} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-800">Change Admin Password (पासवर्ड बदलें)</h3>
+                  <h3 className="text-lg font-bold text-slate-800">Change Admin Password</h3>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Ensure your account is using a strong password that is at least 6 characters long.
                   </p>
@@ -698,7 +698,7 @@ export default function AdminProfile() {
               {/* Current Password */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                  Current Password (वर्तमान पासवर्ड)
+                  Current Password
                 </label>
                 <div className="relative">
                   <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -723,7 +723,7 @@ export default function AdminProfile() {
               {/* New Password */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                  New Password (नया पासवर्ड)
+                  New Password
                 </label>
                 <div className="relative">
                   <KeyRound size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -756,7 +756,7 @@ export default function AdminProfile() {
               {/* Confirm New Password */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                  Confirm New Password (पासवर्ड दोबारा लिखें)
+                  Confirm New Password
                 </label>
                 <div className="relative">
                   <KeyRound size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -789,12 +789,12 @@ export default function AdminProfile() {
               <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/60 text-xs text-amber-900 space-y-1.5">
                 <div className="font-bold flex items-center gap-1.5 text-amber-950">
                   <AlertCircle size={15} />
-                  <span>Important Note / महत्वपूर्ण सूचना:</span>
+                  <span>Important Security Notice:</span>
                 </div>
                 <ul className="list-disc list-inside space-y-1 text-amber-800 text-[11px] leading-relaxed">
-                  <li>Naya password save hone ke baad agle login par vahi naya password use hoga.</li>
-                  <li>Security ke liye apna password kisi aur ke sath share na karein.</li>
-                  <li>Password kam se kam 6 characters ka hona anivarya hai.</li>
+                  <li>Your new password will be required for all future logins.</li>
+                  <li>For security reasons, never share your admin credentials with anyone.</li>
+                  <li>Password must contain at least 6 characters.</li>
                 </ul>
               </div>
 
@@ -813,7 +813,7 @@ export default function AdminProfile() {
                   ) : (
                     <>
                       <Lock size={17} />
-                      <span>Update Password (पासवर्ड बदलें)</span>
+                      <span>Update Password</span>
                     </>
                   )}
                 </button>
@@ -836,14 +836,14 @@ export default function AdminProfile() {
                   <Clock size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-800">Session Security (सुरक्षा टाइमआउट)</h3>
+                  <h3 className="text-base font-bold text-slate-800">Session Security</h3>
                   <p className="text-xs text-slate-500">Auto-lock on inactivity</p>
                 </div>
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-xs text-slate-600 space-y-2">
                 <p>
-                  Agar admin computer par <strong>3 minute</strong> tak koi activity (mouse move, click ya typing) nahi hoti, toh system automatically security ke liye logout kar deta hai.
+                  To protect library and student records, your session automatically locks after <strong>3 minutes</strong> of inactivity.
                 </p>
                 <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs pt-1">
                   <CheckCircle2 size={16} />
@@ -859,7 +859,7 @@ export default function AdminProfile() {
                   <CheckCircle2 size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-800">Connected Services (क्लाउड सिस्टम)</h3>
+                  <h3 className="text-base font-bold text-slate-800">Connected Cloud Services</h3>
                   <p className="text-xs text-slate-500">Status & health of cloud servers</p>
                 </div>
               </div>
