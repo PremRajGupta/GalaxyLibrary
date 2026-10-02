@@ -109,7 +109,13 @@ export default function ChatBot() {
 
   // Safe phone and fees resolution
   const phone = siteContent.libraryInfo?.phone || '+91 7488252019';
-  const phoneRaw = siteContent.libraryInfo?.phoneRaw || '917488252019';
+  const rawDigits = (siteContent.libraryInfo?.phoneRaw || '917488252019').replace(/\D/g, '');
+  const waNumber =
+    rawDigits.startsWith('91') && rawDigits.length === 12
+      ? rawDigits
+      : rawDigits.length === 10
+      ? `91${rawDigits}`
+      : rawDigits || '917488252019';
   const libAdmissionFee = siteContent.admissionFees?.library ?? 5;
   const compAdmissionFee = siteContent.admissionFees?.computerCenter ?? 50;
   const courses: ComputerCourse[] =
@@ -523,7 +529,7 @@ export default function ChatBot() {
             action: { label: '📝 Apply for Admission', path: '/apply' },
             secondaryAction: {
               label: '💬 Chat on WhatsApp',
-              url: `https://wa.me/91${phoneRaw}?text=Hi! I want to enroll in Galaxy Library.`,
+              url: `https://wa.me/${waNumber}?text=Hi! I want to enroll in Galaxy Library.`,
             },
           },
         ]);
@@ -544,7 +550,7 @@ export default function ChatBot() {
             },
             secondaryAction: {
               label: '💬 Ask on WhatsApp',
-              url: `https://wa.me/91${phoneRaw}?text=Hi! I am interested in ${shiftInfo.name} (${shiftInfo.fee}) at Galaxy Library.`,
+              url: `https://wa.me/${waNumber}?text=Hi! I am interested in ${shiftInfo.name} (${shiftInfo.fee}) at Galaxy Library.`,
             },
           },
         ]);
@@ -589,7 +595,7 @@ export default function ChatBot() {
             },
             secondaryAction: {
               label: '💬 Inquire on WhatsApp',
-              url: `https://wa.me/91${phoneRaw}?text=Hi! I would like details about ${selectedCourse.title} course at Galaxy Computer Center.`,
+              url: `https://wa.me/${waNumber}?text=Hi! I would like details about ${selectedCourse.title} course at Galaxy Computer Center.`,
             },
           },
         ]);
@@ -774,7 +780,7 @@ export default function ChatBot() {
 
     if (itemId === 'help-whatsapp') {
       window.open(
-        `https://wa.me/91${phoneRaw}?text=Hi! I want to know more about Galaxy Library and Computer Center.`,
+        `https://wa.me/${waNumber}?text=Hi! I want to know more about Galaxy Library and Computer Center.`,
         '_blank'
       );
       setMessages((prev) => [
@@ -846,7 +852,7 @@ export default function ChatBot() {
       {!isOpen && (
         <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col gap-3.5">
           <a
-            href={`https://wa.me/91${phoneRaw}?text=Hi! I want to know more about Galaxy Library.`}
+            href={`https://wa.me/${waNumber}?text=Hi! I want to know more about Galaxy Library.`}
             target="_blank"
             rel="noopener noreferrer"
             className="p-3 sm:p-4 bg-gradient-to-tr from-green-500 to-emerald-600 text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.25)] hover:shadow-[0_8px_30px_rgba(34,197,94,0.5)] transition-all transform hover:scale-110 flex items-center justify-center animate-bounce group"
@@ -882,28 +888,24 @@ export default function ChatBot() {
       {isOpen && (
         <div className="fixed bottom-4 right-4 w-[calc(100vw-32px)] sm:w-[410px] h-[85vh] sm:h-[580px] max-h-[750px] sm:bottom-6 sm:right-6 bg-white dark:bg-[#0f172a] rounded-3xl shadow-2xl flex flex-col z-50 overflow-hidden border border-slate-200/90 dark:border-slate-800 animate-fade-in">
           {/* Header */}
-          <div className="bg-gradient-to-r from-[#1e293b] via-blue-900 to-indigo-900 p-4 flex justify-between items-center text-white relative">
-            <div className="flex items-center gap-3">
-              <div className="relative">
+          <div className="bg-gradient-to-r from-[#1e293b] via-blue-900 to-indigo-900 px-4 py-3.5 flex justify-between items-center text-white relative">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="relative flex-shrink-0">
                 <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-blue-200 border border-white/15 shadow-xs">
                   <Bot size={22} />
                 </div>
                 <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-[#1e293b] rounded-full animate-pulse"></span>
               </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <h3 className="font-bold text-sm tracking-tight">Galaxy Assistant</h3>
-                  <span className="text-[10px] px-1.5 py-0.2 bg-blue-500/20 text-blue-200 rounded border border-blue-400/30">
-                    Interactive Guide
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-300">
-                  Instant Answers & Shift Information
+              <div className="min-w-0">
+                <h3 className="font-bold text-sm tracking-tight text-white truncate">Galaxy Assistant</h3>
+                <p className="text-[11px] text-emerald-300 font-medium flex items-center gap-1.5 mt-0.5">
+                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full inline-block"></span>
+                  <span>Online • Instant Help</span>
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => {
@@ -915,16 +917,16 @@ export default function ChatBot() {
                     },
                   ]);
                 }}
-                className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                title="Reset Chat"
+                className="p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                title="Restart Chat"
               >
                 <RotateCcw size={16} />
               </button>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                title="Close Chat"
+                className="p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                title="Close"
               >
                 <X size={18} />
               </button>
@@ -1086,7 +1088,7 @@ export default function ChatBot() {
             </button>
 
             <a
-              href={`https://wa.me/91${phoneRaw}?text=Hi! I want to know more about Galaxy Library.`}
+              href={`https://wa.me/${waNumber}?text=Hi! I want to know more about Galaxy Library.`}
               target="_blank"
               rel="noopener noreferrer"
               className="py-2.5 px-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 flex-shrink-0"
