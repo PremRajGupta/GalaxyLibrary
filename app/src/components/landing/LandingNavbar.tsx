@@ -100,7 +100,7 @@ export default function LandingNavbar({
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
         <div className="flex items-center justify-between h-16">
           <button
             type="button"
@@ -123,7 +123,7 @@ export default function LandingNavbar({
                 key={link.id}
                 type="button"
                 onClick={() => handleNav(link.sectionId)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white hover:bg-white dark:hover:bg-white/10 rounded-full transition-all"
+                className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white hover:bg-white dark:hover:bg-white/10 rounded-full transition-all whitespace-nowrap"
               >
                 {link.label}
               </button>
@@ -138,6 +138,13 @@ export default function LandingNavbar({
             >
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
+
+            <Link
+              to="/apply"
+              className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-full transition-all hover:scale-105 shadow-[0_0_15px_rgba(22,163,74,0.4)] whitespace-nowrap"
+            >
+              Admission
+            </Link>
 
             <Link
               to="/login"
@@ -185,13 +192,22 @@ export default function LandingNavbar({
                 {link.label}
               </button>
             ))}
-            <Link
-              to="/login"
-              onClick={() => setMenuOpen(false)}
-              className="block w-full text-center mt-4 px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold rounded-xl transition-colors shadow-lg"
-            >
-              {pageText.navLogin}
-            </Link>
+            <div className="flex gap-3 mt-4">
+              <Link
+                to="/apply"
+                onClick={() => setMenuOpen(false)}
+                className="block w-full text-center px-4 py-3 bg-green-600 text-white font-bold rounded-xl transition-colors shadow-lg"
+              >
+                Admission
+              </Link>
+              <Link
+                to="/login"
+                onClick={() => setMenuOpen(false)}
+                className="block w-full text-center px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold rounded-xl transition-colors shadow-lg"
+              >
+                {pageText.navLogin}
+              </Link>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

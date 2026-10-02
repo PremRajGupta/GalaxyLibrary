@@ -18,10 +18,17 @@ const statusConfig = {
   expired: { bg: 'bg-[#fee2e2]', text: 'text-[#ef4444]', label: 'Expired' },
 };
 
-export default function StudentRecords() {
+interface StudentRecordsProps {
+  defaultRegistrationType?: string;
+  hideRegistrationFilter?: boolean;
+}
+
+export default function StudentRecords({ defaultRegistrationType, hideRegistrationFilter }: StudentRecordsProps = {}) {
   const [studentList, setStudentList] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [shiftFilter, setShiftFilter] = useState('');
+  const [registrationTypeFilter, setRegistrationTypeFilter] = useState(defaultRegistrationType || 'all');
   const [notification, setNotification] = useState('');
   const [loading, setLoading] = useState(true);
   const [viewingStudent, setViewingStudent] = useState<any>(null);
@@ -108,12 +115,17 @@ export default function StudentRecords() {
     fetchStudents();
   }, [location]);
 
-  const [shiftFilter, setShiftFilter] = useState('');
 
   // Reset to first page when search or filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, shiftFilter]);
+  }, [searchTerm, statusFilter, shiftFilter, registrationTypeFilter]);
+  
+  useEffect(() => {
+    if (defaultRegistrationType) {
+      setRegistrationTypeFilter(defaultRegistrationType);
+    }
+  }, [defaultRegistrationType, location.pathname]);
 
   const showNotification = (msg: string) => {
     setNotification(msg);
@@ -278,7 +290,8 @@ export default function StudentRecords() {
                           (s.fatherName && s.fatherName.toLowerCase().includes(searchLower));
     const matchesStatus = statusFilter ? s.status === statusFilter : true;
     const matchesShift = shiftFilter ? (s.timeShift === shiftFilter || s.shift === shiftFilter) : true;
-    return matchesSearch && matchesStatus && matchesShift;
+    const matchesRegistrationType = registrationTypeFilter !== 'all' ? (s.registrationType || 'library') === registrationTypeFilter : true;
+    return matchesSearch && matchesStatus && matchesShift && matchesRegistrationType;
   });
 
   const uniqueShifts = Array.from(new Set(studentList.map(s => s.timeShift || s.shift).filter(Boolean))).sort();
@@ -410,6 +423,32 @@ export default function StudentRecords() {
                         <div>
                           <p className="text-xs text-[#94a3b8] mb-1">Back</p>
                           <img src={viewingStudent.aadharBack} alt="Aadhar Back" className="w-full h-auto rounded border border-[#e2e8f0]" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {(viewingStudent.tenthCert || viewingStudent.twelfthCert || viewingStudent.gradCert) && (
+                  <div className="mt-6">
+                    <p className="text-[#64748b] text-sm mb-3 font-medium">Educational Certificates</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {viewingStudent.tenthCert && (
+                        <div>
+                          <p className="text-xs text-[#94a3b8] mb-1">10th Cert</p>
+                          <img src={viewingStudent.tenthCert} alt="10th Certificate" className="w-full h-auto rounded border border-[#e2e8f0]" />
+                        </div>
+                      )}
+                      {viewingStudent.twelfthCert && (
+                        <div>
+                          <p className="text-xs text-[#94a3b8] mb-1">12th Cert</p>
+                          <img src={viewingStudent.twelfthCert} alt="12th Certificate" className="w-full h-auto rounded border border-[#e2e8f0]" />
+                        </div>
+                      )}
+                      {viewingStudent.gradCert && (
+                        <div>
+                          <p className="text-xs text-[#94a3b8] mb-1">Graduation</p>
+                          <img src={viewingStudent.gradCert} alt="Graduation Certificate" className="w-full h-auto rounded border border-[#e2e8f0]" />
                         </div>
                       )}
                     </div>
@@ -572,6 +611,18 @@ export default function StudentRecords() {
               ))}
             </select>
             
+            {!hideRegistrationFilter && (
+              <select
+                value={registrationTypeFilter}
+                onChange={(e) => setRegistrationTypeFilter(e.target.value)}
+                className="w-full sm:w-auto px-4 py-2.5 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#3b82f6] transition-all text-sm bg-white"
+              >
+                <option value="all">All Sections</option>
+                <option value="library">Library</option>
+                <option value="computer_center">Computer Center</option>
+              </select>
+            )}
+            
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -629,7 +680,16 @@ export default function StudentRecords() {
                             )}
                             <div>
                               <p className="text-sm font-medium text-[#1e293b]">{student.name}</p>
-                              <p className="text-xs text-[#94a3b8]">{student.studentId}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs text-[#94a3b8]">{student.studentId}</p>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                                  student.registrationType === 'computer_center' 
+                                    ? 'bg-[#f3e8ff] text-[#9333ea]' 
+                                    : 'bg-[#e0f2fe] text-[#0284c7]'
+                                }`}>
+                                  {student.registrationType === 'computer_center' ? 'Computer Center' : 'Library'}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </td>

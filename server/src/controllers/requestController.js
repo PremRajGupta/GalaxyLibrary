@@ -63,3 +63,23 @@ export const deleteRequest = async (req, res) => {
     res.status(400).json({ message: 'Error deleting request', error: error.message });
   }
 };
+
+export const createPublicAdmissionRequest = async (req, res) => {
+  try {
+    const { details, admissionData } = req.body;
+    const newRequest = new Request({
+      organizationId: 'default',
+      branchId: 'default',
+      studentName: admissionData.name || 'New Admission',
+      requestType: 'admission',
+      details,
+      admissionData,
+      status: 'pending'
+    });
+    await newRequest.save();
+    res.status(201).json(newRequest);
+  } catch (error) {
+    res.status(400).json({ message: 'Error creating request', error: error.message });
+  }
+};
+

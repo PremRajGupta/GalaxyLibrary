@@ -22,18 +22,30 @@ const generateReceiptNumber = async () => {
 
 export const getFees = async (req, res) => {
   try {
-    const fees = await Fee.find().sort({ createdAt: -1 }).lean();
+    const { registrationType, month } = req.query;
+    let feeQuery = {};
+    if (month && month !== 'all') {
+      feeQuery.month = month;
+    }
+    const fees = await Fee.find(feeQuery).sort({ createdAt: -1 }).lean();
     const studentIds = [...new Set(fees.map((fee) => fee.studentDisplayId).filter(Boolean))];
-    const students = await Student.find({ studentId: { $in: studentIds } })
-      .select('studentId course seatNumber fatherName mobile joiningDate admissionDate')
+    const studentQuery = { studentId: { $in: studentIds } };
+    if (registrationType && registrationType !== 'all') {
+      studentQuery.registrationType = registrationType;
+    }
+    const students = await Student.find(studentQuery)
+      .select('studentId course seatNumber fatherName mobile joiningDate admissionDate registrationType')
       .lean();
     const studentsByDisplayId = new Map(students.map((student) => [student.studentId, student]));
 
-    const normalizedFees = fees.map((fee) => {
+    const normalizedFees = fees.reduce((acc, fee) => {
       const student = studentsByDisplayId.get(fee.studentDisplayId);
+      // If filtering by registrationType and student doesn't match, skip
+      if (registrationType && registrationType !== 'all' && !student) return acc;
+
       const displayId = getStudentDisplayId(fee) || fee.studentDisplayId;
 
-      return {
+      acc.push({
         ...fee,
         studentDisplayId: displayId,
         studentId: displayId,
@@ -43,11 +55,13 @@ export const getFees = async (req, res) => {
         fatherName: student?.fatherName,
         studentMobile: student?.mobile,
         joiningDate: student?.joiningDate || student?.admissionDate,
+        registrationType: student?.registrationType || 'library',
         date: fee.paymentDate
           ? new Date(fee.paymentDate).toISOString().split('T')[0]
           : undefined,
-      };
-    });
+      });
+      return acc;
+    }, []);
 
     res.status(200).json(normalizedFees);
   } catch (error) {

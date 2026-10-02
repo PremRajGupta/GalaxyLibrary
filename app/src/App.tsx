@@ -23,6 +23,7 @@ import TermsOfService from './pages/TermsOfService';
 import ComputerCenter from './pages/ComputerCenter';
 import AllCourses from './pages/AllCourses';
 import ComputerCenterRegistration from './pages/ComputerCenterRegistration';
+import PublicAdmission from './pages/PublicAdmission';
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -108,6 +109,7 @@ function AppRoutes() {
       <Route path="/computercenter" element={<ComputerCenter />} />
       <Route path="/computercenter/courses" element={<AllCourses />} />
       <Route path="/computercenter/registration" element={<ComputerCenterRegistration />} />
+      <Route path="/apply" element={<PublicAdmission />} />
       <Route path="/login" element={<PublicLoginRoute />} />
 
       {/* Admin Protected Routes */}

@@ -161,7 +161,7 @@ export default function StudentPortal() {
 
       {/* Header bar */}
       <header className="bg-[#1a2b4a]/95 backdrop-blur-xl text-white shadow-md border-b border-white/10 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-3 py-3 sm:px-4 sm:py-4 lg:px-8 flex items-center justify-between">
+        <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <AppLogo size="sm" className="flex-shrink-0 drop-shadow-md" />
             <div className="min-w-0">
@@ -179,7 +179,7 @@ export default function StudentPortal() {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-3 py-2 sm:px-4 sm:py-3 lg:px-8 lg:py-4 relative z-10">
+      <main className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-3 sm:py-4 relative z-10">
         
         {/* Welcome greeting card (Glassmorphism) */}
         <div className="bg-white/70 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white p-3 sm:p-4 lg:p-5 mb-4 sm:mb-5 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 relative overflow-hidden">

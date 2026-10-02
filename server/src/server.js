@@ -12,6 +12,7 @@ import seatRoutes from './routes/seatRoutes.js';
 import requestRoutes from './routes/requestRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
+import cashfreeRoutes from './routes/cashfreeRoutes.js';
 import { getSiteContent, updateSiteContent } from './controllers/siteContentController.js';
 import { getPublicStats, recordPublicVisit } from './controllers/publicStatsController.js';
 
@@ -203,6 +204,7 @@ app.post(['/api/student/login', '/api/v1/student/login', '/student/login'], asyn
 });
 
 // ===== PUBLIC ROUTES (Before auth middleware) =====
+app.use('/api/v1/cashfree', cashfreeRoutes);
 // Public Website Content (No Auth — home page must load/save for all visitors)
 app.get('/api/v1/site-content', getSiteContent);
 app.get('/api/site-content', getSiteContent);

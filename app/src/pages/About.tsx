@@ -69,7 +69,7 @@ export default function About() {
 
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#334155] text-white py-16 sm:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 text-center">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
             About <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3b82f6] to-[#60a5fa]">Galaxy Library</span>
           </h1>
@@ -80,7 +80,7 @@ export default function About() {
       </div>
 
       {/* Main H1 - Critical for SEO */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+      <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-16 sm:py-20">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold mb-6 leading-tight text-[#1e293b]">
             Welcome to Galaxy Library - Top Educational Institute in {libraryInfo?.location || 'Tehta'}

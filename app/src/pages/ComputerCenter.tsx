@@ -245,7 +245,7 @@ export default function ComputerCenter() {
             <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent"></div>
           </div>
 
-          <div className="flex-grow flex items-center justify-start w-full relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
+          <div className="flex-grow flex items-center justify-start w-full relative z-10 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-12 lg:py-20">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -351,7 +351,7 @@ export default function ComputerCenter() {
         </section>
 
         {/* TOP COURSES SECTION */}
-        <section id="courses-section" className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-20 relative z-10 bg-slate-50 dark:bg-[#040814]">
+        <section id="courses-section" className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-20 relative z-10 bg-slate-50 dark:bg-[#040814]">
           <div className="text-center mb-12 flex flex-col items-center">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1e293b] dark:text-white flex items-center justify-center gap-3">
               <Sparkles className="text-yellow-500 fill-yellow-500 w-8 h-8" />
@@ -427,7 +427,7 @@ export default function ComputerCenter() {
         </section>
 
         {/* FEATURES GRID SECTION */}
-        <section className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-24 relative z-10">
+        <section className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-24 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white mb-4">
               Why Choose Galaxy?

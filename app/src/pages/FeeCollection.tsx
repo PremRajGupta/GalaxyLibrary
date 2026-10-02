@@ -152,6 +152,8 @@ export function FeeCollection() {
   useEffect(() => {
     loadData();
   }, [location]);
+  
+  const [registrationTypeFilter, setRegistrationTypeFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<StudentFee | null>(null);
   const [payAmount, setPayAmount] = useState('');
@@ -262,7 +264,8 @@ export function FeeCollection() {
   const filteredStudents = students.filter((s) => {
     const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           s.studentId.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch && s.feeDue > 0;
+    const matchesRegistrationType = registrationTypeFilter === 'all' || (s.registrationType || 'library') === registrationTypeFilter;
+    return matchesSearch && s.feeDue > 0 && matchesRegistrationType;
   });
 
   // Paginated slices
@@ -270,10 +273,14 @@ export function FeeCollection() {
   const paginatedDueStudents = filteredStudents.slice((duePage - 1) * RECORDS_PER_PAGE, duePage * RECORDS_PER_PAGE);
 
   // Keep only the latest RECORDS_PER_PAGE recent payments (newest first)
-  const recentPaymentsSorted = [...payments].sort((a, b) => (new Date(b.date || '').getTime() - new Date(a.date || '').getTime()));
+  const filteredPayments = payments.filter((p) => {
+    const matchesRegistrationType = registrationTypeFilter === 'all' || (p.registrationType || 'library') === registrationTypeFilter;
+    return matchesRegistrationType;
+  });
+  const recentPaymentsSorted = [...filteredPayments].sort((a, b) => (new Date(b.date || '').getTime() - new Date(a.date || '').getTime()));
   const paginatedRecentPayments = recentPaymentsSorted.slice(0, RECORDS_PER_PAGE);
 
-  const totalDue = students.reduce((sum, s) => sum + s.feeDue, 0);
+  const totalDue = students.filter(s => registrationTypeFilter === 'all' || (s.registrationType || 'library') === registrationTypeFilter).reduce((sum, s) => sum + s.feeDue, 0);
   
   const totalCollected = payments.reduce((sum, p) => {
     if (!p.date) return sum;
@@ -600,16 +607,27 @@ export function FeeCollection() {
             </div>
           </div>
 
-          {/* Search */}
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" size={18} />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by Student ID or Name..."
-              className="w-full pl-10 pr-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/20 transition-all"
-            />
+          {/* Search and Section Filter */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" size={18} />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by Student ID or Name..."
+                className="w-full pl-10 pr-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/20 transition-all"
+              />
+            </div>
+            <select
+              value={registrationTypeFilter}
+              onChange={(e) => setRegistrationTypeFilter(e.target.value)}
+              className="px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#3b82f6] transition-all bg-white font-medium text-[#1e293b]"
+            >
+              <option value="all">All Sections</option>
+              <option value="library">Library</option>
+              <option value="computer_center">Computer Center</option>
+            </select>
           </div>
 
           {/* Students Due Table */}

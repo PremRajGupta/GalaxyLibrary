@@ -47,11 +47,18 @@ export default function NewAdmission() {
     photo: undefined,
     aadharFront: undefined,
     aadharBack: undefined,
+    tenthCert: undefined,
+    twelfthCert: undefined,
+    gradCert: undefined,
+    registrationType: 'library',
   });
   const [submitted, setSubmitted] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [aadharFrontPreview, setAadharFrontPreview] = useState<string | null>(null);
   const [aadharBackPreview, setAadharBackPreview] = useState<string | null>(null);
+  const [tenthCertPreview, setTenthCertPreview] = useState<string | null>(null);
+  const [twelfthCertPreview, setTwelfthCertPreview] = useState<string | null>(null);
+  const [gradCertPreview, setGradCertPreview] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string>('');
@@ -66,15 +73,40 @@ export default function NewAdmission() {
 
   useEffect(() => {
     if (location.state?.prefillData) {
+      const data = location.state.prefillData;
       setFormData(prev => ({
         ...prev,
-        ...location.state.prefillData
+        ...data,
+        aadharNumber: data.aadhaarNumber || data.aadharNumber || '',
+        timeShift: data.shift || data.timeShift || '',
+        feeAmount: (data.shift || data.timeShift) ? String(getFeeForTimeShift(data.shift || data.timeShift)) : prev.feeAmount,
       }));
-      if (location.state.prefillData.seatNumber) {
+      
+      if (data.livePhotoBase64) {
+        setPhotoPreview(data.livePhotoBase64);
+        setFormData(prev => ({ ...prev, photo: data.livePhotoBase64 }));
+      }
+      
+      if (data.tenthCert) {
+        setTenthCertPreview(data.tenthCert);
+        setFormData(prev => ({ ...prev, tenthCert: data.tenthCert }));
+      }
+      
+      if (data.twelfthCert) {
+        setTwelfthCertPreview(data.twelfthCert);
+        setFormData(prev => ({ ...prev, twelfthCert: data.twelfthCert }));
+      }
+      
+      if (data.gradCert) {
+        setGradCertPreview(data.gradCert);
+        setFormData(prev => ({ ...prev, gradCert: data.gradCert }));
+      }
+      
+      if (data.seatNumber) {
         setSeatSearch(
-          location.state.prefillData.seatNumber === 'other'
+          data.seatNumber === 'other'
             ? 'Other (custom seat)'
-            : location.state.prefillData.seatNumber
+            : data.seatNumber
         );
       }
     }
@@ -210,14 +242,29 @@ export default function NewAdmission() {
     setFormData((prev) => ({ ...prev, photo: dataUrl ?? undefined }));
   };
 
-  const setAadharFrontImage = (dataUrl: string | null) => {
-    setAadharFrontPreview(dataUrl);
-    setFormData((prev) => ({ ...prev, aadharFront: dataUrl ?? undefined }));
+  const setAadharFrontImage = (base64: string | null) => {
+    setAadharFrontPreview(base64);
+    setFormData({ ...formData, aadharFront: base64 || undefined });
   };
 
-  const setAadharBackImage = (dataUrl: string | null) => {
-    setAadharBackPreview(dataUrl);
-    setFormData((prev) => ({ ...prev, aadharBack: dataUrl ?? undefined }));
+  const setAadharBackImage = (base64: string | null) => {
+    setAadharBackPreview(base64);
+    setFormData({ ...formData, aadharBack: base64 || undefined });
+  };
+
+  const setTenthCertImage = (base64: string | null) => {
+    setTenthCertPreview(base64);
+    setFormData({ ...formData, tenthCert: base64 || undefined });
+  };
+
+  const setTwelfthCertImage = (base64: string | null) => {
+    setTwelfthCertPreview(base64);
+    setFormData({ ...formData, twelfthCert: base64 || undefined });
+  };
+
+  const setGradCertImage = (base64: string | null) => {
+    setGradCertPreview(base64);
+    setFormData({ ...formData, gradCert: base64 || undefined });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -319,6 +366,11 @@ export default function NewAdmission() {
     const aadharNumberError = validateAadharNumber(formData.aadharNumber, { required: false });
     if (aadharNumberError) e.aadharNumber = aadharNumberError;
     if (!formData.photo) e.photo = 'Student photo is required.';
+    
+    if (formData.registrationType === 'computer_center' && !formData.tenthCert) {
+      e.tenthCert = '10th Certificate is required for Computer Center admissions.';
+    }
+    
     setErrors(e);
     return e;
   };
@@ -345,6 +397,10 @@ export default function NewAdmission() {
     photo: undefined,
     aadharFront: undefined,
     aadharBack: undefined,
+    tenthCert: undefined,
+    twelfthCert: undefined,
+    gradCert: undefined,
+    registrationType: 'library',
   } as AdmissionFormData;
 
   const resetForm = (options?: { keepFeedback?: boolean }) => {
@@ -352,6 +408,9 @@ export default function NewAdmission() {
     setPhotoPreview(null);
     setAadharFrontPreview(null);
     setAadharBackPreview(null);
+    setTenthCertPreview(null);
+    setTwelfthCertPreview(null);
+    setGradCertPreview(null);
     setSeatSearch('');
     setSeatDropdownOpen(false);
     setErrors({});
@@ -380,6 +439,32 @@ export default function NewAdmission() {
                 <h2 className="text-xl sm:text-2xl font-semibold text-[#0f172a]">New Admission</h2>
                 <p className="text-sm text-[#64748b] mt-1">Add a new student profile and assign seat & fees</p>
               </div>
+            </div>
+
+            {/* Registration Type Toggle */}
+            <div className="flex bg-[#f1f5f9] p-1 rounded-xl w-full sm:max-w-md mb-8">
+              <button
+                type="button"
+                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  formData.registrationType === 'library'
+                    ? 'bg-white text-[#0ea5e9] shadow-sm'
+                    : 'text-[#64748b] hover:text-[#0f172a]'
+                }`}
+                onClick={() => setFormData({ ...formData, registrationType: 'library' })}
+              >
+                Library
+              </button>
+              <button
+                type="button"
+                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  formData.registrationType === 'computer_center'
+                    ? 'bg-white text-[#0ea5e9] shadow-sm'
+                    : 'text-[#64748b] hover:text-[#0f172a]'
+                }`}
+                onClick={() => setFormData({ ...formData, registrationType: 'computer_center' })}
+              >
+                Computer Center
+              </button>
             </div>
 
             {errorMessage && (
@@ -821,6 +906,41 @@ export default function NewAdmission() {
                   />
                 </div>
               </div>
+
+              {formData.registrationType === 'computer_center' && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-[#0f172a] mb-3">
+                    Educational Certificates <span className="text-xs text-[#64748b] font-normal">(Required for Computer Center)</span>
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <ImageCaptureField
+                      label={<span className="block text-xs font-medium text-[#475569]">10th Marksheet/Certificate <RequiredMark /></span>}
+                      previewUrl={tenthCertPreview}
+                      onImageChange={setTenthCertImage}
+                      facingMode="environment"
+                      previewClassName="w-full h-28"
+                      emptyHint="No 10th cert"
+                      error={errors.tenthCert}
+                    />
+                    <ImageCaptureField
+                      label={<span className="block text-xs font-medium text-[#475569]">12th Marksheet (Optional)</span>}
+                      previewUrl={twelfthCertPreview}
+                      onImageChange={setTwelfthCertImage}
+                      facingMode="environment"
+                      previewClassName="w-full h-28"
+                      emptyHint="No 12th cert"
+                    />
+                    <ImageCaptureField
+                      label={<span className="block text-xs font-medium text-[#475569]">Graduation (Optional)</span>}
+                      previewUrl={gradCertPreview}
+                      onImageChange={setGradCertImage}
+                      facingMode="environment"
+                      previewClassName="w-full h-28"
+                      emptyHint="No grad cert"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="pt-4">
                 <button

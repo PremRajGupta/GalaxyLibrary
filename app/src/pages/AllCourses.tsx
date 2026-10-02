@@ -41,7 +41,7 @@ export default function AllCourses() {
         onNavigate={handleNavigate}
       />
       
-      <div className="flex-grow pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full relative z-10">
+      <div className="flex-grow pt-24 pb-20 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 relative z-10">
         
         {/* Back Button */}
         <button 

@@ -82,6 +82,36 @@ export const createStudent = async (req, res) => {
       }
     }
 
+    if (studentData.tenthCert && studentData.tenthCert.startsWith('data:image')) {
+      try {
+        const uploadResult = await imageService.uploadBase64(studentData.tenthCert, studentData.organizationId, 'tenth_cert');
+        studentData.tenthCert = uploadResult.url;
+        studentData.tenthCertPublicId = uploadResult.publicId;
+      } catch (err) {
+        console.warn('Cloudinary upload failed for tenth cert, falling back to base64:', err.message);
+      }
+    }
+
+    if (studentData.twelfthCert && studentData.twelfthCert.startsWith('data:image')) {
+      try {
+        const uploadResult = await imageService.uploadBase64(studentData.twelfthCert, studentData.organizationId, 'twelfth_cert');
+        studentData.twelfthCert = uploadResult.url;
+        studentData.twelfthCertPublicId = uploadResult.publicId;
+      } catch (err) {
+        console.warn('Cloudinary upload failed for twelfth cert, falling back to base64:', err.message);
+      }
+    }
+
+    if (studentData.gradCert && studentData.gradCert.startsWith('data:image')) {
+      try {
+        const uploadResult = await imageService.uploadBase64(studentData.gradCert, studentData.organizationId, 'grad_cert');
+        studentData.gradCert = uploadResult.url;
+        studentData.gradCertPublicId = uploadResult.publicId;
+      } catch (err) {
+        console.warn('Cloudinary upload failed for grad cert, falling back to base64:', err.message);
+      }
+    }
+
     const fixedFeeAmount = getFeeForTimeShift(studentData.timeShift);
     if (fixedFeeAmount > 0) {
       studentData.feeAmount = fixedFeeAmount;
@@ -167,6 +197,36 @@ export const updateStudent = async (req, res) => {
         studentData.aadharBackPublicId = uploadResult.publicId;
       } catch (err) {
         console.warn('Cloudinary upload failed for aadhar back, falling back to base64:', err.message);
+      }
+    }
+
+    if (studentData.tenthCert && studentData.tenthCert.startsWith('data:image')) {
+      try {
+        const uploadResult = await imageService.uploadBase64(studentData.tenthCert, orgId, 'tenth_cert');
+        studentData.tenthCert = uploadResult.url;
+        studentData.tenthCertPublicId = uploadResult.publicId;
+      } catch (err) {
+        console.warn('Cloudinary upload failed for tenth cert, falling back to base64:', err.message);
+      }
+    }
+
+    if (studentData.twelfthCert && studentData.twelfthCert.startsWith('data:image')) {
+      try {
+        const uploadResult = await imageService.uploadBase64(studentData.twelfthCert, orgId, 'twelfth_cert');
+        studentData.twelfthCert = uploadResult.url;
+        studentData.twelfthCertPublicId = uploadResult.publicId;
+      } catch (err) {
+        console.warn('Cloudinary upload failed for twelfth cert, falling back to base64:', err.message);
+      }
+    }
+
+    if (studentData.gradCert && studentData.gradCert.startsWith('data:image')) {
+      try {
+        const uploadResult = await imageService.uploadBase64(studentData.gradCert, orgId, 'grad_cert');
+        studentData.gradCert = uploadResult.url;
+        studentData.gradCertPublicId = uploadResult.publicId;
+      } catch (err) {
+        console.warn('Cloudinary upload failed for grad cert, falling back to base64:', err.message);
       }
     }
 

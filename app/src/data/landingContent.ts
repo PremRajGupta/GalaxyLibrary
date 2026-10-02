@@ -133,6 +133,11 @@ export type Announcement = {
   upcomingText: string;
 };
 
+export type AdmissionFees = {
+  library: number;
+  computerCenter: number;
+};
+
 export type SiteContent = {
   announcement?: Announcement;
   libraryInfo: LibraryInfo;

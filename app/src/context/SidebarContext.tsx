@@ -5,16 +5,47 @@ interface SidebarContextType {
   open: () => void;
   close: () => void;
   toggle: () => void;
+  isExpanded: boolean;
+  toggleExpanded: () => void;
+  setIsExpanded: (val: boolean) => void;
 }
 
 const SidebarContext = createContext<SidebarContextType | null>(null);
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpandedState] = useState(() => {
+    try {
+      return localStorage.getItem('admin_sidebar_expanded') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   const open = useCallback(() => setIsOpen(true), []);
   const close = useCallback(() => setIsOpen(false), []);
   const toggle = useCallback(() => setIsOpen((prev) => !prev), []);
+
+  const toggleExpanded = useCallback(() => {
+    setIsExpandedState((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('admin_sidebar_expanded', String(next));
+      } catch (e) {
+        console.error(e);
+      }
+      return next;
+    });
+  }, []);
+
+  const setIsExpanded = useCallback((expanded: boolean) => {
+    setIsExpandedState(expanded);
+    try {
+      localStorage.setItem('admin_sidebar_expanded', String(expanded));
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -35,7 +66,17 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   }, [isOpen]);
 
   return (
-    <SidebarContext.Provider value={{ isOpen, open, close, toggle }}>
+    <SidebarContext.Provider
+      value={{
+        isOpen,
+        open,
+        close,
+        toggle,
+        isExpanded,
+        toggleExpanded,
+        setIsExpanded,
+      }}
+    >
       {children}
     </SidebarContext.Provider>
   );

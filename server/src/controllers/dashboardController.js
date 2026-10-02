@@ -7,16 +7,27 @@ import { computeStudentFeeDue } from '../utils/feeDues.js';
 
 export const getDashboardStats = async (req, res) => {
   try {
-    const totalStudents = await Student.countDocuments({ status: 'active' });
+    const { registrationType } = req.query;
+    const studentQuery = { status: 'active' };
+    if (registrationType && registrationType !== 'all') {
+      studentQuery.registrationType = registrationType;
+    }
+
+    const totalStudents = await Student.countDocuments(studentQuery);
     const { totalSeats, occupiedSeats, availableSeats } = await getSeatStats();
 
-    const fees = await Fee.find();
-    const totalRevenue = fees.reduce((acc, fee) => acc + fee.amount, 0);
+    // Populate studentId to filter fees by registrationType
+    const fees = await Fee.find().populate('studentId', 'registrationType');
+    const filteredFees = (registrationType && registrationType !== 'all') 
+      ? fees.filter(f => f.studentId && f.studentId.registrationType === registrationType)
+      : fees;
+
+    const totalRevenue = filteredFees.reduce((acc, fee) => acc + fee.amount, 0);
 
     const currentDate = new Date();
     const currentMonthNum = currentDate.getMonth();
     const currentYearNum = currentDate.getFullYear();
-    const monthlyRevenue = fees.reduce((acc, fee) => {
+    const monthlyRevenue = filteredFees.reduce((acc, fee) => {
       const pDate = new Date(fee.paymentDate || fee.createdAt);
       if (pDate.getMonth() === currentMonthNum && pDate.getFullYear() === currentYearNum) {
         return acc + fee.amount;
@@ -24,10 +35,10 @@ export const getDashboardStats = async (req, res) => {
       return acc;
     }, 0);
 
-    const activeStudents = await Student.find({ status: 'active' })
-      .select('name studentId course timeShift customShiftHours feeAmount joiningDate admissionDate');
+    const activeStudents = await Student.find(studentQuery)
+      .select('name studentId course timeShift customShiftHours feeAmount joiningDate admissionDate registrationType');
 
-    const paymentsByStudent = fees.reduce((acc, fee) => {
+    const paymentsByStudent = filteredFees.reduce((acc, fee) => {
       const key = fee.studentDisplayId;
       if (!acc[key]) acc[key] = [];
       acc[key].push({

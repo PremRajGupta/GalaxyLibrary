@@ -24,6 +24,7 @@ const studentSchema = new mongoose.Schema({
   },
   email: { type: String, required: true },
   address: { type: String, required: true },
+  registrationType: { type: String, enum: ['library', 'computer_center'], default: 'library' },
   course: { type: String, required: true },
   seatNumber: { type: String },
   timeShift: { type: String }, // 4hours, 6hours, 8hours, 12hours, 24hours, night, other
@@ -44,6 +45,12 @@ const studentSchema = new mongoose.Schema({
   aadharFrontPublicId: { type: String },
   aadharBack: { type: String }, // Cloudinary URL
   aadharBackPublicId: { type: String },
+  tenthCert: { type: String },
+  tenthCertPublicId: { type: String },
+  twelfthCert: { type: String },
+  twelfthCertPublicId: { type: String },
+  gradCert: { type: String },
+  gradCertPublicId: { type: String },
   joiningDate: { type: Date, default: Date.now },
   admissionDate: { type: Date, default: Date.now },
   status: { type: String, enum: ['active', 'inactive', 'expired'], default: 'active' },

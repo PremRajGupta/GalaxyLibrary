@@ -118,6 +118,7 @@ export const getReportsData = async (req, res) => {
 
     const periodFees = allFees.filter((fee) => isWithinRange(getPaymentDate(fee), startDate, endDate));
     const totalCollected = periodFees.reduce((acc, fee) => acc + (fee.amount || 0), 0);
+    const totalDiscount = periodFees.reduce((acc, fee) => acc + (Number(fee.discountAmount) || 0), 0);
     const totalPayments = periodFees.length;
 
     const admissions = allStudents.filter((student) => {
@@ -155,20 +156,25 @@ export const getReportsData = async (req, res) => {
         studentId: student._id,
         studentDisplayId: student.studentId,
         name: student.name,
+        course: getCourseLabel(student.course) || 'Library',
+        contact: student.mobile || student.parentMobile || '',
+        monthlyFee,
         paid: due.paidAmount,
         due: due.pendingAmount,
+        status: due.pendingAmount <= 0 ? 'Fully Paid' : (due.paidAmount > 0 ? 'Partially Paid' : 'Unpaid'),
       };
     });
 
     const bucketOrder = buildOrderedBuckets(timeRange, startDate, endDate);
-    const feeMap = Object.fromEntries(bucketOrder.map((label) => [label, { collected: 0, pending: 0 }]));
+    const feeMap = Object.fromEntries(bucketOrder.map((label) => [label, { collected: 0, pending: 0, discount: 0 }]));
 
     periodFees.forEach((fee) => {
       const label = getFeeBucketLabel(getPaymentDate(fee), timeRange);
       if (!feeMap[label]) {
-        feeMap[label] = { collected: 0, pending: 0 };
+        feeMap[label] = { collected: 0, pending: 0, discount: 0 };
       }
       feeMap[label].collected += fee.amount || 0;
+      feeMap[label].discount = (feeMap[label].discount || 0) + (Number(fee.discountAmount) || 0);
     });
 
     // Compute pending dues by date/bucket
@@ -218,6 +224,7 @@ export const getReportsData = async (req, res) => {
       month: label,
       collected: feeMap[label]?.collected || 0,
       pending: feeMap[label]?.pending || 0,
+      discount: feeMap[label]?.discount || 0,
     }));
 
     const courseMap = {};
@@ -249,6 +256,59 @@ export const getReportsData = async (req, res) => {
         students: studentsInCourse,
       };
     });
+
+    const studentMap = allStudents.reduce((acc, s) => {
+      if (s.studentId) acc[s.studentId] = s;
+      if (s._id) acc[s._id.toString()] = s;
+      return acc;
+    }, {});
+
+    const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    const feeCollectionDetails = periodFees
+      .slice()
+      .sort((a, b) => getPaymentDate(a).getTime() - getPaymentDate(b).getTime())
+      .map((fee) => {
+        const student = studentMap[fee.studentDisplayId] || studentMap[fee.studentId?.toString()];
+        const paymentAmount = Number(fee.amount) || 0;
+        const discount = Number(fee.discountAmount) || 0;
+        const totalAmount = (fee.feeCreditAmount != null && !isNaN(Number(fee.feeCreditAmount)) && Number(fee.feeCreditAmount) > 0)
+          ? Number(fee.feeCreditAmount)
+          : (paymentAmount + discount);
+
+        const pDate = getPaymentDate(fee);
+        const dayName = !isNaN(pDate.getTime()) ? DAY_NAMES[pDate.getDay()] : '-';
+        const monthYear = !isNaN(pDate.getTime()) ? `${MONTH_NAMES[pDate.getMonth()]} ${pDate.getFullYear()}` : '-';
+
+        return {
+          id: fee._id,
+          receiptNumber: fee.receiptNumber || '-',
+          studentDisplayId: fee.studentDisplayId || student?.studentId || '-',
+          studentName: fee.studentName || student?.name || 'Unknown',
+          course: getCourseLabel(student?.course) || 'Library',
+          contact: student?.mobile || student?.parentMobile || '',
+          month: fee.month || '-',
+          dayName,
+          monthYear,
+          total: totalAmount,
+          payment: paymentAmount,
+          discount: discount,
+          paymentMode: (fee.paymentMode || 'cash').toUpperCase(),
+          paymentDate: pDate,
+        };
+      });
+
+    const expiredStudents = allStudents
+      .filter((student) => student.status === 'expired')
+      .map((student) => ({
+        studentDisplayId: student.studentId,
+        name: student.name,
+        course: getCourseLabel(student.course) || 'Library',
+        contact: student.mobile || student.parentMobile || '',
+        status: 'Expired',
+        inactiveDate: student.inactiveDate || student.updatedAt,
+      }));
 
     const expiredCount = allStudents.filter((student) => student.status === 'expired').length;
 
@@ -289,14 +349,17 @@ export const getReportsData = async (req, res) => {
 
     res.status(200).json({
       feeData,
+      feeCollectionDetails,
       admissionData,
       admissionDetails,
       reportCards,
       studentPayments,
+      expiredStudents,
       summary: {
         periodLabel,
         dateRange: formatDateRange(startDate, endDate),
         totalCollected,
+        totalDiscount,
         totalPending,
         totalAdmissions: admissions.length,
         totalPayments,

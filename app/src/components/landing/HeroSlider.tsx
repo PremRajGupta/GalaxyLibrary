@@ -110,7 +110,7 @@ export default function HeroSlider({ slides }: HeroSliderProps) {
         </motion.div>
       </AnimatePresence>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
+      <div className="relative z-10 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-20">
         <div className="max-w-3xl">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}

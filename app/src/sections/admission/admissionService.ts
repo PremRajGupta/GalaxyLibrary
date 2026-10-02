@@ -24,6 +24,10 @@ export interface AdmissionFormData {
   photo?: string;
   aadharFront?: string;
   aadharBack?: string;
+  tenthCert?: string;
+  twelfthCert?: string;
+  gradCert?: string;
+  registrationType?: string;
   password?: string;
 }
 
@@ -71,6 +75,7 @@ export const submitAdmission = async (formData: AdmissionFormData): Promise<Admi
       photo: formData.photo,
       aadharFront: formData.aadharFront,
       aadharBack: formData.aadharBack,
+      registrationType: formData.registrationType,
     };
     const paidAmount = Number(formData.paidAmount) || 0;
     

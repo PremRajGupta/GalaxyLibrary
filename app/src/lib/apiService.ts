@@ -41,8 +41,8 @@ export const studentApi = {
 };
 
 export const feeApi = {
-  getFees: async () => {
-    const response = await api.get('/fees');
+  getFees: async (params?: Record<string, string>) => {
+    const response = await api.get('/fees', { params });
     return response.data;
   },
   createFee: async (data: any) => {
@@ -84,8 +84,8 @@ export const seatApi = {
 };
 
 export const dashboardApi = {
-  getStats: async () => {
-    const response = await api.get('/dashboard/stats');
+  getStats: async (params?: Record<string, string>) => {
+    const response = await api.get('/dashboard/stats', { params });
     return response.data;
   }
 };
@@ -103,8 +103,32 @@ export const requestApi = {
     const response = await api.put(`/requests/${id}`, { status });
     return response.data;
   },
+  rejectRequest: async (id: string, reason: string) => {
+    const response = await api.put(`/requests/${id}/status`, { status: 'rejected', reason });
+    return response.data;
+  },
+  createCashfreeOrder: async (phone: string, name: string, amount: number) => {
+    const response = await api.post('/v1/cashfree/create-order', { customerPhone: phone, customerName: name, orderAmount: amount });
+    return response.data;
+  },
+  generateAadhaarOtp: async (aadhaarNumber: string) => {
+    const response = await api.post('/v1/cashfree/kyc/aadhaar/otp', { aadhaarNumber });
+    return response.data;
+  },
+  verifyAadhaarOtp: async (refId: string, otp: string) => {
+    const response = await api.post('/v1/cashfree/kyc/aadhaar/verify', { refId, otp });
+    return response.data;
+  },
+  submitPublicAdmission: async (admissionData: any) => {
+    const response = await api.post('/v1/cashfree/submit-admission', { details: 'Public Admission via Website', admissionData });
+    return response.data;
+  },
   deleteRequest: async (id: string) => {
     const response = await api.delete(`/requests/${id}`);
+    return response.data;
+  },
+  getPublicAvailableSeats: async () => {
+    const response = await api.get('/v1/cashfree/seats/available');
     return response.data;
   }
 };

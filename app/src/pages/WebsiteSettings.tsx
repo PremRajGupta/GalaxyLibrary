@@ -179,6 +179,43 @@ export default function WebsiteSettings() {
                 <div className="md:col-span-2"><label className={labelClass}>WhatsApp Message</label><textarea className={`${inputClass} resize-none h-20`} value={content.libraryInfo.whatsappMessage} onChange={(e) => updateLibraryInfo('whatsappMessage', e.target.value)} /></div>
               </div>
             </section>
+            
+            <section className="page-card">
+              <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Registration Fees (Public Admission)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>Library Registration Fee (₹)</label>
+                  <input
+                    type="number"
+                    className={inputClass}
+                    value={content.admissionFees?.library || 5}
+                    onChange={(e) => setContent(prev => ({
+                      ...prev,
+                      admissionFees: {
+                        library: Number(e.target.value) || 0,
+                        computerCenter: prev.admissionFees?.computerCenter || 50
+                      }
+                    }))}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Computer Center Registration Fee (₹)</label>
+                  <input
+                    type="number"
+                    className={inputClass}
+                    value={content.admissionFees?.computerCenter || 50}
+                    onChange={(e) => setContent(prev => ({
+                      ...prev,
+                      admissionFees: {
+                        library: prev.admissionFees?.library || 5,
+                        computerCenter: Number(e.target.value) || 0
+                      }
+                    }))}
+                  />
+                </div>
+              </div>
+            </section>
+
             <section className="page-card">
               <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Admission & Visit Help Contact</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

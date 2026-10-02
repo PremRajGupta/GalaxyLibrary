@@ -21,10 +21,12 @@ export default function Dashboard() {
   const [statsData, setStatsData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [notification] = useState('');
+  const [registrationType, setRegistrationType] = useState('all');
 
   const fetchStats = async () => {
     try {
-      const data = await dashboardApi.getStats();
+      setLoading(true);
+      const data = await dashboardApi.getStats({ registrationType });
       setStatsData(data);
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -35,7 +37,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchStats();
-  }, [location]);
+  }, [location, registrationType]);
 
   const openFeesPayModal = (studentId: string) => {
     navigate('/fees', { state: { openPayForStudentId: studentId } });
@@ -78,6 +80,18 @@ export default function Dashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <div className="mb-6 flex items-center justify-end">
+        <select
+          value={registrationType}
+          onChange={(e) => setRegistrationType(e.target.value)}
+          className="border border-[#cbd5e1] rounded-lg px-3 py-2 text-sm text-[#334155] focus:outline-none focus:ring-2 focus:ring-[#38bdf8] focus:border-transparent bg-white shadow-sm"
+        >
+          <option value="all">All Sections</option>
+          <option value="library">Library</option>
+          <option value="computer_center">Computer Center</option>
+        </select>
+      </div>
 
       <motion.div
         variants={containerVariants}

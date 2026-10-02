@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { reportApi } from '../lib/apiService';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import ExcelJS from 'exceljs';
 
 const colorMap = {
   blue: { bg: 'bg-[#dbeafe]', icon: 'text-[#3b82f6]' },
@@ -32,6 +33,7 @@ type ReportSummary = {
   periodLabel: string;
   dateRange: string;
   totalCollected: number;
+  totalDiscount: number;
   totalPending: number;
   totalAdmissions: number;
   totalPayments: number;
@@ -43,6 +45,7 @@ const defaultSummary: ReportSummary = {
   periodLabel: 'This Month',
   dateRange: '',
   totalCollected: 0,
+  totalDiscount: 0,
   totalPending: 0,
   totalAdmissions: 0,
   totalPayments: 0,
@@ -63,10 +66,66 @@ type AdmissionDetail = {
   students: AdmissionStudent[];
 };
 
-const formatReportDate = (value: string | Date) => {
+type FeeCollectionRecord = {
+  id?: string;
+  receiptNumber: string;
+  studentDisplayId: string;
+  studentName: string;
+  course: string;
+  contact: string;
+  month: string;
+  dayName?: string;
+  monthYear?: string;
+  total: number;
+  payment: number;
+  discount: number;
+  paymentMode: string;
+  paymentDate: string | Date;
+};
+
+type StudentPaymentRecord = {
+  studentId: string;
+  studentDisplayId: string;
+  name: string;
+  course?: string;
+  contact?: string;
+  monthlyFee?: number;
+  paid: number;
+  due: number;
+  status?: string;
+};
+
+type ExpiredStudentRecord = {
+  studentDisplayId: string;
+  name: string;
+  course?: string;
+  contact?: string;
+  status: string;
+  inactiveDate?: string | Date;
+};
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+const formatReportDate = (value?: string | Date) => {
+  if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
-  return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+  return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
+const getDayName = (dateVal: string | Date | undefined) => {
+  if (!dateVal) return '-';
+  const d = new Date(dateVal);
+  if (Number.isNaN(d.getTime())) return '-';
+  return DAY_NAMES[d.getDay()];
+};
+
+const getMonthYear = (dateVal: string | Date | undefined) => {
+  if (!dateVal) return '-';
+  const d = new Date(dateVal);
+  if (Number.isNaN(d.getTime())) return '-';
+  return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
 };
 
 const escapeCsvCell = (value: unknown) => {
@@ -81,7 +140,10 @@ export default function Reports() {
   const [dateRange, setDateRange] = useState('thisMonth');
   const [notification, setNotification] = useState('');
   const [loading, setLoading] = useState(true);
-  const [feeData, setFeeData] = useState<{ month: string; collected: number }[]>([]);
+  const [feeData, setFeeData] = useState<{ month: string; collected: number; discount?: number; pending?: number }[]>([]);
+  const [feeCollectionDetails, setFeeCollectionDetails] = useState<FeeCollectionRecord[]>([]);
+  const [studentPayments, setStudentPayments] = useState<StudentPaymentRecord[]>([]);
+  const [expiredStudents, setExpiredStudents] = useState<ExpiredStudentRecord[]>([]);
   const [admissionData, setAdmissionData] = useState<{ name: string; value: number; color: string }[]>([]);
   const [admissionDetails, setAdmissionDetails] = useState<AdmissionDetail[]>([]);
   const [reportCards, setReportCards] = useState<any[]>([]);
@@ -96,6 +158,9 @@ export default function Reports() {
     try {
       const data = await reportApi.getReportsData(dateRange);
       setFeeData(data.feeData || []);
+      setFeeCollectionDetails(data.feeCollectionDetails || []);
+      setStudentPayments(data.studentPayments || []);
+      setExpiredStudents(data.expiredStudents || []);
       setAdmissionData(data.admissionData || []);
       setAdmissionDetails(data.admissionDetails || []);
       setReportCards(data.reportCards || []);
@@ -119,9 +184,9 @@ export default function Reports() {
     admissionDetails.forEach((group) => {
       group.students.forEach((student) => {
         rows.push([
-          group.course,
-          student.studentDisplayId,
           student.name,
+          student.studentDisplayId,
+          group.course,
           formatReportDate(student.joiningDate),
           student.contact || '-',
         ]);
@@ -133,29 +198,141 @@ export default function Reports() {
 
   const getReportData = (title: string) => {
     if (title === 'Fee Collection Report') {
+      const isWeek = dateRange === 'thisWeek';
+      const isYear = dateRange === 'thisYear';
+
+      const columns = isWeek
+        ? ['Student Name', 'Student ID', 'Day', 'Payment Date', 'Fee Month', 'Total (₹)', 'Payment (₹)', 'Discount (₹)', 'Receipt No', 'Contact']
+        : isYear
+        ? ['Student Name', 'Student ID', 'Month', 'Payment Date', 'Fee Month', 'Total (₹)', 'Payment (₹)', 'Discount (₹)', 'Receipt No', 'Contact']
+        : ['Student Name', 'Student ID', 'Date', 'Day', 'Fee Month', 'Total (₹)', 'Payment (₹)', 'Discount (₹)', 'Receipt No', 'Contact'];
+
+      if (feeCollectionDetails.length === 0) {
+        return {
+          columns,
+          rows: [['No fee collections recorded in this period', '-', '-', '-', '-', 0, 0, 0, '-', '-']],
+        };
+      }
+
+      const rows: (string | number)[][] = feeCollectionDetails.map((f) => {
+        const day = f.dayName || getDayName(f.paymentDate);
+        const monthYear = f.monthYear || getMonthYear(f.paymentDate);
+        const pDate = formatReportDate(f.paymentDate);
+
+        if (isWeek) {
+          return [
+            f.studentName || '-',
+            f.studentDisplayId || '-',
+            day,
+            pDate,
+            f.month || '-',
+            f.total,
+            f.payment,
+            f.discount,
+            f.receiptNumber || '-',
+            f.contact || '-',
+          ];
+        }
+
+        if (isYear) {
+          return [
+            f.studentName || '-',
+            f.studentDisplayId || '-',
+            monthYear,
+            pDate,
+            f.month || '-',
+            f.total,
+            f.payment,
+            f.discount,
+            f.receiptNumber || '-',
+            f.contact || '-',
+          ];
+        }
+
+        // isMonth
+        return [
+          f.studentName || '-',
+          f.studentDisplayId || '-',
+          pDate,
+          day,
+          f.month || '-',
+          f.total,
+          f.payment,
+          f.discount,
+          f.receiptNumber || '-',
+          f.contact || '-',
+        ];
+      });
+
+      const sumTotal = feeCollectionDetails.reduce((acc, f) => acc + (Number(f.total) || 0), 0);
+      const sumPayment = feeCollectionDetails.reduce((acc, f) => acc + (Number(f.payment) || 0), 0);
+      const sumDiscount = feeCollectionDetails.reduce((acc, f) => acc + (Number(f.discount) || 0), 0);
+
+      rows.push(['TOTAL', '-', '-', '-', '-', sumTotal, sumPayment, sumDiscount, '-', '-']);
+
       return {
-        columns: ['Period', 'Collected (₹)'],
-        rows: feeData.map((item) => [item.month, item.collected]),
+        columns,
+        rows,
       };
     }
 
     if (title === 'Pending Fees Report') {
+      const pendingList = studentPayments.filter((s) => (Number(s.due) || 0) > 0);
+      if (pendingList.length === 0) {
+        return {
+          columns: ['Student Name', 'Student ID', 'Course', 'Contact', 'Monthly Fee (₹)', 'Paid (₹)', 'Due Amount (₹)', 'Status'],
+          rows: [['No pending dues found for active students', '-', '-', '-', 0, 0, 0, 'All Paid']],
+        };
+      }
+
+      const rows: (string | number)[][] = pendingList.map((s) => [
+        s.name || '-',
+        s.studentDisplayId || '-',
+        s.course || 'Library',
+        s.contact || '-',
+        s.monthlyFee || 0,
+        s.paid || 0,
+        s.due || 0,
+        s.status || 'Due',
+      ]);
+
+      const sumMonthly = pendingList.reduce((acc, s) => acc + (Number(s.monthlyFee) || 0), 0);
+      const sumPaid = pendingList.reduce((acc, s) => acc + (Number(s.paid) || 0), 0);
+      const sumDue = pendingList.reduce((acc, s) => acc + (Number(s.due) || 0), 0);
+
+      rows.push(['TOTAL', '-', '-', '-', sumMonthly, sumPaid, sumDue, '-']);
+
       return {
-        columns: ['Metric', 'Value'],
-        rows: [
-          ['Total Pending', summary.totalPending],
-          ['Fully Paid Students', summary.paymentStatus.fullPaid],
-          ['Partially Paid Students', summary.paymentStatus.partial],
-          ['Unpaid Students', summary.paymentStatus.unpaid],
-        ],
+        columns: ['Student Name', 'Student ID', 'Course', 'Contact', 'Monthly Fee (₹)', 'Paid (₹)', 'Due Amount (₹)', 'Status'],
+        rows,
       };
     }
 
     if (title === 'Admission Report') {
       const rows = getAdmissionExportRows();
       return {
-        columns: ['Course', 'Student ID', 'Student Name', 'Joining Date', 'Contact'],
+        columns: ['Student Name', 'Student ID', 'Course', 'Joining Date', 'Contact'],
         rows: rows.length > 0 ? rows : [['No admissions in this period', '-', '-', '-', '-']],
+      };
+    }
+
+    if (title === 'Student Status Report') {
+      if (expiredStudents.length === 0) {
+        return {
+          columns: ['Student Name', 'Student ID', 'Course', 'Contact', 'Status', 'Inactive / Expiry Date'],
+          rows: [['No expired students found', '-', '-', '-', 'Active', '-']],
+        };
+      }
+      return {
+        columns: ['Student Name', 'Student ID', 'Course', 'Contact', 'Status', 'Inactive / Expiry Date'],
+        rows: expiredStudents.map((s) => [
+          s.name || '-',
+          s.studentDisplayId || '-',
+          s.course || 'Library',
+          s.contact || '-',
+          s.status || 'Expired',
+          formatReportDate(s.inactiveDate),
+        ]),
       };
     }
 
@@ -169,21 +346,38 @@ export default function Reports() {
   const handlePDF = (title: string) => {
     showNotification(`Generating PDF: ${title}...`);
     try {
-      const doc = new jsPDF();
+      const data = getReportData(title);
+      const isWide = data.columns.length > 5;
+      const doc = new jsPDF(isWide ? 'landscape' : 'portrait');
       doc.text(title, 14, 15);
       doc.setFontSize(10);
-      doc.text(`Generated on: ${new Date().toLocaleDateString('en-US')}`, 14, 22);
+      doc.text(`Generated on: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`, 14, 22);
       if (summary.dateRange) {
         doc.text(`Period: ${summary.periodLabel} (${summary.dateRange})`, 14, 28);
       }
 
-      const data = getReportData(title);
+      const discountColIndex = data.columns.findIndex((c) => c.toLowerCase().includes('discount'));
+
       autoTable(doc, {
         startY: summary.dateRange ? 34 : 28,
         head: [data.columns],
         body: data.rows,
-        styles: { fontSize: 9, cellPadding: 3 },
+        styles: { fontSize: 8, cellPadding: 2.5 },
         headStyles: { fillColor: [59, 130, 246] },
+        didParseCell: (hookData) => {
+          // If this is the TOTAL row
+          if (hookData.section === 'body' && String(hookData.row.raw[0]).toUpperCase() === 'TOTAL') {
+            hookData.cell.styles.fontStyle = 'bold';
+            hookData.cell.styles.fillColor = [241, 245, 249];
+            hookData.cell.styles.textColor = [15, 23, 42];
+          }
+
+          // If this is the Discount column
+          if (discountColIndex !== -1 && hookData.column.index === discountColIndex && hookData.section === 'body') {
+            hookData.cell.styles.textColor = [234, 88, 12]; // Orange (#ea580c)
+            hookData.cell.styles.fontStyle = 'bold';
+          }
+        },
       });
 
       doc.save(`${title.replace(/\s+/g, '_')}_${dateRange}.pdf`);
@@ -193,22 +387,72 @@ export default function Reports() {
     }
   };
 
-  const handleExcel = (title: string) => {
+  const handleExcel = async (title: string) => {
     showNotification(`Generating Excel: ${title}...`);
     try {
       const data = getReportData(title);
-      const csvContent = [
-        data.columns.map(escapeCsvCell).join(','),
-        ...data.rows.map((row) => row.map(escapeCsvCell).join(',')),
-      ].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const workbook = new ExcelJS.Workbook();
+      const safeSheetName = title.slice(0, 31).replace(/[\\/?*\[\]]/g, '');
+      const worksheet = workbook.addWorksheet(safeSheetName);
+
+      // Header row with blue background and bold white text
+      const headerRow = worksheet.addRow(data.columns);
+      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF3B82F6' },
+      };
+      headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+      headerRow.height = 24;
+
+      const discountColIdx = data.columns.findIndex((c) => c.toLowerCase().includes('discount')) + 1;
+
+      // Data rows
+      data.rows.forEach((rowValues) => {
+        const isTotalRow = String(rowValues[0]).toUpperCase() === 'TOTAL';
+        const row = worksheet.addRow(rowValues);
+        row.height = 20;
+
+        if (isTotalRow) {
+          row.font = { bold: true };
+          row.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF1F5F9' },
+          };
+        }
+
+        // Orange color for Discount column
+        if (discountColIdx > 0) {
+          const discountCell = row.getCell(discountColIdx);
+          discountCell.font = {
+            bold: isTotalRow || Number(discountCell.value) > 0,
+            color: { argb: 'FFEA580C' }, // Orange (#ea580c)
+          };
+        }
+      });
+
+      // Auto-fit column widths
+      worksheet.columns.forEach((column) => {
+        let maxLen = 12;
+        column.eachCell?.({ includeEmpty: true }, (cell) => {
+          const val = cell.value ? String(cell.value) : '';
+          if (val.length > maxLen) maxLen = val.length;
+        });
+        column.width = Math.min(maxLen + 4, 32);
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `${title.replace(/\s+/g, '_')}_${dateRange}.csv`);
+      link.href = url;
+      link.download = `${title.replace(/\s+/g, '_')}_${dateRange}.xlsx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (e) {
       console.error(e);
       showNotification('Error generating Excel');
@@ -263,9 +507,10 @@ export default function Reports() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 sm:gap-4 mb-6">
           {[
             { label: 'Collected', value: `₹${summary.totalCollected.toLocaleString('en-IN')}`, color: 'text-[#3b82f6]' },
+            { label: 'Discount', value: `₹${(summary.totalDiscount || 0).toLocaleString('en-IN')}`, color: 'text-[#8b5cf6]' },
             { label: 'Pending', value: `₹${summary.totalPending.toLocaleString('en-IN')}`, color: 'text-[#f59e0b]' },
             { label: 'Admissions', value: summary.totalAdmissions.toString(), color: 'text-[#22c55e]' },
             { label: 'Payments', value: summary.totalPayments.toString(), color: 'text-[#6366f1]' },

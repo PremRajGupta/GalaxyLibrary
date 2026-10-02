@@ -3,8 +3,8 @@ import mongoose from 'mongoose';
 const requestSchema = new mongoose.Schema({
   organizationId: { type: String, required: true },
   branchId: { type: String, required: true },
-  studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
-  studentDisplayId: { type: String, required: true },
+  studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: function() { return this.requestType !== 'admission'; } },
+  studentDisplayId: { type: String, required: function() { return this.requestType !== 'admission'; } },
   studentName: { type: String, required: true },
   requestType: { type: String, enum: ['seat_change', 'leave', 'other', 'admission'], required: true },
   details: { type: String, required: true },

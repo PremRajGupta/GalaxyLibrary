@@ -6,7 +6,7 @@ import { Monitor, Cpu, Code, ArrowRight } from 'lucide-react';
 export default function ComputerClassCTA() {
   return (
     <section className="py-10 lg:py-16 bg-white dark:bg-[#0f172a] relative overflow-hidden transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
           
           {/* Left Side: Content */}
