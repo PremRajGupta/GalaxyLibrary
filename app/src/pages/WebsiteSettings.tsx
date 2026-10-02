@@ -142,7 +142,7 @@ export default function WebsiteSettings() {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-16">
+    <div className="w-full space-y-6 pb-16">
       <TopHeader />
 
       {/* Floating Notification Toast */}
@@ -626,7 +626,7 @@ export default function WebsiteSettings() {
               </div>
 
               <div className="bg-gradient-to-b from-slate-50 to-slate-100 rounded-2xl p-6 sm:p-8 space-y-6 border border-slate-200/80">
-                <div className="max-w-5xl mx-auto">
+                <div className="w-full">
                   <div className="text-center mb-8">
                     <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">{content.pageText.contactTitle}</h2>
                     <p className="text-base text-slate-600 font-medium">{content.pageText.contactSubtitle}</p>

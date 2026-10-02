@@ -320,7 +320,7 @@ export default function AdminProfile() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-16">
+    <div className="w-full space-y-6 pb-16">
       <TopHeader />
 
       {/* Floating Notification Toast */}
