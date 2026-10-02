@@ -18,8 +18,13 @@ import {
 } from '../lib/siteContentService';
 
 const inputClass =
-  'w-full px-3 py-1.5 border border-[#e2e8f0] rounded-md focus:outline-none focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/20 text-xs';
-const labelClass = 'block text-xs font-semibold text-[#475569] mb-1';
+  'w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm transition-all';
+const labelClass = 'block text-sm font-semibold text-slate-700 mb-1.5';
+
+const cardInputClass =
+  'w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm transition-all';
+const cardLabelClass =
+  'block text-xs font-bold text-slate-600 mb-1 uppercase tracking-wider';
 
 const TABS = [
   { id: 'general', label: 'General & Contact' },
@@ -100,7 +105,7 @@ export default function WebsiteSettings() {
   };
 
   if (loading) {
-    return <div className="py-20 text-center text-[#64748b]">Loading website editor...</div>;
+    return <div className="py-20 text-center text-slate-500 font-medium text-base">Loading website editor...</div>;
   }
 
   return (
@@ -113,7 +118,7 @@ export default function WebsiteSettings() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-4 left-4 right-4 sm:left-auto sm:right-6 sm:top-6 z-50 px-4 py-3 bg-[#22c55e] text-white text-sm font-medium rounded-lg shadow-lg"
+            className="fixed top-4 left-4 right-4 sm:left-auto sm:right-6 sm:top-6 z-50 px-5 py-3.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl shadow-xl flex items-center gap-2"
           >
             {notification}
           </motion.div>
@@ -122,23 +127,38 @@ export default function WebsiteSettings() {
 
       <div className="page-card mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#dbeafe] rounded-lg flex items-center justify-center">
-              <Globe className="text-[#3b82f6]" size={20} />
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+              <Globe size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-[#1e293b]">Edit Index Page</h2>
-              <p className="text-sm text-[#64748b]">Full control over home page — navbar, hero, about, gallery, contact, footer</p>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Edit Index Page</h2>
+              <p className="text-sm text-slate-500 mt-0.5">Full control over home page — navbar, hero, about, gallery, contact, footer</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={handleReset} disabled={saving} className="px-4 py-2.5 border border-[#fecaca] rounded-lg text-sm font-medium text-[#dc2626] hover:bg-[#fef2f2] disabled:opacity-50">
-              Reset
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={saving}
+              className="px-4 py-2.5 border border-red-200 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+            >
+              Reset Defaults
             </button>
-            <a href="/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 border border-[#e2e8f0] rounded-lg text-sm font-medium hover:bg-[#f8fafc]">
-              <ExternalLink size={16} /> Preview
+            <a
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4.5 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
+            >
+              <ExternalLink size={16} /> Preview Site
             </a>
-            <button type="button" onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#3b82f6] text-white rounded-lg text-sm font-semibold hover:bg-[#2563eb] disabled:opacity-50">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all disabled:opacity-50"
+            >
               <Save size={16} /> {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
@@ -151,10 +171,10 @@ export default function WebsiteSettings() {
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-4.5 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-all shadow-sm ${
               activeTab === tab.id
-                ? 'bg-[#3b82f6] text-white'
-                : 'bg-white text-[#64748b] border border-[#e2e8f0] hover:bg-[#f8fafc]'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900'
             }`}
           >
             {tab.label}
@@ -162,27 +182,58 @@ export default function WebsiteSettings() {
         ))}
       </div>
 
-      <div className="space-y-6 pb-10">
+      <div className="space-y-6 pb-12">
         {activeTab === 'general' && (
           <>
             <section className="page-card">
-              <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Library / Owner Contact</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label className={labelClass}>Library Name</label><input className={inputClass} value={content.libraryInfo.name} onChange={(e) => updateLibraryInfo('name', e.target.value)} /></div>
-                <div><label className={labelClass}>Tagline</label><input className={inputClass} value={content.libraryInfo.tagline} onChange={(e) => updateLibraryInfo('tagline', e.target.value)} /></div>
-                <div><label className={labelClass}>Left Card Title / Owner Name</label><input className={inputClass} value={content.libraryInfo.ownerName} onChange={(e) => updateLibraryInfo('ownerName', e.target.value)} /></div>
-                <div><label className={labelClass}>Phone (display)</label><input className={inputClass} value={content.libraryInfo.phone} onChange={(e) => updateLibraryInfo('phone', e.target.value)} /></div>
-                <div><label className={labelClass}>WhatsApp Number (digits only)</label><input className={inputClass} value={content.libraryInfo.phoneRaw} onChange={(e) => updateLibraryInfo('phoneRaw', e.target.value.replace(/\D/g, ''))} /></div>
-                <div><label className={labelClass}>Email</label><input type="email" className={inputClass} value={content.libraryInfo.email} onChange={(e) => updateLibraryInfo('email', e.target.value)} /></div>
-                <div className="md:col-span-2"><label className={labelClass}>Address</label><input className={inputClass} value={content.libraryInfo.address} onChange={(e) => updateLibraryInfo('address', e.target.value)} /></div>
-                <div className="md:col-span-2"><label className={labelClass}>Google Maps URL (optional)</label><input className={inputClass} value={content.libraryInfo.mapUrl} onChange={(e) => updateLibraryInfo('mapUrl', e.target.value)} placeholder="Paste Google Maps share link, or leave blank to search address" /></div>
-                <div className="md:col-span-2"><label className={labelClass}>WhatsApp Message</label><textarea className={`${inputClass} resize-none h-20`} value={content.libraryInfo.whatsappMessage} onChange={(e) => updateLibraryInfo('whatsappMessage', e.target.value)} /></div>
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-5 pb-2 border-b border-slate-100">
+                Library / Owner Contact
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className={labelClass}>Library Name</label>
+                  <input className={inputClass} value={content.libraryInfo.name} onChange={(e) => updateLibraryInfo('name', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Tagline</label>
+                  <input className={inputClass} value={content.libraryInfo.tagline} onChange={(e) => updateLibraryInfo('tagline', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Left Card Title / Owner Name</label>
+                  <input className={inputClass} value={content.libraryInfo.ownerName} onChange={(e) => updateLibraryInfo('ownerName', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Phone (display)</label>
+                  <input className={inputClass} value={content.libraryInfo.phone} onChange={(e) => updateLibraryInfo('phone', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>WhatsApp Number (digits only)</label>
+                  <input className={inputClass} value={content.libraryInfo.phoneRaw} onChange={(e) => updateLibraryInfo('phoneRaw', e.target.value.replace(/\D/g, ''))} />
+                </div>
+                <div>
+                  <label className={labelClass}>Email</label>
+                  <input type="email" className={inputClass} value={content.libraryInfo.email} onChange={(e) => updateLibraryInfo('email', e.target.value)} />
+                </div>
+                <div className="md:col-span-2">
+                  <label className={labelClass}>Address</label>
+                  <input className={inputClass} value={content.libraryInfo.address} onChange={(e) => updateLibraryInfo('address', e.target.value)} />
+                </div>
+                <div className="md:col-span-2">
+                  <label className={labelClass}>Google Maps URL (optional)</label>
+                  <input className={inputClass} value={content.libraryInfo.mapUrl} onChange={(e) => updateLibraryInfo('mapUrl', e.target.value)} placeholder="Paste Google Maps share link, or leave blank to search address" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className={labelClass}>WhatsApp Message</label>
+                  <textarea className={`${inputClass} resize-none h-24`} value={content.libraryInfo.whatsappMessage} onChange={(e) => updateLibraryInfo('whatsappMessage', e.target.value)} />
+                </div>
               </div>
             </section>
             
             <section className="page-card">
-              <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Registration Fees (Public Admission)</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-5 pb-2 border-b border-slate-100">
+                Registration Fees (Public Admission)
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label className={labelClass}>Library Registration Fee (₹)</label>
                   <input
@@ -217,44 +268,97 @@ export default function WebsiteSettings() {
             </section>
 
             <section className="page-card">
-              <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Admission & Visit Help Contact</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label className={labelClass}>Right Card Title</label><input className={inputClass} value={content.admissionContact.title} onChange={(e) => updateAdmissionContact('title', e.target.value)} /></div>
-                <div><label className={labelClass}>Phone (display)</label><input className={inputClass} value={content.admissionContact.phone} onChange={(e) => updateAdmissionContact('phone', e.target.value)} /></div>
-                <div><label className={labelClass}>WhatsApp Number (digits only)</label><input className={inputClass} value={content.admissionContact.phoneRaw} onChange={(e) => updateAdmissionContact('phoneRaw', e.target.value.replace(/\D/g, ''))} /></div>
-                <div><label className={labelClass}>Email</label><input type="email" className={inputClass} value={content.admissionContact.email} onChange={(e) => updateAdmissionContact('email', e.target.value)} /></div>
-                <div className="md:col-span-2"><label className={labelClass}>Address</label><input className={inputClass} value={content.admissionContact.address} onChange={(e) => updateAdmissionContact('address', e.target.value)} /></div>
-                <div className="md:col-span-2"><label className={labelClass}>Google Maps URL (optional)</label><input className={inputClass} value={content.admissionContact.mapUrl} onChange={(e) => updateAdmissionContact('mapUrl', e.target.value)} placeholder="Paste Google Maps share link, or leave blank to search address" /></div>
-                <div className="md:col-span-2"><label className={labelClass}>WhatsApp Message</label><textarea className={`${inputClass} resize-none h-20`} value={content.admissionContact.whatsappMessage} onChange={(e) => updateAdmissionContact('whatsappMessage', e.target.value)} /></div>
-              </div>
-            </section>
-            <section className="page-card">
-              <h3 className="text-lg font-semibold text-[#1e293b] mb-4">Contact Section Headings</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label className={labelClass}>Section Title</label><input className={inputClass} value={content.pageText.contactTitle} onChange={(e) => updatePageText('contactTitle', e.target.value)} /></div>
-                <div><label className={labelClass}>Section Subtitle</label><input className={inputClass} value={content.pageText.contactSubtitle} onChange={(e) => updatePageText('contactSubtitle', e.target.value)} /></div>
-                <div><label className={labelClass}>Phone Label</label><input className={inputClass} value={content.pageText.contactPhoneLabel} onChange={(e) => updatePageText('contactPhoneLabel', e.target.value)} /></div>
-                <div><label className={labelClass}>Email Label</label><input className={inputClass} value={content.pageText.contactEmailLabel} onChange={(e) => updatePageText('contactEmailLabel', e.target.value)} /></div>
-                <div><label className={labelClass}>Address Label</label><input className={inputClass} value={content.pageText.contactAddressLabel} onChange={(e) => updatePageText('contactAddressLabel', e.target.value)} /></div>
-                <div><label className={labelClass}>WhatsApp Button Text</label><input className={inputClass} value={content.pageText.whatsappButton} onChange={(e) => updatePageText('whatsappButton', e.target.value)} /></div>
-                <div><label className={labelClass}>Right Card Phone Label</label><input className={inputClass} value={content.pageText.contactSecondPhoneLabel} onChange={(e) => updatePageText('contactSecondPhoneLabel', e.target.value)} /></div>
-                <div><label className={labelClass}>Right Card Email Label</label><input className={inputClass} value={content.pageText.contactSecondEmailLabel} onChange={(e) => updatePageText('contactSecondEmailLabel', e.target.value)} /></div>
-                <div><label className={labelClass}>Right Card Address Label</label><input className={inputClass} value={content.pageText.contactSecondAddressLabel} onChange={(e) => updatePageText('contactSecondAddressLabel', e.target.value)} /></div>
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-5 pb-2 border-b border-slate-100">
+                Admission & Visit Help Contact
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className={labelClass}>Right Card Title</label>
+                  <input className={inputClass} value={content.admissionContact.title} onChange={(e) => updateAdmissionContact('title', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Phone (display)</label>
+                  <input className={inputClass} value={content.admissionContact.phone} onChange={(e) => updateAdmissionContact('phone', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>WhatsApp Number (digits only)</label>
+                  <input className={inputClass} value={content.admissionContact.phoneRaw} onChange={(e) => updateAdmissionContact('phoneRaw', e.target.value.replace(/\D/g, ''))} />
+                </div>
+                <div>
+                  <label className={labelClass}>Email</label>
+                  <input type="email" className={inputClass} value={content.admissionContact.email} onChange={(e) => updateAdmissionContact('email', e.target.value)} />
+                </div>
+                <div className="md:col-span-2">
+                  <label className={labelClass}>Address</label>
+                  <input className={inputClass} value={content.admissionContact.address} onChange={(e) => updateAdmissionContact('address', e.target.value)} />
+                </div>
+                <div className="md:col-span-2">
+                  <label className={labelClass}>Google Maps URL (optional)</label>
+                  <input className={inputClass} value={content.admissionContact.mapUrl} onChange={(e) => updateAdmissionContact('mapUrl', e.target.value)} placeholder="Paste Google Maps share link, or leave blank to search address" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className={labelClass}>WhatsApp Message</label>
+                  <textarea className={`${inputClass} resize-none h-24`} value={content.admissionContact.whatsappMessage} onChange={(e) => updateAdmissionContact('whatsappMessage', e.target.value)} />
+                </div>
               </div>
             </section>
 
             <section className="page-card">
-              <div className="flex items-center gap-2 mb-6">
-                <Eye size={20} className="text-[#3b82f6]" />
-                <h3 className="text-lg font-semibold text-[#1e293b]">Contact Section Preview</h3>
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-5 pb-2 border-b border-slate-100">
+                Contact Section Headings
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className={labelClass}>Section Title</label>
+                  <input className={inputClass} value={content.pageText.contactTitle} onChange={(e) => updatePageText('contactTitle', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Section Subtitle</label>
+                  <input className={inputClass} value={content.pageText.contactSubtitle} onChange={(e) => updatePageText('contactSubtitle', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Phone Label</label>
+                  <input className={inputClass} value={content.pageText.contactPhoneLabel} onChange={(e) => updatePageText('contactPhoneLabel', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Email Label</label>
+                  <input className={inputClass} value={content.pageText.contactEmailLabel} onChange={(e) => updatePageText('contactEmailLabel', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Address Label</label>
+                  <input className={inputClass} value={content.pageText.contactAddressLabel} onChange={(e) => updatePageText('contactAddressLabel', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>WhatsApp Button Text</label>
+                  <input className={inputClass} value={content.pageText.whatsappButton} onChange={(e) => updatePageText('whatsappButton', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Right Card Phone Label</label>
+                  <input className={inputClass} value={content.pageText.contactSecondPhoneLabel} onChange={(e) => updatePageText('contactSecondPhoneLabel', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Right Card Email Label</label>
+                  <input className={inputClass} value={content.pageText.contactSecondEmailLabel} onChange={(e) => updatePageText('contactSecondEmailLabel', e.target.value)} />
+                </div>
+                <div className="md:col-span-2">
+                  <label className={labelClass}>Right Card Address Label</label>
+                  <input className={inputClass} value={content.pageText.contactSecondAddressLabel} onChange={(e) => updatePageText('contactSecondAddressLabel', e.target.value)} />
+                </div>
               </div>
-              <p className="text-sm text-[#64748b] mb-6">This is how your contact section will look on the homepage and admin dashboard:</p>
+            </section>
+
+            <section className="page-card">
+              <div className="flex items-center gap-2.5 mb-2">
+                <Eye size={22} className="text-blue-600" />
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900">Contact Section Preview</h3>
+              </div>
+              <p className="text-sm text-slate-500 mb-6">This is how your contact section will look on the homepage and visitor screen:</p>
               
-              <div className="bg-gradient-to-b from-[#f8fafc] to-[#f1f5f9] rounded-xl p-8 space-y-6">
+              <div className="bg-gradient-to-b from-slate-50 to-slate-100 rounded-2xl p-6 sm:p-8 space-y-6 border border-slate-200/80">
                 <div className="max-w-5xl mx-auto">
                   <div className="text-center mb-8">
-                    <h2 className="text-2xl font-bold text-[#1e293b] mb-2">{content.pageText.contactTitle}</h2>
-                    <p className="text-[#64748b]">{content.pageText.contactSubtitle}</p>
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">{content.pageText.contactTitle}</h2>
+                    <p className="text-base text-slate-600 font-medium">{content.pageText.contactSubtitle}</p>
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -299,15 +403,15 @@ export default function WebsiteSettings() {
         {activeTab === 'announcement' && (
           <section className="page-card space-y-6">
             <div>
-              <h3 className="text-lg font-semibold text-[#1e293b]">Announcements & Special Offers</h3>
-              <p className="text-sm text-[#64748b] mt-1">
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900">Announcements & Special Offers</h3>
+              <p className="text-sm text-slate-500 mt-1 leading-relaxed">
                 Control the offer banner that appears on the homepage (below the Gallery section). When enabled, visitors see the offer with a live countdown timer. When the timer expires, the "Upcoming Offer" message is shown instead.
               </p>
             </div>
 
             {/* Master Toggle */}
-            <div className="flex items-center gap-3 p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]">
-              <div className="relative inline-flex">
+            <div className="flex items-center gap-3.5 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+              <div className="relative inline-flex items-center">
                 <input
                   type="checkbox"
                   id="showAnnouncement"
@@ -325,19 +429,19 @@ export default function WebsiteSettings() {
                       },
                     }))
                   }
-                  className="w-5 h-5 text-[#3b82f6] border-gray-300 rounded focus:ring-[#3b82f6] cursor-pointer"
+                  className="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
                 />
               </div>
               <div>
-                <label htmlFor="showAnnouncement" className="text-sm font-semibold text-[#1e293b] cursor-pointer block">
+                <label htmlFor="showAnnouncement" className="text-base font-bold text-slate-900 cursor-pointer block">
                   Show Offer Banner on Homepage
                 </label>
-                <p className="text-xs text-[#64748b] mt-0.5">Visitors will see this banner below the Gallery section.</p>
+                <p className="text-sm text-slate-500 mt-0.5">Visitors will see this banner below the Gallery section.</p>
               </div>
             </div>
 
             {/* Offer Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Title / Badge */}
               <div>
                 <label className={labelClass}>Offer Badge / Title</label>
@@ -360,7 +464,7 @@ export default function WebsiteSettings() {
                   }
                   placeholder="e.g. Special Discount Offer"
                 />
-                <p className="text-xs text-[#94a3b8] mt-1">Shown as the badge/tag at the top of the offer card.</p>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">Shown as the badge/tag at the top of the offer card.</p>
               </div>
 
               {/* End Date */}
@@ -393,7 +497,7 @@ export default function WebsiteSettings() {
                     }))
                   }
                 />
-                <p className="text-xs text-[#94a3b8] mt-1">Countdown timer will count down to this date & time.</p>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">Countdown timer will count down to this date & time.</p>
               </div>
 
               {/* Offer Text */}
@@ -418,7 +522,7 @@ export default function WebsiteSettings() {
                   }
                   placeholder="e.g. Join today and get 10% off on your first month admission fee!"
                 />
-                <p className="text-xs text-[#94a3b8] mt-1">Main message shown on the offer banner.</p>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">Main message shown on the offer banner.</p>
               </div>
 
               {/* Link */}
@@ -443,7 +547,7 @@ export default function WebsiteSettings() {
                   }
                   placeholder="e.g. #contact or /services"
                 />
-                <p className="text-xs text-[#94a3b8] mt-1">#contact scrolls to Contact section. Leave blank to hide the button.</p>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">#contact scrolls to Contact section. Leave blank to hide button.</p>
               </div>
 
               {/* Upcoming Text */}
@@ -468,45 +572,45 @@ export default function WebsiteSettings() {
                   }
                   placeholder="e.g. Stay tuned! An exciting new offer is coming soon."
                 />
-                <p className="text-xs text-[#94a3b8] mt-1">Shown when the countdown timer reaches zero (offer expired).</p>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">Shown when the countdown timer reaches zero (offer expired).</p>
               </div>
             </div>
 
             {/* Live Preview */}
             {content.announcement?.show && (
-              <div className="mt-2 pt-6 border-t border-[#e2e8f0]">
-                <p className="text-sm font-semibold text-[#1e293b] mb-3">📋 Live Preview (Navbar Banner)</p>
-                <div className="bg-gradient-to-r from-[#3b82f6] to-[#2563eb] text-white py-2.5 px-4 text-center text-sm font-semibold rounded-lg flex items-center justify-center gap-2 shadow-sm">
+              <div className="mt-4 pt-6 border-t border-slate-200">
+                <p className="text-sm font-bold text-slate-800 mb-3">📋 Live Preview (Navbar Banner)</p>
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-5 text-center text-sm font-semibold rounded-xl flex items-center justify-center gap-2 shadow-sm">
                   <span>📢 {content.announcement?.text || 'Your announcement text will appear here'}</span>
                   {content.announcement?.link && (
                     <span className="underline font-bold ml-1 cursor-pointer hover:text-blue-100">Learn More →</span>
                   )}
                 </div>
-                <p className="text-xs text-[#64748b] mt-3 mb-2 font-semibold">📦 Offer Card Preview (Homepage - below Gallery)</p>
-                <div className="rounded-xl p-5 border border-[#6366f1]/30 bg-gradient-to-br from-[#0f172a] to-[#1e1b4b] text-white relative overflow-hidden">
-                  <div className="inline-flex items-center gap-1 bg-[#6366f1]/25 border border-[#6366f1]/40 text-[#a5b4fc] text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-3">
+                <p className="text-sm font-bold text-slate-800 mt-6 mb-3">📦 Offer Card Preview (Homepage - below Gallery)</p>
+                <div className="rounded-2xl p-6 border border-indigo-500/30 bg-gradient-to-br from-slate-900 to-indigo-950 text-white relative overflow-hidden shadow-md">
+                  <div className="inline-flex items-center gap-1.5 bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-3">
                     🎁 {content.announcement?.title || 'Limited Time Offer'}
                   </div>
-                  <h4 className="text-lg font-extrabold mb-1">Exclusive <span className="text-[#a5b4fc]">Special Offer</span></h4>
-                  <p className="text-[#cbd5e1] text-sm mb-3">{content.announcement?.text || 'Offer description...'}</p>
-                  <div className="flex items-center gap-2 text-xs text-[#94a3b8] mb-3">
-                    <span>⏱ Offer ends in:</span>
+                  <h4 className="text-xl font-extrabold mb-1">Exclusive <span className="text-indigo-300">Special Offer</span></h4>
+                  <p className="text-slate-300 text-sm sm:text-base mb-4">{content.announcement?.text || 'Offer description...'}</p>
+                  <div className="flex items-center gap-2.5 text-xs text-slate-300 mb-4">
+                    <span className="font-semibold">⏱ Offer ends in:</span>
                     {['DD', 'HH', 'MM', 'SS'].map((u, i) => (
-                      <span key={u} className="flex flex-col items-center gap-0.5">
-                        <span className="bg-[#0f172a] border border-[#6366f1]/30 rounded px-2 py-1 text-[#a5b4fc] font-bold text-sm">{u}</span>
-                        <span className="text-[10px] text-[#64748b] uppercase">{['Days','Hrs','Min','Sec'][i]}</span>
+                      <span key={u} className="flex flex-col items-center gap-1">
+                        <span className="bg-slate-950/80 border border-indigo-500/30 rounded-lg px-2.5 py-1 text-indigo-300 font-bold text-sm">{u}</span>
+                        <span className="text-xs text-slate-400 uppercase font-semibold">{['Days','Hrs','Min','Sec'][i]}</span>
                       </span>
                     ))}
                   </div>
                   {content.announcement?.link && (
-                    <div className="inline-flex items-center gap-1 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] text-white text-xs font-bold px-4 py-2 rounded-lg shadow">
+                    <div className="inline-flex items-center gap-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs sm:text-sm font-bold px-4.5 py-2.5 rounded-xl shadow">
                       ✨ Grab This Offer →
                     </div>
                   )}
                 </div>
                 {content.announcement?.upcomingText && (
-                  <div className="mt-3 p-3 rounded-lg bg-[#f8fafc] border border-[#e2e8f0] text-sm text-[#64748b]">
-                    <span className="font-semibold text-[#475569]">⏳ When expired, visitors see:</span> "{content.announcement.upcomingText}"
+                  <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-600">
+                    <span className="font-bold text-slate-800">⏳ When expired, visitors see:</span> "{content.announcement.upcomingText}"
                   </div>
                 )}
               </div>
@@ -516,39 +620,40 @@ export default function WebsiteSettings() {
 
         {activeTab === 'hero' && (
           <section className="page-card">
-            <p className="text-sm text-[#64748b] mb-4">
+            <p className="text-sm text-slate-500 mb-5 leading-relaxed">
               Use image URLs from Google Images / Unsplash (right-click image → copy image address). Paste the full https:// link.
             </p>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-[#1e293b]">Hero Slider</h3>
+            <div className="flex items-center justify-between mb-5 pb-2 border-b border-slate-100">
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900">Hero Slider</h3>
               <button
                 type="button"
                 onClick={() => setContent((prev) => ({
                   ...prev,
                   heroSlides: [...prev.heroSlides, { id: nextItemId(prev.heroSlides), image: '', title: 'New Slide', subtitle: '' }],
                 }))}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-[#3b82f6] bg-[#dbeafe] rounded-lg hover:bg-[#bfdbfe]"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors shadow-sm"
               >
                 <Plus size={16} /> Add Slide
               </button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {content.heroSlides.map((slide, index) => (
-                <div key={slide.id} className="p-3 bg-[#f8fafc] rounded-xl border border-[#e2e8f0] flex flex-col justify-between">
+                <div key={slide.id} className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200 flex flex-col justify-between shadow-sm">
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-semibold text-[#3b82f6]">Slide {index + 1}</p>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <p className="text-sm font-bold text-blue-600">Slide {index + 1}</p>
                       {content.heroSlides.length > 1 && (
                         <button
                           type="button"
                           onClick={() => setContent((prev) => ({ ...prev, heroSlides: prev.heroSlides.filter((s) => s.id !== slide.id) }))}
-                          className="p-1 text-[#ef4444] hover:bg-[#fee2e2] rounded"
+                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete Slide"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={16} />
                         </button>
                       )}
                     </div>
-                    <div className="mb-2 rounded border border-[#e2e8f0] bg-[#e2e8f0] overflow-hidden h-28 flex items-center justify-center">
+                    <div className="mb-3 rounded-xl border border-slate-200 bg-slate-200 overflow-hidden h-32 flex items-center justify-center">
                       {slide.image?.trim() ? (
                         <img
                           src={slide.image}
@@ -559,31 +664,31 @@ export default function WebsiteSettings() {
                           }}
                         />
                       ) : (
-                        <span className="text-[10px] text-[#64748b] p-2 text-center">No image preview</span>
+                        <span className="text-xs text-slate-500 p-2 text-center font-medium">No image preview</span>
                       )}
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div>
-                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Heading</label>
+                        <label className={cardLabelClass}>Heading</label>
                         <input
-                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs"
+                          className={cardInputClass}
                           value={slide.title}
                           onChange={(e) => setContent((prev) => { const heroSlides = [...prev.heroSlides]; heroSlides[index] = { ...slide, title: e.target.value }; return { ...prev, heroSlides }; })}
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Subtitle</label>
+                        <label className={cardLabelClass}>Subtitle</label>
                         <textarea
-                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs resize-none"
+                          className={`${cardInputClass} resize-none`}
                           rows={2}
                           value={slide.subtitle}
                           onChange={(e) => setContent((prev) => { const heroSlides = [...prev.heroSlides]; heroSlides[index] = { ...slide, subtitle: e.target.value }; return { ...prev, heroSlides }; })}
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Image URL</label>
+                        <label className={cardLabelClass}>Image URL</label>
                         <input
-                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs"
+                          className={cardInputClass}
                           value={slide.image}
                           onChange={(e) => setContent((prev) => { const heroSlides = [...prev.heroSlides]; heroSlides[index] = { ...slide, image: e.target.value }; return { ...prev, heroSlides }; })}
                           placeholder="https://..."
@@ -599,26 +704,50 @@ export default function WebsiteSettings() {
 
         {activeTab === 'about' && (
           <section className="page-card">
-            <h3 className="text-lg font-semibold text-[#1e293b] mb-4">About Section</h3>
-            <div className="space-y-4 mb-6">
-              <div><label className={labelClass}>Title</label><input className={inputClass} value={content.aboutContent.title} onChange={(e) => setContent((prev) => ({ ...prev, aboutContent: { ...prev.aboutContent, title: e.target.value } }))} /></div>
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-5 pb-2 border-b border-slate-100">About Section</h3>
+            <div className="space-y-5 mb-8">
+              <div>
+                <label className={labelClass}>Title</label>
+                <input className={inputClass} value={content.aboutContent.title} onChange={(e) => setContent((prev) => ({ ...prev, aboutContent: { ...prev.aboutContent, title: e.target.value } }))} />
+              </div>
               <div>
                 <label className={labelClass}>Description (blank line = new paragraph)</label>
-                <textarea className={`${inputClass} min-h-[140px]`} value={content.aboutContent.paragraphs.join('\n\n')} onChange={(e) => setContent((prev) => ({ ...prev, aboutContent: { ...prev.aboutContent, paragraphs: e.target.value.split(/\n\n+/).map((p) => p.trim()).filter(Boolean) } }))} />
+                <textarea className={`${inputClass} min-h-[160px]`} value={content.aboutContent.paragraphs.join('\n\n')} onChange={(e) => setContent((prev) => ({ ...prev, aboutContent: { ...prev.aboutContent, paragraphs: e.target.value.split(/\n\n+/).map((p) => p.trim()).filter(Boolean) } }))} />
               </div>
             </div>
-            <div className="flex items-center justify-between mb-3">
-              <p className="font-medium text-[#1e293b]">Highlights</p>
-              <button type="button" onClick={() => setContent((prev) => ({ ...prev, aboutContent: { ...prev.aboutContent, highlights: [...prev.aboutContent.highlights, { label: 'Label', value: 'Value' }] } }))} className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-[#3b82f6] bg-[#dbeafe] rounded-lg"><Plus size={16} /> Add</button>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-base font-bold text-slate-800">Highlights / Stats</p>
+              <button
+                type="button"
+                onClick={() => setContent((prev) => ({ ...prev, aboutContent: { ...prev.aboutContent, highlights: [...prev.aboutContent.highlights, { label: 'Label', value: 'Value' }] } }))}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors shadow-sm"
+              >
+                <Plus size={16} /> Add Highlight
+              </button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {content.aboutContent.highlights.map((item, index) => (
-                <div key={`${item.label}-${index}`} className="p-4 bg-[#f8fafc] rounded-lg border relative">
+                <div key={`${item.label}-${index}`} className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200 relative shadow-sm">
                   {content.aboutContent.highlights.length > 1 && (
-                    <button type="button" onClick={() => setContent((prev) => ({ ...prev, aboutContent: { ...prev.aboutContent, highlights: prev.aboutContent.highlights.filter((_, i) => i !== index) } }))} className="absolute top-2 right-2 p-1 text-[#ef4444]"><Trash2 size={14} /></button>
+                    <button
+                      type="button"
+                      onClick={() => setContent((prev) => ({ ...prev, aboutContent: { ...prev.aboutContent, highlights: prev.aboutContent.highlights.filter((_, i) => i !== index) } }))}
+                      className="absolute top-3 right-3 p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete highlight"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   )}
-                  <input className={`${inputClass} mb-2`} value={item.value} onChange={(e) => setContent((prev) => { const highlights = [...prev.aboutContent.highlights]; highlights[index] = { ...item, value: e.target.value }; return { ...prev, aboutContent: { ...prev.aboutContent, highlights } }; })} placeholder="Value" />
-                  <input className={inputClass} value={item.label} onChange={(e) => setContent((prev) => { const highlights = [...prev.aboutContent.highlights]; highlights[index] = { ...item, label: e.target.value }; return { ...prev, aboutContent: { ...prev.aboutContent, highlights } }; })} placeholder="Label" />
+                  <div className="space-y-3">
+                    <div>
+                      <label className={cardLabelClass}>Value (e.g. 500+)</label>
+                      <input className={cardInputClass} value={item.value} onChange={(e) => setContent((prev) => { const highlights = [...prev.aboutContent.highlights]; highlights[index] = { ...item, value: e.target.value }; return { ...prev, aboutContent: { ...prev.aboutContent, highlights } }; })} placeholder="Value" />
+                    </div>
+                    <div>
+                      <label className={cardLabelClass}>Label (e.g. Students)</label>
+                      <input className={cardInputClass} value={item.label} onChange={(e) => setContent((prev) => { const highlights = [...prev.aboutContent.highlights]; highlights[index] = { ...item, label: e.target.value }; return { ...prev, aboutContent: { ...prev.aboutContent, highlights } }; })} placeholder="Label" />
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -627,15 +756,21 @@ export default function WebsiteSettings() {
 
         {activeTab === 'gallery' && (
           <section className="page-card">
-            <p className="text-sm text-[#64748b] mb-4">
+            <p className="text-sm text-slate-500 mb-5 leading-relaxed">
               Add your library photos using a direct image URL (https://). Only images with a valid URL appear on the home page. Use Unsplash or uploaded image links.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div><label className={labelClass}>Gallery Title</label><input className={inputClass} value={content.pageText.galleryTitle} onChange={(e) => updatePageText('galleryTitle', e.target.value)} /></div>
-              <div><label className={labelClass}>Gallery Subtitle</label><input className={inputClass} value={content.pageText.gallerySubtitle} onChange={(e) => updatePageText('gallerySubtitle', e.target.value)} /></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+              <div>
+                <label className={labelClass}>Gallery Title</label>
+                <input className={inputClass} value={content.pageText.galleryTitle} onChange={(e) => updatePageText('galleryTitle', e.target.value)} />
+              </div>
+              <div>
+                <label className={labelClass}>Gallery Subtitle</label>
+                <input className={inputClass} value={content.pageText.gallerySubtitle} onChange={(e) => updatePageText('gallerySubtitle', e.target.value)} />
+              </div>
             </div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-[#1e293b]">Gallery Images</h3>
+            <div className="flex items-center justify-between mb-5 pb-2 border-b border-slate-100">
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900">Gallery Images</h3>
               <button
                 type="button"
                 onClick={() =>
@@ -652,17 +787,17 @@ export default function WebsiteSettings() {
                     ],
                   }))
                 }
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-[#3b82f6] bg-[#dbeafe] rounded-lg"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors shadow-sm"
               >
                 <Plus size={16} /> Add Image
               </button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {content.galleryImages.map((image, index) => (
-                <div key={image.id} className="p-3 bg-[#f8fafc] rounded-xl border border-[#e2e8f0] flex flex-col justify-between">
+                <div key={image.id} className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200 flex flex-col justify-between shadow-sm">
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-semibold text-[#3b82f6]">Image {index + 1}</p>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <p className="text-sm font-bold text-blue-600">Image {index + 1}</p>
                       <button
                         type="button"
                         onClick={() =>
@@ -672,12 +807,13 @@ export default function WebsiteSettings() {
                           }))
                         }
                         disabled={content.galleryImages.length <= 1}
-                        className="p-1 text-[#ef4444] hover:bg-[#fee2e2] rounded disabled:opacity-40"
+                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg disabled:opacity-40 transition-colors"
+                        title="Delete image"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
-                    <div className="mb-2 rounded border border-[#e2e8f0] bg-[#e2e8f0] overflow-hidden h-24 flex items-center justify-center">
+                    <div className="mb-3 rounded-xl border border-slate-200 bg-slate-200 overflow-hidden h-32 flex items-center justify-center">
                       {image.src?.trim() ? (
                         <img
                           src={image.src}
@@ -688,14 +824,14 @@ export default function WebsiteSettings() {
                           }}
                         />
                       ) : (
-                        <span className="text-[10px] text-[#64748b] p-2 text-center">No image preview</span>
+                        <span className="text-xs text-slate-500 p-2 text-center font-medium">No image preview</span>
                       )}
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div>
-                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Image URL</label>
+                        <label className={cardLabelClass}>Image URL</label>
                         <input
-                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs"
+                          className={cardInputClass}
                           value={image.src}
                           onChange={(e) => {
                             const src = e.target.value;
@@ -709,9 +845,9 @@ export default function WebsiteSettings() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Caption / Title</label>
+                        <label className={cardLabelClass}>Caption / Title</label>
                         <input
-                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs"
+                          className={cardInputClass}
                           value={image.title}
                           onChange={(e) => {
                             const title = e.target.value;
@@ -728,9 +864,9 @@ export default function WebsiteSettings() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Alt text</label>
+                        <label className={cardLabelClass}>Alt text</label>
                         <input
-                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs"
+                          className={cardInputClass}
                           value={image.alt}
                           onChange={(e) => {
                             setContent((prev) => {
@@ -744,7 +880,7 @@ export default function WebsiteSettings() {
                       </div>
                       <button
                         type="button"
-                        className="text-[10px] text-[#3b82f6] hover:underline block w-full text-left mt-1"
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline block w-full text-left pt-1"
                         onClick={() =>
                           setContent((prev) => {
                             const galleryImages = [...prev.galleryImages];
@@ -765,10 +901,10 @@ export default function WebsiteSettings() {
 
         {activeTab === 'faculty' && (
           <section className="page-card">
-            <p className="text-sm text-[#64748b] mb-4">
+            <p className="text-sm text-slate-500 mb-5 leading-relaxed">
               Add faculty or library team profiles using direct photo URLs. These profiles appear below Our Library Gallery on the home page.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
               <div>
                 <label className={labelClass}>Section Title</label>
                 <input
@@ -786,8 +922,8 @@ export default function WebsiteSettings() {
                 />
               </div>
             </div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-[#1e293b]">Faculty Profiles</h3>
+            <div className="flex items-center justify-between mb-5 pb-2 border-b border-slate-100">
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900">Faculty Profiles</h3>
               {content.facultyMembers.length < 4 && (
                 <button
                   type="button"
@@ -806,18 +942,18 @@ export default function WebsiteSettings() {
                       ],
                     }))
                   }
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-[#3b82f6] bg-[#dbeafe] rounded-lg hover:bg-blue-200 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors shadow-sm"
                 >
                   <Plus size={16} /> Add Profile
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {content.facultyMembers.map((member, index) => (
-                <div key={member.id} className="p-3 bg-[#f8fafc] rounded-xl border border-[#e2e8f0] flex flex-col justify-between">
+                <div key={member.id} className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200 flex flex-col justify-between shadow-sm">
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-semibold text-[#3b82f6]">Profile {index + 1}</p>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <p className="text-sm font-bold text-blue-600">Profile {index + 1}</p>
                       <button
                         type="button"
                         onClick={() =>
@@ -827,12 +963,13 @@ export default function WebsiteSettings() {
                           }))
                         }
                         disabled={content.facultyMembers.length <= 1}
-                        className="p-1 text-[#ef4444] hover:bg-[#fee2e2] rounded disabled:opacity-40"
+                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg disabled:opacity-40 transition-colors"
+                        title="Delete profile"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
-                    <div className="mb-2 rounded border border-[#e2e8f0] bg-[#e2e8f0] overflow-hidden h-24 flex items-center justify-center">
+                    <div className="mb-3 rounded-xl border border-slate-200 bg-slate-200 overflow-hidden h-32 flex items-center justify-center">
                       {member.photo?.trim() ? (
                         <img
                           src={member.photo}
@@ -843,14 +980,14 @@ export default function WebsiteSettings() {
                           }}
                         />
                       ) : (
-                        <span className="text-[10px] text-[#64748b] p-2 text-center">No photo preview</span>
+                        <span className="text-xs text-slate-500 p-2 text-center font-medium">No photo preview</span>
                       )}
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div>
-                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Photo URL</label>
+                        <label className={cardLabelClass}>Photo URL</label>
                         <input
-                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs"
+                          className={cardInputClass}
                           value={member.photo}
                           onChange={(e) => {
                             const photo = e.target.value;
@@ -864,9 +1001,9 @@ export default function WebsiteSettings() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Name</label>
+                        <label className={cardLabelClass}>Name</label>
                         <input
-                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs"
+                          className={cardInputClass}
                           value={member.name}
                           onChange={(e) => {
                             const name = e.target.value;
@@ -879,9 +1016,9 @@ export default function WebsiteSettings() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Role / Designation</label>
+                        <label className={cardLabelClass}>Role / Designation</label>
                         <input
-                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs"
+                          className={cardInputClass}
                           value={member.role}
                           onChange={(e) => {
                             const role = e.target.value;
@@ -894,9 +1031,9 @@ export default function WebsiteSettings() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-semibold text-[#64748b] mb-0.5 uppercase tracking-wider">Detail</label>
+                        <label className={cardLabelClass}>Detail</label>
                         <textarea
-                          className="w-full px-2 py-1 border border-[#e2e8f0] rounded focus:outline-none focus:border-[#3b82f6] text-xs resize-none"
+                          className={`${cardInputClass} resize-none`}
                           rows={2}
                           value={member.detail}
                           onChange={(e) => {
@@ -918,9 +1055,14 @@ export default function WebsiteSettings() {
           </section>
         )}
 
-        <div className="flex justify-end">
-          <button type="button" onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 px-6 py-3 bg-[#3b82f6] text-white font-semibold rounded-lg hover:bg-[#2563eb] disabled:opacity-50">
-            <Save size={18} /> {saving ? 'Saving...' : 'Save All Changes'}
+        <div className="flex justify-end pt-4">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-8 py-3.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-500/25 transition-all text-base disabled:opacity-50"
+          >
+            <Save size={20} /> {saving ? 'Saving...' : 'Save All Changes'}
           </button>
         </div>
       </div>
