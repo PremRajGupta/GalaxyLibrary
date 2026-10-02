@@ -46,7 +46,8 @@ type MenuCategory =
   | 'admissions'
   | 'facilities'
   | 'timing-location'
-  | 'helpline';
+  | 'helpline'
+  | 'answered';
 
 interface MenuItem {
   id: string;
@@ -61,6 +62,7 @@ export default function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
   const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
   const [currentMenu, setCurrentMenu] = useState<MenuCategory>('main');
+  const [lastCategory, setLastCategory] = useState<MenuCategory>('main');
   const [messages, setMessages] = useState<Message[]>([
     {
       text: '👋 **Welcome to Galaxy Library & Computer Center!**\n\nHow can I help you today? Please choose a topic below for instant details:',
@@ -69,6 +71,7 @@ export default function ChatBot() {
   ]);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const latestAnswerRef = useRef<HTMLDivElement>(null);
 
   // Load live site content so courses, fees, and contact are always synchronized
   useEffect(() => {
@@ -91,7 +94,13 @@ export default function ChatBot() {
 
   useEffect(() => {
     if (isOpen) {
-      scrollToBottom();
+      if (currentMenu === 'answered' && latestAnswerRef.current) {
+        setTimeout(() => {
+          latestAnswerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 60);
+      } else {
+        scrollToBottom();
+      }
     }
   }, [messages, isOpen, currentMenu]);
 
@@ -380,6 +389,35 @@ export default function ChatBot() {
     }
   };
 
+  const getCategoryLabel = (cat: MenuCategory): string => {
+    switch (cat) {
+      case 'library-shifts':
+        return 'Shifts';
+      case 'computer-courses':
+        return 'Courses';
+      case 'admissions':
+        return 'Admission Topics';
+      case 'facilities':
+        return 'Facilities';
+      case 'timing-location':
+        return 'Timings';
+      case 'helpline':
+        return 'Helpline';
+      default:
+        return 'Options';
+    }
+  };
+
+  const provideAnswer = (category: MenuCategory, userQuestionText: string, botResponse: Message) => {
+    setLastCategory(category);
+    setMessages((prev) => [
+      ...prev,
+      { text: userQuestionText, isBot: false },
+      botResponse,
+    ]);
+    setCurrentMenu('answered');
+  };
+
   // ==================== HANDLE MENU ITEM CLICK ====================
   const handleMenuSelect = (itemId: string) => {
     // 1. Navigation back
@@ -520,40 +558,32 @@ export default function ChatBot() {
       };
 
       if (itemId === 'shift-compare-all') {
-        setMessages((prev) => [
-          ...prev,
-          { text: 'Compare All Shift Plans', isBot: false },
-          {
-            text: `📊 **Galaxy Library Shift Plans & Monthly Pricing:**\n\n• **4 Hours:** ₹300 / month\n• **6 Hours:** ₹400 / month (Most Popular)\n• **8 Hours:** ₹500 / month\n• **12 Hours:** ₹600 / month (Best Value)\n• **Night Shift:** ₹350 / month\n• **24 Hours (Full Day):** ₹800 / month (VIP 24x7 Access)\n\n✨ **All plans include:**\n- Free High-Speed 5G Wi-Fi\n- Air-Conditioned (AC) study space\n- Dedicated desk power socket for laptop/phone\n- Chilled & normal RO drinking water\n- Daily newspapers & quiet study ambience\n- Solar & Inverter power backup\n\n📝 **Online Registration Fee:** ₹${libAdmissionFee} only (One-time)`,
-            isBot: true,
-            action: { label: '📝 Apply for Admission', path: '/apply' },
-            secondaryAction: {
-              label: '💬 Chat on WhatsApp',
-              url: `https://wa.me/${waNumber}?text=Hi! I want to enroll in Galaxy Library.`,
-            },
+        provideAnswer('library-shifts', 'Compare All Shift Plans', {
+          text: `📊 **Galaxy Library Shift Plans & Monthly Pricing:**\n\n• **4 Hours:** ₹300 / month\n• **6 Hours:** ₹400 / month (Most Popular)\n• **8 Hours:** ₹500 / month\n• **12 Hours:** ₹600 / month (Best Value)\n• **Night Shift:** ₹350 / month\n• **24 Hours (Full Day):** ₹800 / month (VIP 24x7 Access)\n\n✨ **All plans include:**\n- Free High-Speed 5G Wi-Fi\n- Air-Conditioned (AC) study space\n- Dedicated desk power socket for laptop/phone\n- Chilled & normal RO drinking water\n- Daily newspapers & quiet study ambience\n- Solar & Inverter power backup\n\n📝 **Online Registration Fee:** ₹${libAdmissionFee} only (One-time)`,
+          isBot: true,
+          action: { label: '📝 Apply for Admission', path: '/apply' },
+          secondaryAction: {
+            label: '💬 Chat on WhatsApp',
+            url: `https://wa.me/${waNumber}?text=Hi! I want to enroll in Galaxy Library.`,
           },
-        ]);
+        });
         return;
       }
 
       const shiftInfo = shiftMap[itemId];
       if (shiftInfo) {
-        setMessages((prev) => [
-          ...prev,
-          { text: shiftInfo.name, isBot: false },
-          {
-            text: `✨ **${shiftInfo.name} Details:**\n\n• **Monthly Fee:** ${shiftInfo.fee}\n• **Timings:** ${shiftInfo.time}\n• **Included Amenities:**\n  - Reserved personal study desk\n  - High-Speed Wi-Fi & Individual desk charging port\n  - 100% Air-Conditioned (AC) hall\n  - Uninterrupted Solar & Inverter power backup\n  - Chilled RO Drinking Water\n  - Daily Hindi & English Newspapers\n  - Disciplined, pin-drop silent environment\n\n• **Registration Fee:** ₹${libAdmissionFee} only (One-time online registration)`,
-            isBot: true,
-            action: {
-              label: `📝 Apply for ${shiftInfo.name.split(' ')[0]} Shift`,
-              path: `/apply?shift=${shiftInfo.actionShift}`,
-            },
-            secondaryAction: {
-              label: '💬 Ask on WhatsApp',
-              url: `https://wa.me/${waNumber}?text=Hi! I am interested in ${shiftInfo.name} (${shiftInfo.fee}) at Galaxy Library.`,
-            },
+        provideAnswer('library-shifts', shiftInfo.name, {
+          text: `✨ **${shiftInfo.name} Details:**\n\n• **Monthly Fee:** ${shiftInfo.fee}\n• **Timings:** ${shiftInfo.time}\n• **Included Amenities:**\n  - Reserved personal study desk\n  - High-Speed Wi-Fi & Individual desk charging port\n  - 100% Air-Conditioned (AC) hall\n  - Uninterrupted Solar & Inverter power backup\n  - Chilled RO Drinking Water\n  - Daily Hindi & English Newspapers\n  - Disciplined, pin-drop silent environment\n\n• **Registration Fee:** ₹${libAdmissionFee} only (One-time online registration)`,
+          isBot: true,
+          action: {
+            label: `📝 Apply for ${shiftInfo.name.split(' ')[0]} Shift`,
+            path: `/apply?shift=${shiftInfo.actionShift}`,
           },
-        ]);
+          secondaryAction: {
+            label: '💬 Ask on WhatsApp',
+            url: `https://wa.me/${waNumber}?text=Hi! I am interested in ${shiftInfo.name} (${shiftInfo.fee}) at Galaxy Library.`,
+          },
+        });
         return;
       }
     }
@@ -564,187 +594,135 @@ export default function ChatBot() {
         const summaryText = courses
           .map((c, i) => `${i + 1}. **${c.title}** (${c.duration}) — ₹${c.fee}`)
           .join('\n');
-        setMessages((prev) => [
-          ...prev,
-          { text: 'View All Courses Overview', isBot: false },
-          {
-            text: `💻 **Galaxy Computer Center — Course Catalog:**\n\n${summaryText}\n\n🎓 **Key Features:**\n- 1 Student = 1 Computer practical training\n- Government recognized certification upon completion\n- Experienced faculty guidance & job-oriented curriculum\n- Flexible Morning & Evening batch schedules\n\n📝 **One-time Registration Fee:** ₹${compAdmissionFee} only`,
-            isBot: true,
-            action: { label: '📝 Register for a Course', path: '/computercenter/registration' },
-            secondaryAction: {
-              label: '🌐 View All Courses Page',
-              path: '/computercenter/courses',
-            },
+        provideAnswer('computer-courses', 'View All Courses Overview', {
+          text: `💻 **Galaxy Computer Center — Course Catalog:**\n\n${summaryText}\n\n🎓 **Key Features:**\n- 1 Student = 1 Computer practical training\n- Government recognized certification upon completion\n- Experienced faculty guidance & job-oriented curriculum\n- Flexible Morning & Evening batch schedules\n\n📝 **One-time Registration Fee:** ₹${compAdmissionFee} only`,
+          isBot: true,
+          action: { label: '📝 Register for a Course', path: '/computercenter/registration' },
+          secondaryAction: {
+            label: '🌐 View All Courses Page',
+            path: '/computercenter/courses',
           },
-        ]);
+        });
         return;
       }
 
       const courseId = itemId.replace('course-', '');
       const selectedCourse = courses.find((c) => c.id === courseId);
       if (selectedCourse) {
-        setMessages((prev) => [
-          ...prev,
-          { text: `${selectedCourse.title} Details`, isBot: false },
-          {
-            text: `🎓 **${selectedCourse.title} (${selectedCourse.fullName || selectedCourse.title})**\n\n• **Course Duration:** ${selectedCourse.duration}\n• **Total Course Fee:** ₹${selectedCourse.fee}\n• **Curriculum & Practical Highlights:**\n  - Comprehensive theoretical concepts with 100% hands-on practical lab sessions\n  - Step-by-step guidance under experienced mentors\n  - Real-world assignments and project work\n  - Certification provided on completion\n\n• **Batch Timings:** Flexible Morning & Evening slots\n• **One-time Registration Fee:** ₹${compAdmissionFee}`,
-            isBot: true,
-            action: {
-              label: `📝 Register for ${selectedCourse.title}`,
-              path: `/computercenter/registration?course=${selectedCourse.id}`,
-            },
-            secondaryAction: {
-              label: '💬 Inquire on WhatsApp',
-              url: `https://wa.me/${waNumber}?text=Hi! I would like details about ${selectedCourse.title} course at Galaxy Computer Center.`,
-            },
+        provideAnswer('computer-courses', `${selectedCourse.title} Details`, {
+          text: `🎓 **${selectedCourse.title} (${selectedCourse.fullName || selectedCourse.title})**\n\n• **Course Duration:** ${selectedCourse.duration}\n• **Total Course Fee:** ₹${selectedCourse.fee}\n• **Curriculum & Practical Highlights:**\n  - Comprehensive theoretical concepts with 100% hands-on practical lab sessions\n  - Step-by-step guidance under experienced mentors\n  - Real-world assignments and project work\n  - Certification provided on completion\n\n• **Batch Timings:** Flexible Morning & Evening slots\n• **One-time Registration Fee:** ₹${compAdmissionFee}`,
+          isBot: true,
+          action: {
+            label: `📝 Register for ${selectedCourse.title}`,
+            path: `/computercenter/registration?course=${selectedCourse.id}`,
           },
-        ]);
+          secondaryAction: {
+            label: '💬 Inquire on WhatsApp',
+            url: `https://wa.me/${waNumber}?text=Hi! I would like details about ${selectedCourse.title} course at Galaxy Computer Center.`,
+          },
+        });
         return;
       }
     }
 
     // 5. Admission Answers
     if (itemId === 'adm-library') {
-      setMessages((prev) => [
-        ...prev,
-        { text: 'How to take Library Admission?', isBot: false },
-        {
-          text: `📚 **Steps for Library Admission:**\n\n1. **Online Form:** Click "Apply Online" or visit the \`/apply\` portal.\n2. **Fill Details:** Enter your Name, Mobile number, Address, and choose your preferred study shift (4hr, 6hr, 8hr, etc.).\n3. **Pay Registration:** Pay the nominal ₹${libAdmissionFee} registration fee via UPI / QR Code.\n4. **Download Slip:** Receive your digital admission confirmation slip immediately.\n5. **Desk Seat Allotment:** Show the slip at the library front desk, verify your Aadhaar card, and get your reserved seat allotted right away!`,
-          isBot: true,
-          action: { label: '📝 Apply for Library Online', path: '/apply' },
-        },
-      ]);
+      provideAnswer('admissions', 'How to take Library Admission?', {
+        text: `📚 **Steps for Library Admission:**\n\n1. **Online Form:** Click "Apply Online" or visit the \`/apply\` portal.\n2. **Fill Details:** Enter your Name, Mobile number, Address, and choose your preferred study shift (4hr, 6hr, 8hr, etc.).\n3. **Pay Registration:** Pay the nominal ₹${libAdmissionFee} registration fee via UPI / QR Code.\n4. **Download Slip:** Receive your digital admission confirmation slip immediately.\n5. **Desk Seat Allotment:** Show the slip at the library front desk, verify your Aadhaar card, and get your reserved seat allotted right away!`,
+        isBot: true,
+        action: { label: '📝 Apply for Library Online', path: '/apply' },
+      });
       return;
     }
 
     if (itemId === 'adm-computer') {
-      setMessages((prev) => [
-        ...prev,
-        { text: 'How to enroll in Computer Center?', isBot: false },
-        {
-          text: `💻 **Steps for Computer Course Enrollment:**\n\n1. **Select Course:** Choose from ADCA, DCA, Tally with GST, BCC, etc.\n2. **Online Registration:** Go to \`/computercenter/registration\` and submit your form.\n3. **Pay Token Fee:** Pay the ₹${compAdmissionFee} registration token fee.\n4. **Batch Confirmation:** Our coordinator will assign your preferred Morning or Evening batch.\n5. **Start Learning:** Begin hands-on lab sessions at Dhirabigha, Tehta campus!`,
-          isBot: true,
-          action: { label: '📝 Register for Computer Classes', path: '/computercenter/registration' },
-        },
-      ]);
+      provideAnswer('admissions', 'How to enroll in Computer Center?', {
+        text: `💻 **Steps for Computer Course Enrollment:**\n\n1. **Select Course:** Choose from ADCA, DCA, Tally with GST, BCC, etc.\n2. **Online Registration:** Go to \`/computercenter/registration\` and submit your form.\n3. **Pay Token Fee:** Pay the ₹${compAdmissionFee} registration token fee.\n4. **Batch Confirmation:** Our coordinator will assign your preferred Morning or Evening batch.\n5. **Start Learning:** Begin hands-on lab sessions at Dhirabigha, Tehta campus!`,
+        isBot: true,
+        action: { label: '📝 Register for Computer Classes', path: '/computercenter/registration' },
+      });
       return;
     }
 
     if (itemId === 'adm-docs') {
-      setMessages((prev) => [
-        ...prev,
-        { text: 'Required Documents for Admission', isBot: false },
-        {
-          text: `📑 **Documents Required for Admission:**\n\n• 1 Recent Passport-sized Photograph\n• Photocopy or Digital Copy of Aadhaar Card (for identity verification)\n• Active Mobile Number (for SMS notifications & admission slip)\n• College / Exam Admit Card (Optional)\n\n*Note: Verification takes less than 2 minutes at the desk.*`,
-          isBot: true,
-        },
-      ]);
+      provideAnswer('admissions', 'Required Documents for Admission', {
+        text: `📑 **Documents Required for Admission:**\n\n• 1 Recent Passport-sized Photograph\n• Photocopy or Digital Copy of Aadhaar Card (for identity verification)\n• Active Mobile Number (for SMS notifications & admission slip)\n• College / Exam Admit Card (Optional)\n\n*Note: Verification takes less than 2 minutes at the desk.*`,
+        isBot: true,
+      });
       return;
     }
 
     if (itemId === 'adm-fees') {
-      setMessages((prev) => [
-        ...prev,
-        { text: 'Registration Fees & Payment Modes', isBot: false },
-        {
-          text: `💳 **Registration Fees & Payment Modes:**\n\n• **Library Online Registration:** ₹${libAdmissionFee} only (One-time)\n• **Computer Center Registration:** ₹${compAdmissionFee} only (One-time)\n\n• **Payment Methods Supported:**\n  - UPI (Google Pay, PhonePe, Paytm, BHIM)\n  - Direct QR Code scan at reception\n  - Cash at front desk\n  - Instant digital receipt issued for every transaction`,
-          isBot: true,
-          action: { label: '📝 Start Online Application', path: '/apply' },
-        },
-      ]);
+      provideAnswer('admissions', 'Registration Fees & Payment Modes', {
+        text: `💳 **Registration Fees & Payment Modes:**\n\n• **Library Online Registration:** ₹${libAdmissionFee} only (One-time)\n• **Computer Center Registration:** ₹${compAdmissionFee} only (One-time)\n\n• **Payment Methods Supported:**\n  - UPI (Google Pay, PhonePe, Paytm, BHIM)\n  - Direct QR Code scan at reception\n  - Cash at front desk\n  - Instant digital receipt issued for every transaction`,
+        isBot: true,
+        action: { label: '📝 Start Online Application', path: '/apply' },
+      });
       return;
     }
 
     // 6. Facilities Answers
     if (itemId === 'fac-ac') {
-      setMessages((prev) => [
-        ...prev,
-        { text: 'AC & Solar Power Backup', isBot: false },
-        {
-          text: `❄️ **Central Air Conditioning & Solar Power Backup:**\n\n• Fully Air-Conditioned study hall maintained at optimal comfort (24°C).\n• High-capacity Solar Plant + Commercial Inverter setup.\n• **Zero Power Blackout:** Even during long power cuts in summer, AC, lights, fans, and Wi-Fi run continuously without disruption!`,
-          isBot: true,
-        },
-      ]);
+      provideAnswer('facilities', 'AC & Solar Power Backup', {
+        text: `❄️ **Central Air Conditioning & Solar Power Backup:**\n\n• Fully Air-Conditioned study hall maintained at optimal comfort (24°C).\n• High-capacity Solar Plant + Commercial Inverter setup.\n• **Zero Power Blackout:** Even during long power cuts in summer, AC, lights, fans, and Wi-Fi run continuously without disruption!`,
+        isBot: true,
+      });
       return;
     }
 
     if (itemId === 'fac-wifi') {
-      setMessages((prev) => [
-        ...prev,
-        { text: '5G Wi-Fi & Personal Charging Ports', isBot: false },
-        {
-          text: `📶 **High-Speed Wi-Fi & Dedicated Charging Sockets:**\n\n• Unlimited ultra-fast fiber broadband with redundant backup lines.\n• Smooth streaming for online lectures, Zoom sessions, and mock exams.\n• **Individual Power Socket:** Every single desk features a dedicated multi-pin power outlet to charge your laptop, tablet, or phone safely.`,
-          isBot: true,
-        },
-      ]);
+      provideAnswer('facilities', '5G Wi-Fi & Personal Charging Ports', {
+        text: `📶 **High-Speed Wi-Fi & Dedicated Charging Sockets:**\n\n• Unlimited ultra-fast fiber broadband with redundant backup lines.\n• Smooth streaming for online lectures, Zoom sessions, and mock exams.\n• **Individual Power Socket:** Every single desk features a dedicated multi-pin power outlet to charge your laptop, tablet, or phone safely.`,
+        isBot: true,
+      });
       return;
     }
 
     if (itemId === 'fac-water') {
-      setMessages((prev) => [
-        ...prev,
-        { text: 'RO Drinking Water & Clean Washrooms', isBot: false },
-        {
-          text: `💧 **RO Purified Water & Hygiene:**\n\n• Advanced multi-stage RO + UV water purification system.\n• Chilled drinking water available during summers, and normal water year-round.\n• Dedicated maintenance staff ensuring clean study desks, tidy floors, and hygienic sanitized washrooms.`,
-          isBot: true,
-        },
-      ]);
+      provideAnswer('facilities', 'RO Drinking Water & Clean Washrooms', {
+        text: `💧 **RO Purified Water & Hygiene:**\n\n• Advanced multi-stage RO + UV water purification system.\n• Chilled drinking water available during summers, and normal water year-round.\n• Dedicated maintenance staff ensuring clean study desks, tidy floors, and hygienic sanitized washrooms.`,
+        isBot: true,
+      });
       return;
     }
 
     if (itemId === 'fac-ambience') {
-      setMessages((prev) => [
-        ...prev,
-        { text: 'Newspapers, Magazines & Silence', isBot: false },
-        {
-          text: `📰 **Study Materials & Disciplined Ambience:**\n\n• Daily leading Hindi & English newspapers (The Hindu, Dainik Jagran, Prabhat Khabar).\n• Monthly competitive magazines & current affairs digests.\n• Sound-insulated environment ensuring pin-drop silence and zero distractions for peak focus.`,
-          isBot: true,
-        },
-      ]);
+      provideAnswer('facilities', 'Newspapers, Magazines & Silence', {
+        text: `📰 **Study Materials & Disciplined Ambience:**\n\n• Daily leading Hindi & English newspapers (The Hindu, Dainik Jagran, Prabhat Khabar).\n• Monthly competitive magazines & current affairs digests.\n• Sound-insulated environment ensuring pin-drop silence and zero distractions for peak focus.`,
+        isBot: true,
+      });
       return;
     }
 
     if (itemId === 'fac-safety') {
-      setMessages((prev) => [
-        ...prev,
-        { text: 'CCTV Surveillance & Girls Safety', isBot: false },
-        {
-          text: `🛡️ **Safety, Security & Girls-Friendly Environment:**\n\n• 24x7 High-Definition CCTV camera monitoring across campus and entry.\n• Strict discipline maintained with zero tolerance for nuisance.\n• Safe & secure for female students during morning, evening, and regular study slots.\n• Secure on-site parking for bicycles and two-wheelers.`,
-          isBot: true,
-        },
-      ]);
+      provideAnswer('facilities', 'CCTV Surveillance & Girls Safety', {
+        text: `🛡️ **Safety, Security & Girls-Friendly Environment:**\n\n• 24x7 High-Definition CCTV camera monitoring across campus and entry.\n• Strict discipline maintained with zero tolerance for nuisance.\n• Safe & secure for female students during morning, evening, and regular study slots.\n• Secure on-site parking for bicycles and two-wheelers.`,
+        isBot: true,
+      });
       return;
     }
 
     // 7. Timing & Location Answers
     if (itemId === 'time-hours') {
-      setMessages((prev) => [
-        ...prev,
-        { text: 'Library Operating Hours', isBot: false },
-        {
-          text: `⏰ **Operating Hours:**\n\n• **Open 24 Hours a Day**, 7 days a week, 365 days a year.\n• Open on all Sundays and public/festival holidays.\n• Students can choose their study shifts according to their personal schedule and comfort.`,
-          isBot: true,
-        },
-      ]);
+      provideAnswer('timing-location', 'Library Operating Hours', {
+        text: `⏰ **Operating Hours:**\n\n• **Open 24 Hours a Day**, 7 days a week, 365 days a year.\n• Open on all Sundays and public/festival holidays.\n• Students can choose their study shifts according to their personal schedule and comfort.`,
+        isBot: true,
+      });
       return;
     }
 
     if (itemId === 'time-address') {
       const address = siteContent.libraryInfo?.address || 'Dhirabigha Sugaon Road, Tehta, Bihar';
-      setMessages((prev) => [
-        ...prev,
-        { text: 'Complete Postal Address & Landmark', isBot: false },
-        {
-          text: `📍 **Campus Address & Directions:**\n\n• **Address:** ${address}\n• **Town/District:** Tehta, Jehanabad, Bihar\n• **Nearby Landmarks:** Near Tehta High School & Tehta Railway Station.\n• **Accessibility:** Easily accessible via main road, with convenient parking space.`,
-          isBot: true,
-          action: {
-            label: '🗺️ Open in Google Maps',
-            url:
-              siteContent.libraryInfo?.mapUrl ||
-              'https://maps.google.com/?q=Galaxy+Library+Tehta+Jehanabad',
-          },
+      provideAnswer('timing-location', 'Complete Postal Address & Landmark', {
+        text: `📍 **Campus Address & Directions:**\n\n• **Address:** ${address}\n• **Town/District:** Tehta, Jehanabad, Bihar\n• **Nearby Landmarks:** Near Tehta High School & Tehta Railway Station.\n• **Accessibility:** Easily accessible via main road, with convenient parking space.`,
+        isBot: true,
+        action: {
+          label: '🗺️ Open in Google Maps',
+          url:
+            siteContent.libraryInfo?.mapUrl ||
+            'https://maps.google.com/?q=Galaxy+Library+Tehta+Jehanabad',
         },
-      ]);
+      });
       return;
     }
 
@@ -753,28 +731,20 @@ export default function ChatBot() {
         siteContent.libraryInfo?.mapUrl ||
         'https://maps.google.com/?q=Galaxy+Library+Tehta+Jehanabad';
       window.open(mapUrl, '_blank');
-      setMessages((prev) => [
-        ...prev,
-        { text: 'Opened Google Maps Directions', isBot: false },
-        {
-          text: 'Google Maps directions opened in a new tab. Let me know if you need any assistance reaching the library!',
-          isBot: true,
-        },
-      ]);
+      provideAnswer('timing-location', 'Opened Google Maps Directions', {
+        text: 'Google Maps directions opened in a new tab. Let me know if you need any assistance reaching the library!',
+        isBot: true,
+      });
       return;
     }
 
     // 8. Helpline Answers
     if (itemId === 'help-call') {
       window.location.href = `tel:${phone.replace(/\s+/g, '')}`;
-      setMessages((prev) => [
-        ...prev,
-        { text: `Calling ${phone}`, isBot: false },
-        {
-          text: `Calling ${phone}. You can reach out between 8:00 AM and 10:00 PM for inquiries, fee details, or seat bookings.`,
-          isBot: true,
-        },
-      ]);
+      provideAnswer('helpline', `Calling ${phone}`, {
+        text: `Calling ${phone}. You can reach out between 8:00 AM and 10:00 PM for inquiries, fee details, or seat bookings.`,
+        isBot: true,
+      });
       return;
     }
 
@@ -783,28 +753,20 @@ export default function ChatBot() {
         `https://wa.me/${waNumber}?text=Hi! I want to know more about Galaxy Library and Computer Center.`,
         '_blank'
       );
-      setMessages((prev) => [
-        ...prev,
-        { text: 'Chat on WhatsApp', isBot: false },
-        {
-          text: 'Redirecting to WhatsApp chat with the Galaxy Library official support team...',
-          isBot: true,
-        },
-      ]);
+      provideAnswer('helpline', 'Chat on WhatsApp', {
+        text: 'Redirecting to WhatsApp chat with the Galaxy Library official support team...',
+        isBot: true,
+      });
       return;
     }
 
     if (itemId === 'help-email') {
       const email = siteContent.libraryInfo?.email || 'galaxy.library@gmail.com';
       window.location.href = `mailto:${email}`;
-      setMessages((prev) => [
-        ...prev,
-        { text: `Email: ${email}`, isBot: false },
-        {
-          text: `You can send your queries or document submissions to **${email}**. We respond within 24 hours.`,
-          isBot: true,
-        },
-      ]);
+      provideAnswer('helpline', `Email: ${email}`, {
+        text: `You can send your queries or document submissions to **${email}**. We respond within 24 hours.`,
+        isBot: true,
+      });
       return;
     }
   };
@@ -910,6 +872,7 @@ export default function ChatBot() {
                 type="button"
                 onClick={() => {
                   setCurrentMenu('main');
+                  setLastCategory('main');
                   setMessages([
                     {
                       text: '👋 **Welcome to Galaxy Library & Computer Center!**\n\nHow can I help you today? Please choose a topic below for instant details:',
@@ -935,61 +898,103 @@ export default function ChatBot() {
 
           {/* Messages & Interactive Options Scroll Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/70 dark:bg-[#0b1120] text-slate-800 dark:text-slate-200">
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`flex gap-2.5 max-w-[92%] ${
-                  msg.isBot ? 'mr-auto' : 'ml-auto flex-row-reverse'
-                }`}
-              >
+            {messages.map((msg, index) => {
+              const isScrollTarget =
+                currentMenu === 'answered'
+                  ? index === messages.length - 2 || (index === messages.length - 1 && messages.length === 1)
+                  : false;
+
+              return (
                 <div
-                  className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center shadow-xs ${
-                    msg.isBot
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-indigo-600 text-white'
+                  key={index}
+                  ref={isScrollTarget ? latestAnswerRef : null}
+                  className={`scroll-mt-4 flex gap-2.5 max-w-[92%] ${
+                    msg.isBot ? 'mr-auto' : 'ml-auto flex-row-reverse'
                   }`}
                 >
-                  {msg.isBot ? <Bot size={16} /> : <User size={16} />}
-                </div>
-
-                <div className="space-y-2">
                   <div
-                    className={`p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
+                    className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center shadow-xs ${
                       msg.isBot
-                        ? 'bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 rounded-tl-sm shadow-xs'
-                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-tr-sm shadow-sm'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-indigo-600 text-white'
                     }`}
                   >
-                    {formatMessageText(msg.text)}
+                    {msg.isBot ? <Bot size={16} /> : <User size={16} />}
+                  </div>
 
-                    {/* Integrated Action Buttons */}
-                    {(msg.action || msg.secondaryAction) && (
-                      <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-700/60 flex flex-wrap gap-2">
-                        {msg.action && (
-                          <button
-                            type="button"
-                            onClick={() => handleActionClick(msg.action!)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
-                          >
-                            <span>{msg.action.label}</span>
-                            <ChevronRight size={13} />
-                          </button>
-                        )}
-                        {msg.secondaryAction && (
-                          <button
-                            type="button"
-                            onClick={() => handleActionClick(msg.secondaryAction!)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
-                          >
-                            <span>{msg.secondaryAction.label}</span>
-                          </button>
-                        )}
-                      </div>
-                    )}
+                  <div className="space-y-2">
+                    <div
+                      className={`p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
+                        msg.isBot
+                          ? 'bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 rounded-tl-sm shadow-xs'
+                          : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-tr-sm shadow-sm'
+                      }`}
+                    >
+                      {formatMessageText(msg.text)}
+
+                      {/* Integrated Action Buttons */}
+                      {(msg.action || msg.secondaryAction) && (
+                        <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-700/60 flex flex-wrap gap-2">
+                          {msg.action && (
+                            <button
+                              type="button"
+                              onClick={() => handleActionClick(msg.action!)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                            >
+                              <span>{msg.action.label}</span>
+                              <ChevronRight size={13} />
+                            </button>
+                          )}
+                          {msg.secondaryAction && (
+                            <button
+                              type="button"
+                              onClick={() => handleActionClick(msg.secondaryAction!)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+                            >
+                              <span>{msg.secondaryAction.label}</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
+              );
+            })}
+
+            {/* Quick Follow-up Chips when Answer is Visible */}
+            {currentMenu === 'answered' && (
+              <div className="pt-2 space-y-2 animate-fade-in">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    <Sparkles size={12} className="text-blue-500" />
+                    Next Steps
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {lastCategory !== 'main' && (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentMenu(lastCategory)}
+                      className="p-2.5 bg-blue-50/90 hover:bg-blue-100/90 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-xs cursor-pointer"
+                    >
+                      <ArrowLeft size={13} />
+                      <span className="truncate">Other {getCategoryLabel(lastCategory)}</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentMenu('main')}
+                    className={`p-2.5 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-xs cursor-pointer ${
+                      lastCategory === 'main' ? 'col-span-2' : ''
+                    }`}
+                  >
+                    <Menu size={13} />
+                    <span>Main Menu</span>
+                  </button>
+                </div>
               </div>
-            ))}
+            )}
 
             {/* ==================== INTERACTIVE GUIDED OPTIONS LIST (Matches Reference Image) ==================== */}
             {menuItems.length > 0 && (
@@ -1064,8 +1069,11 @@ export default function ChatBot() {
               <button
                 type="button"
                 onClick={() => {
-                  setCurrentMenu('main');
-                  scrollToBottom();
+                  if (currentMenu === 'answered' && lastCategory !== 'main') {
+                    setCurrentMenu(lastCategory);
+                  } else {
+                    setCurrentMenu('main');
+                  }
                 }}
                 className="py-2.5 px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 flex-shrink-0"
                 title="Go back"
@@ -1079,7 +1087,6 @@ export default function ChatBot() {
               type="button"
               onClick={() => {
                 setCurrentMenu('main');
-                scrollToBottom();
               }}
               className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm shadow-blue-500/20 active:scale-98"
             >
