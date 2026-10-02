@@ -14,12 +14,21 @@ const toResponse = (doc) => ({
     : { title: '', text: '', link: '', endDate: '', show: false, upcomingText: '' },
   libraryInfo: doc.libraryInfo,
   admissionContact: doc.admissionContact,
+  admissionFees: doc.admissionFees || defaultSiteContent.admissionFees || { library: 5, computerCenter: 50 },
   pageText: doc.pageText,
   navMenuItems: doc.navMenuItems,
   heroSlides: doc.heroSlides,
   aboutContent: doc.aboutContent,
   galleryImages: doc.galleryImages,
   facultyMembers: doc.facultyMembers,
+  computerCenterTeachers:
+    doc.computerCenterTeachers && doc.computerCenterTeachers.length > 0
+      ? doc.computerCenterTeachers
+      : defaultSiteContent.computerCenterTeachers || [],
+  computerCourses:
+    doc.computerCourses && doc.computerCourses.length > 0
+      ? doc.computerCourses
+      : defaultSiteContent.computerCourses || [],
   updatedAt: doc.updatedAt,
 });
 
@@ -58,19 +67,29 @@ const mergeSiteContent = (existing, incoming) => {
       ...base.admissionContact,
       ...(incoming.admissionContact ?? {}),
     },
+    admissionFees: {
+      library:
+        typeof incoming.admissionFees?.library === 'number'
+          ? incoming.admissionFees.library
+          : (base.admissionFees?.library ?? defaultSiteContent.admissionFees?.library ?? 5),
+      computerCenter:
+        typeof incoming.admissionFees?.computerCenter === 'number'
+          ? incoming.admissionFees.computerCenter
+          : (base.admissionFees?.computerCenter ?? defaultSiteContent.admissionFees?.computerCenter ?? 50),
+    },
     pageText: {
       ...defaultSiteContent.pageText,
       ...base.pageText,
       ...(incoming.pageText ?? {}),
     },
     navMenuItems:
-      incoming.navMenuItems?.length > 0
+      Array.isArray(incoming.navMenuItems) && incoming.navMenuItems.length > 0
         ? incoming.navMenuItems
         : base.navMenuItems?.length > 0
           ? base.navMenuItems
           : defaultSiteContent.navMenuItems,
     heroSlides:
-      incoming.heroSlides?.length > 0
+      Array.isArray(incoming.heroSlides) && incoming.heroSlides.length > 0
         ? incoming.heroSlides
         : base.heroSlides?.length > 0
           ? base.heroSlides
@@ -80,30 +99,42 @@ const mergeSiteContent = (existing, incoming) => {
       ...base.aboutContent,
       ...(incoming.aboutContent ?? {}),
       paragraphs:
-        incoming.aboutContent?.paragraphs?.length > 0
+        Array.isArray(incoming.aboutContent?.paragraphs) && incoming.aboutContent.paragraphs.length > 0
           ? incoming.aboutContent.paragraphs
           : base.aboutContent?.paragraphs?.length > 0
             ? base.aboutContent.paragraphs
             : defaultSiteContent.aboutContent.paragraphs,
       highlights:
-        incoming.aboutContent?.highlights?.length > 0
+        Array.isArray(incoming.aboutContent?.highlights) && incoming.aboutContent.highlights.length > 0
           ? incoming.aboutContent.highlights
           : base.aboutContent?.highlights?.length > 0
             ? base.aboutContent.highlights
             : defaultSiteContent.aboutContent.highlights,
     },
     galleryImages:
-      incoming.galleryImages?.length > 0
+      Array.isArray(incoming.galleryImages) && incoming.galleryImages.length > 0
         ? incoming.galleryImages
         : base.galleryImages?.length > 0
           ? base.galleryImages
           : defaultSiteContent.galleryImages,
     facultyMembers:
-      incoming.facultyMembers?.length > 0
+      Array.isArray(incoming.facultyMembers) && incoming.facultyMembers.length > 0
         ? incoming.facultyMembers
         : base.facultyMembers?.length > 0
           ? base.facultyMembers
           : defaultSiteContent.facultyMembers,
+    computerCenterTeachers:
+      Array.isArray(incoming.computerCenterTeachers) && incoming.computerCenterTeachers.length > 0
+        ? incoming.computerCenterTeachers
+        : base.computerCenterTeachers?.length > 0
+          ? base.computerCenterTeachers
+          : defaultSiteContent.computerCenterTeachers || [],
+    computerCourses:
+      Array.isArray(incoming.computerCourses) && incoming.computerCourses.length > 0
+        ? incoming.computerCourses
+        : base.computerCourses?.length > 0
+          ? base.computerCourses
+          : defaultSiteContent.computerCourses || [],
   };
 };
 

@@ -39,6 +39,27 @@ const facultyMemberSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const computerCourseSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true },
+    title: { type: String, default: '' },
+    fullName: { type: String, default: '' },
+    duration: { type: String, default: '' },
+    fee: { type: String, default: '' },
+    color: { type: String, default: '' },
+    image: { type: String, default: '' },
+  },
+  { _id: false }
+);
+
+const admissionFeesSchema = new mongoose.Schema(
+  {
+    library: { type: Number, default: 5 },
+    computerCenter: { type: Number, default: 50 },
+  },
+  { _id: false }
+);
+
 const navMenuItemSchema = new mongoose.Schema(
   {
     id: { type: Number, required: true },
@@ -79,6 +100,10 @@ const siteContentSchema = new mongoose.Schema(
       mapUrl: { type: String, default: '' },
       whatsappMessage: { type: String, default: '' },
     },
+    admissionFees: {
+      type: admissionFeesSchema,
+      default: () => ({ library: 5, computerCenter: 50 }),
+    },
     heroSlides: { type: [heroSlideSchema], default: [] },
     aboutContent: {
       title: { type: String, default: '' },
@@ -88,6 +113,7 @@ const siteContentSchema = new mongoose.Schema(
     galleryImages: { type: [galleryImageSchema], default: [] },
     facultyMembers: { type: [facultyMemberSchema], default: [] },
     computerCenterTeachers: { type: [facultyMemberSchema], default: [] },
+    computerCourses: { type: [computerCourseSchema], default: [] },
     navMenuItems: { type: [navMenuItemSchema], default: [] },
     pageText: {
       navHome: { type: String, default: 'Home' },

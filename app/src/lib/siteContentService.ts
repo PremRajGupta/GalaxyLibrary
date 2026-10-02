@@ -183,6 +183,22 @@ export function prepareSiteContentForSave(content: SiteContent): SiteContent {
     detail: (member.detail ?? '').trim(),
   }));
 
+  const computerCourses = (content.computerCourses || []).map((course) => ({
+    ...course,
+    id: course.id || `course_${Date.now()}`,
+    title: (course.title ?? '').trim(),
+    fullName: (course.fullName ?? '').trim(),
+    duration: (course.duration ?? '').trim(),
+    fee: (course.fee ?? '').trim(),
+    color: (course.color ?? '').trim(),
+    image: (course.image ?? '').trim(),
+  }));
+
+  const admissionFees = {
+    library: Number(content.admissionFees?.library) || 5,
+    computerCenter: Number(content.admissionFees?.computerCenter) || 50,
+  };
+
   const navMenuItems =
     content.navMenuItems && content.navMenuItems.length > 0
       ? content.navMenuItems.map((item) => ({
@@ -221,6 +237,8 @@ export function prepareSiteContentForSave(content: SiteContent): SiteContent {
     galleryImages,
     facultyMembers,
     computerCenterTeachers,
+    computerCourses,
+    admissionFees,
     aboutContent: {
       ...content.aboutContent,
       paragraphs: content.aboutContent.paragraphs.filter((p) => p.trim()),
