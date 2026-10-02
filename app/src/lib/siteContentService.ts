@@ -70,6 +70,7 @@ export function mergeSiteContent(saved: Partial<SiteContent>): SiteContent {
   );
 
   return {
+    admissionFees: saved.admissionFees ?? DEFAULT_SITE_CONTENT.admissionFees,
     announcement: {
       title: saved.announcement?.title ?? DEFAULT_SITE_CONTENT.announcement?.title ?? '',
       text: saved.announcement?.text ?? DEFAULT_SITE_CONTENT.announcement?.text ?? '',

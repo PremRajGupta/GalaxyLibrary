@@ -3,12 +3,11 @@ import { load } from '@cashfreepayments/cashfree-js';
 import { requestApi } from '../lib/apiService';
 import LiveSelfieCapture from '../components/camera/LiveSelfieCapture';
 import ImageCaptureField from '../components/ImageCaptureField';
-import { CreditCard, Fingerprint, Camera, FileCheck, CheckCircle, UploadCloud, AlertTriangle } from 'lucide-react';
+import { CreditCard, Fingerprint, Camera, FileCheck, CheckCircle, AlertTriangle } from 'lucide-react';
 import AppLogo from '../components/AppLogo';
-import S from '../lib/strings';
 import { TIME_SHIFT_OPTIONS, getFeeForTimeShift, isPresetTimeShift, OTHER_TIME_SHIFT } from '../lib/feeRules';
 import { COURSE_OPTIONS } from '../lib/courseOptions';
-import { seatApi, studentApi } from '../lib/apiService';
+import { studentApi } from '../lib/apiService';
 import { generateAllSeatNumbers, getAvailableSeatsFromStudents } from '../lib/seatLayout';
 
 import { loadSiteContent } from '../lib/siteContentService';
@@ -145,7 +144,7 @@ export default function PublicAdmission() {
     setError('');
     setLoading(true);
     try {
-      const { orderId, paymentSessionId } = await requestApi.createCashfreeOrder(phone, name, registrationFee);
+      const { paymentSessionId } = await requestApi.createCashfreeOrder(phone, name, registrationFee);
       
       const cashfree = await load({
         mode: "sandbox" // "production" or "sandbox"

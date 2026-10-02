@@ -128,14 +128,6 @@ const getMonthYear = (dateVal: string | Date | undefined) => {
   return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
 };
 
-const escapeCsvCell = (value: unknown) => {
-  const str = String(value ?? '');
-  if (/[",\n]/.test(str)) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-};
-
 export default function Reports() {
   const [dateRange, setDateRange] = useState('thisMonth');
   const [notification, setNotification] = useState('');
@@ -366,7 +358,11 @@ export default function Reports() {
         headStyles: { fillColor: [59, 130, 246] },
         didParseCell: (hookData) => {
           // If this is the TOTAL row
-          if (hookData.section === 'body' && String(hookData.row.raw[0]).toUpperCase() === 'TOTAL') {
+          const rawRow = hookData.row.raw;
+          const firstCell = Array.isArray(rawRow)
+            ? (rawRow as unknown[])[0]
+            : (rawRow as HTMLTableRowElement).cells?.item(0)?.textContent;
+          if (hookData.section === 'body' && String(firstCell ?? '').toUpperCase() === 'TOTAL') {
             hookData.cell.styles.fontStyle = 'bold';
             hookData.cell.styles.fillColor = [241, 245, 249];
             hookData.cell.styles.textColor = [15, 23, 42];

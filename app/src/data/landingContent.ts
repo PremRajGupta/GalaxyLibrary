@@ -150,6 +150,7 @@ export type SiteContent = {
   facultyMembers: FacultyMember[];
   computerCenterTeachers: FacultyMember[];
   computerCourses?: ComputerCourse[];
+  admissionFees?: AdmissionFees;
   updatedAt?: string;
 };
 
@@ -212,6 +213,7 @@ export const DEFAULT_PAGE_TEXT: PageText = {
 };
 
 export const DEFAULT_SITE_CONTENT: SiteContent = {
+  admissionFees: { library: 5, computerCenter: 50 },
   announcement: {
     title: 'Special Discount Offer',
     text: 'Join today and get 10% off on your first month admission fee!',

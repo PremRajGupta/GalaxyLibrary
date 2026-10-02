@@ -90,6 +90,7 @@ export const mapFeeToPaymentReceipt = (fee: any): PaymentReceipt => {
     date: paymentDateStr,
     joiningDate: fee.joiningDate,
     notes: fee.notes,
+    registrationType: fee.registrationType,
   };
 };
 
@@ -109,6 +110,7 @@ export const mapStudentToFeeRow = (student: any): StudentFee => ({
   lastPaid: '-',
   status: student.status || 'active',
   joiningDate: student.joiningDate || student.admissionDate,
+  registrationType: student.registrationType,
 });
 
 export const getStoredPayments = async (): Promise<PaymentReceipt[]> => {

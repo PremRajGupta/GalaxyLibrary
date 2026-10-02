@@ -9,6 +9,7 @@ export interface StudentFee {
   timeShift?: string;
   customShiftHours?: number;
   photo?: string;
+  registrationType?: string;
   joiningDate?: string;
   monthlyFee: number;
   feeDue: number;

@@ -19,6 +19,7 @@ export interface PaymentReceipt {
   date: string;
   joiningDate?: string;
   notes?: string;
+  registrationType?: string;
 }
 
 const loadImageAsDataUrl = async (url: string) => {
