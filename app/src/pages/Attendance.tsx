@@ -21,6 +21,10 @@ import {
   Armchair,
   Sparkles,
   X,
+  Fingerprint,
+  Radio,
+  Terminal,
+  Cpu,
 } from 'lucide-react';
 import {
   attendanceService,
@@ -29,6 +33,7 @@ import {
   type AttendanceRecord,
   type AttendanceSummary,
 } from '../lib/attendanceService';
+import { biometricBleService, type FingerMapping } from '../lib/biometricBleService';
 import { studentApi } from '../lib/apiService';
 import { getStudentDisplayId } from '../lib/studentId';
 import { getTimeShiftLabel, TIME_SHIFT_OPTIONS } from '../lib/feeRules';
@@ -94,12 +99,139 @@ export default function Attendance() {
   const [editingRecord, setEditingRecord] = useState<Partial<AttendanceRecord> | null>(null);
   const [allStudents, setAllStudents] = useState<any[]>([]);
 
+  // Biometric Device State
+  const [isBiometricModalOpen, setIsBiometricModalOpen] = useState(false);
+  const [isBiometricConnected, setIsBiometricConnected] = useState(() =>
+    biometricBleService.getConnectedStatus()
+  );
+  const [biometricDeviceName, setBiometricDeviceName] = useState(() =>
+    biometricBleService.getDeviceName()
+  );
+  const [biometricLogs, setBiometricLogs] = useState<string[]>([]);
+  const [fingerMappings, setFingerMappings] = useState<FingerMapping[]>(() =>
+    biometricBleService.getFingerMappings()
+  );
+  const [newFingerId, setNewFingerId] = useState<number>(1);
+  const [newMappedStudentId, setNewMappedStudentId] = useState<string>('');
+  const [isConnectingBle, setIsConnectingBle] = useState(false);
+
   // Live Clock
   const [currentTime, setCurrentTime] = useState(getCurrentTimeString());
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(getCurrentTimeString()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Biometric BLE event subscriptions
+  useEffect(() => {
+    const unsubLog = biometricBleService.onLog((log) => {
+      setBiometricLogs((prev) => [...prev.slice(-30), log]);
+    });
+
+    const unsubStatus = biometricBleService.onStatus((connected, name) => {
+      setIsBiometricConnected(connected);
+      if (name) setBiometricDeviceName(name);
+      if (connected) {
+        notify(`🟢 Biometric Scanner "${name}" Connected!`);
+      } else {
+        notify('Biometric Scanner Disconnected');
+      }
+    });
+
+    const unsubPunch = biometricBleService.onPunch(async (event) => {
+      notify(`👆 Fingerprint Punch Detected (Slot #${event.fingerId ?? '?'})`);
+      if (event.studentId) {
+        const existing = records.find((r) => r.studentId === event.studentId);
+        if (existing && existing.inTime && !existing.outTime) {
+          // Already inside -> Mark Check Out
+          await handleQuickCheckOut(existing);
+        } else if (existing) {
+          // Absent / Not inside -> Mark Check In
+          await handleQuickCheckIn(existing);
+        } else {
+          // Direct check in
+          await attendanceService.markCheckIn({
+            studentId: event.studentId,
+            date: getTodayDateString(),
+            inTime: getCurrentTimeString(),
+          });
+          loadAttendance();
+        }
+      }
+    });
+
+    return () => {
+      unsubLog();
+      unsubStatus();
+      unsubPunch();
+    };
+  }, [records]);
+
+  const handleConnectBiometric = async () => {
+    setIsConnectingBle(true);
+    try {
+      await biometricBleService.connect();
+    } catch (err: any) {
+      if (err.name !== 'NotFoundError') {
+        alert(err.message || 'Bluetooth connection failed');
+      }
+    } finally {
+      setIsConnectingBle(false);
+    }
+  };
+
+  const handleDisconnectBiometric = async () => {
+    await biometricBleService.disconnect();
+  };
+
+  const handleSaveMapping = () => {
+    if (!newMappedStudentId) {
+      notify('⚠️ Please select a student first');
+      return;
+    }
+    const student = allStudents.find(
+      (s) => getStudentDisplayId(s) === newMappedStudentId || s.studentId === newMappedStudentId
+    );
+    if (!student) return;
+
+    const list = biometricBleService.saveFingerMapping({
+      fingerId: Number(newFingerId),
+      studentId: getStudentDisplayId(student) || student.studentId,
+      studentName: student.name,
+      seatNumber: student.seatNumber || '--',
+    });
+    setFingerMappings([...list]);
+    notify(`✅ Finger Slot #${newFingerId} mapped to ${student.name}`);
+    setNewFingerId((prev) => prev + 1);
+  };
+
+  const handleRemoveMapping = (fingerId: number) => {
+    const list = biometricBleService.removeFingerMapping(fingerId);
+    setFingerMappings([...list]);
+    notify(`Mapping for Finger #${fingerId} removed`);
+  };
+
+  const handleSimulatePunch = async (fingerId: number) => {
+    const mapping = fingerMappings.find((m) => m.fingerId === fingerId);
+    if (!mapping) {
+      notify(`⚠️ Finger #${fingerId} is not assigned to any student yet!`);
+      return;
+    }
+    notify(`🧪 Simulating Punch: ${mapping.studentName} (Finger #${fingerId})`);
+    const existing = records.find((r) => r.studentId === mapping.studentId);
+    if (existing && existing.inTime && !existing.outTime) {
+      await handleQuickCheckOut(existing);
+    } else if (existing) {
+      await handleQuickCheckIn(existing);
+    } else {
+      await attendanceService.markCheckIn({
+        studentId: mapping.studentId,
+        date: selectedDate,
+        inTime: getCurrentTimeString(),
+      });
+      loadAttendance();
+    }
+  };
 
   // Fetch Attendance for Selected Date
   const loadAttendance = async (dateStr = selectedDate) => {
@@ -361,6 +493,34 @@ export default function Attendance() {
             <Clock size={14} className="text-blue-600" />
             <span>Live: {currentTime}</span>
           </div>
+
+          {/* Petpooja Biometric Device Button */}
+          <button
+            type="button"
+            onClick={() => setIsBiometricModalOpen(true)}
+            className={`px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs active:scale-95 border ${
+              isBiometricConnected
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100'
+                : 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'
+            }`}
+            title="Configure Petpooja Biometric Scanner"
+          >
+            {isBiometricConnected ? (
+              <>
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                <Fingerprint size={16} />
+                <span>Scanner Active</span>
+              </>
+            ) : (
+              <>
+                <Radio size={15} className="text-indigo-600 dark:text-indigo-400 animate-pulse" />
+                <span>Connect Petpooja Scanner</span>
+              </>
+            )}
+          </button>
 
           <button
             type="button"
@@ -1000,6 +1160,258 @@ export default function Attendance() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Biometric Scanner Device Setup Modal */}
+      <AnimatePresence>
+        {isBiometricModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-2xl overflow-hidden my-8"
+            >
+              {/* Modal Header */}
+              <div className="p-5 sm:p-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between border-b border-indigo-900/40">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-400">
+                    <Fingerprint size={22} />
+                  </div>
+                  <div>
+                    <h2 className="text-base sm:text-lg font-bold flex items-center gap-2">
+                      Petpooja Biometric Puck Setup
+                      <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 border border-indigo-400/20">
+                        BLE Direct
+                      </span>
+                    </h2>
+                    <p className="text-xs text-indigo-200/80">
+                      Connect Petpooja_Payroll_72 wirelessly without any software or annual renewal
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsBiometricModalOpen(false)}
+                  className="p-2 rounded-xl text-indigo-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="p-5 sm:p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+                {/* 1. Device Connection Card */}
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div
+                      className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
+                        isBiometricConnected
+                          ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30'
+                          : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                      }`}
+                    >
+                      <Cpu size={22} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                          {biometricDeviceName}
+                        </h3>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            isBiometricConnected
+                              ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                              : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                          }`}
+                        >
+                          {isBiometricConnected ? '🟢 Connected' : '⚪ Disconnected'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {isBiometricConnected
+                          ? 'Live GATT notifications active • ready for thumb punches'
+                          : 'Ensure device is powered (Stable Blue light) and within Bluetooth range'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    {isBiometricConnected ? (
+                      <button
+                        type="button"
+                        onClick={handleDisconnectBiometric}
+                        className="px-4 py-2 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                      >
+                        Disconnect
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleConnectBiometric}
+                        disabled={isConnectingBle}
+                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
+                        <Radio size={14} className={isConnectingBle ? 'animate-spin' : ''} />
+                        <span>{isConnectingBle ? 'Connecting...' : 'Connect Scanner'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. Finger Slot Mapping Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
+                        Fingerprint Slot Assignment (Student Mapping)
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Link hardware finger ID slot numbers (e.g. 1, 2, 3...) to registered students
+                      </p>
+                    </div>
+                    <span className="text-xs font-semibold px-2 py-0.5 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-lg">
+                      {fingerMappings.length} Mapped
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                    <div className="sm:col-span-3">
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">
+                        Finger Slot #
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="500"
+                        value={newFingerId}
+                        onChange={(e) => setNewFingerId(parseInt(e.target.value, 10) || 1)}
+                        className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-6">
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">
+                        Select Student
+                      </label>
+                      <select
+                        value={newMappedStudentId}
+                        onChange={(e) => setNewMappedStudentId(e.target.value)}
+                        className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                      >
+                        <option value="">-- Choose Student --</option>
+                        {allStudents.map((s) => (
+                          <option key={s._id || s.id || s.studentId} value={getStudentDisplayId(s) || s.studentId}>
+                            {s.name} ({getStudentDisplayId(s) || s.studentId}) {s.seatNumber ? `• Seat ${s.seatNumber}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-3">
+                      <button
+                        type="button"
+                        onClick={handleSaveMapping}
+                        className="w-full py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                      >
+                        Assign Slot
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* List of Mappings */}
+                  {fingerMappings.length > 0 ? (
+                    <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 max-h-48 overflow-y-auto">
+                      {fingerMappings.map((m) => (
+                        <div
+                          key={m.fingerId}
+                          className="px-3.5 py-2.5 bg-white dark:bg-slate-900 flex items-center justify-between text-xs hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-mono font-bold border border-indigo-200 dark:border-indigo-800 text-[11px]">
+                              Slot #{m.fingerId}
+                            </span>
+                            <div>
+                              <span className="font-semibold text-slate-800 dark:text-slate-100">
+                                {m.studentName}
+                              </span>
+                              <span className="text-[11px] text-slate-400 ml-2">
+                                Seat: {m.seatNumber || '--'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleSimulatePunch(m.fingerId)}
+                              className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 text-slate-600 dark:text-slate-300 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer"
+                              title="Test Punch"
+                            >
+                              Test Punch
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveMapping(m.fingerId)}
+                              className="p-1 text-slate-400 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
+                              title="Delete Mapping"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-xs text-slate-400 bg-slate-50 dark:bg-slate-800/20 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                      No finger slots mapped yet. Select a student and assign slot above.
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Live Bluetooth Terminal Log */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                      <Terminal size={14} className="text-indigo-500" />
+                      <span>Live Device Communication Logs</span>
+                    </h3>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      Real-time BLE Packet Feed
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-950 border border-slate-800 rounded-2xl p-3 font-mono text-[11px] text-emerald-400/90 h-32 overflow-y-auto space-y-1">
+                    {biometricLogs.length === 0 ? (
+                      <div className="text-slate-600 italic">
+                        Ready. Click &quot;Connect Scanner&quot; above to begin BLE handshake.
+                      </div>
+                    ) : (
+                      biometricLogs.map((log, idx) => (
+                        <div key={idx} className="leading-relaxed break-all">
+                          {log}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  Runs natively in browser via Web Bluetooth API
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsBiometricModalOpen(false)}
+                  className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
