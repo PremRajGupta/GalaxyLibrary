@@ -88,11 +88,27 @@ export const getAttendance = async (req, res) => {
       const existing = recordMap.get(stuIdStr) || recordMap.get(stu.studentId);
 
       if (existing) {
-        // Calculate live running time if checked in but not checked out today
+        // Multi-session time calculation
         let liveSpentMinutes = existing.timeSpentMinutes || 0;
         let liveSpentFormatted = existing.timeSpentFormatted || '0m';
+        const sessions = existing.sessions || [];
 
-        if (existing.inTime && (!existing.outTime || existing.status === 'present') && targetDate === getTodayDateString()) {
+        if (sessions.length > 0) {
+          const completedMins = sessions
+            .filter((s) => s.outTime)
+            .reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
+
+          const openSession = sessions[sessions.length - 1];
+          if (openSession && !openSession.outTime && targetDate === getTodayDateString()) {
+            const nowStr = getCurrentTimeString();
+            const currentMins = calculateMinutesBetweenTimes(openSession.inTime, nowStr, targetDate);
+            liveSpentMinutes = completedMins + currentMins;
+            liveSpentFormatted = `${formatMinutesToHoursMinutes(liveSpentMinutes)} (Live)`;
+          } else {
+            liveSpentMinutes = completedMins;
+            liveSpentFormatted = formatMinutesToHoursMinutes(liveSpentMinutes);
+          }
+        } else if (existing.inTime && (!existing.outTime || existing.status === 'present') && targetDate === getTodayDateString()) {
           const nowStr = getCurrentTimeString();
           const currentMins = calculateMinutesBetweenTimes(existing.inTime, nowStr, targetDate);
           if (currentMins > 0) {
@@ -117,6 +133,7 @@ export const getAttendance = async (req, res) => {
           outTime: existing.outTime || '',
           timeSpentMinutes: liveSpentMinutes,
           timeSpentFormatted: liveSpentFormatted,
+          sessions: existing.sessions || [],
           status: existing.status || 'present',
           method: existing.method || 'manual',
           remarks: existing.remarks || '',
@@ -202,7 +219,7 @@ export const getAttendance = async (req, res) => {
   }
 };
 
-// Mark Check-In (Quick or manual)
+// Mark Check-In (Quick, Biometric, or manual)
 export const markCheckIn = async (req, res) => {
   try {
     const organizationId = req.user.organizationId || 'default-org';
@@ -227,33 +244,69 @@ export const markCheckIn = async (req, res) => {
       return res.status(404).json({ message: 'Student not found' });
     }
 
-    // Upsert attendance record
-    const filter = {
+    let record = await Attendance.findOne({
       organizationId,
       branchId,
       studentId: student.studentId,
       date: targetDate,
-    };
-
-    const update = {
-      studentRef: student._id,
-      studentName: student.name,
-      studentDisplayId: student.studentId,
-      seatNumber: seatNumber || student.seatNumber || '--',
-      timeShift: student.timeShift || '8hours',
-      registrationType: student.registrationType || 'library',
-      inTime: targetInTime,
-      inTimestamp: new Date(),
-      status: 'present',
-      method: method || 'manual',
-      remarks: remarks || '',
-    };
-
-    const record = await Attendance.findOneAndUpdate(filter, update, {
-      new: true,
-      upsert: true,
     });
 
+    if (!record) {
+      // First Check-In of the day
+      record = new Attendance({
+        organizationId,
+        branchId,
+        studentId: student.studentId,
+        studentRef: student._id,
+        studentName: student.name,
+        studentDisplayId: student.studentId,
+        seatNumber: seatNumber || student.seatNumber || '--',
+        timeShift: student.timeShift || '8hours',
+        registrationType: student.registrationType || 'library',
+        date: targetDate,
+        inTime: targetInTime,
+        inTimestamp: new Date(),
+        outTime: '',
+        status: 'present',
+        method: method || 'biometric',
+        remarks: remarks || '',
+        sessions: [
+          {
+            inTime: targetInTime,
+            inTimestamp: new Date(),
+            outTime: '',
+            durationMinutes: 0,
+            method: method || 'biometric',
+          },
+        ],
+      });
+    } else {
+      // Re-entering student (e.g. after lunch/tea break)
+      if (!record.sessions) record.sessions = [];
+      const lastSession = record.sessions[record.sessions.length - 1];
+
+      if (lastSession && !lastSession.outTime) {
+        // Already inside
+        return res.json({ message: 'Student already checked in', record });
+      }
+
+      // Add new in-session
+      record.sessions.push({
+        inTime: targetInTime,
+        inTimestamp: new Date(),
+        outTime: '',
+        durationMinutes: 0,
+        method: method || 'biometric',
+      });
+
+      if (!record.inTime) {
+        record.inTime = targetInTime;
+      }
+      record.outTime = '';
+      record.status = 'present';
+    }
+
+    await record.save();
     return res.json({ message: 'Check-in marked successfully', record });
   } catch (error) {
     console.error('Error marking check-in:', error);
@@ -261,7 +314,7 @@ export const markCheckIn = async (req, res) => {
   }
 };
 
-// Mark Check-Out
+// Mark Check-Out (Multi-session compliant)
 export const markCheckOut = async (req, res) => {
   try {
     const organizationId = req.user.organizationId || 'default-org';
@@ -286,19 +339,42 @@ export const markCheckOut = async (req, res) => {
     }
 
     const targetOutTime = outTime || getCurrentTimeString();
-    const inTimeStr = record.inTime || '08:00 AM';
-    const timeSpentMinutes = calculateMinutesBetweenTimes(inTimeStr, targetOutTime, record.date);
-    const timeSpentFormatted = formatMinutesToHoursMinutes(timeSpentMinutes);
+
+    if (!record.sessions || record.sessions.length === 0) {
+      // Fallback single session
+      const inTimeStr = record.inTime || '08:00 AM';
+      const timeSpentMinutes = calculateMinutesBetweenTimes(inTimeStr, targetOutTime, record.date);
+      record.sessions = [
+        {
+          inTime: inTimeStr,
+          outTime: targetOutTime,
+          outTimestamp: new Date(),
+          durationMinutes: timeSpentMinutes,
+        },
+      ];
+      record.timeSpentMinutes = timeSpentMinutes;
+      record.timeSpentFormatted = formatMinutesToHoursMinutes(timeSpentMinutes);
+    } else {
+      // Close last open session
+      const lastSession = record.sessions[record.sessions.length - 1];
+      if (lastSession) {
+        lastSession.outTime = targetOutTime;
+        lastSession.outTimestamp = new Date();
+        lastSession.durationMinutes = calculateMinutesBetweenTimes(lastSession.inTime, targetOutTime, record.date);
+      }
+
+      // Sum all completed sessions' duration
+      const totalMinutes = record.sessions.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
+      record.timeSpentMinutes = totalMinutes;
+      record.timeSpentFormatted = formatMinutesToHoursMinutes(totalMinutes);
+    }
 
     record.outTime = targetOutTime;
     record.outTimestamp = new Date();
-    record.timeSpentMinutes = timeSpentMinutes;
-    record.timeSpentFormatted = timeSpentFormatted;
     record.status = 'completed';
     if (remarks) record.remarks = remarks;
 
     await record.save();
-
     return res.json({ message: 'Check-out marked successfully', record });
   } catch (error) {
     console.error('Error marking check-out:', error);

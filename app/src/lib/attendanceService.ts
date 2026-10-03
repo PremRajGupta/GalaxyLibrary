@@ -1,6 +1,16 @@
 import { attendanceApi, studentApi } from './apiService';
 import { getStudentDisplayId } from './studentId';
 
+export interface AttendanceSession {
+  inTime: string; // e.g. "08:15 AM"
+  inTimestamp?: string;
+  outTime?: string; // e.g. "10:30 AM" or empty if currently inside
+  outTimestamp?: string;
+  durationMinutes: number; // In-library duration of this stretch
+  method?: 'manual' | 'qr' | 'biometric';
+  remarks?: string;
+}
+
 export interface AttendanceRecord {
   id: string;
   studentId: string;
@@ -13,12 +23,13 @@ export interface AttendanceRecord {
   timeShift: string;
   registrationType: string;
   date: string; // YYYY-MM-DD
-  inTime: string; // e.g. "08:15 AM"
+  inTime: string; // e.g. "08:15 AM" (Earliest In)
   inTimestamp?: string;
-  outTime: string; // e.g. "02:30 PM"
+  outTime: string; // e.g. "02:30 PM" (Latest Out)
   outTimestamp?: string;
   timeSpentMinutes: number;
   timeSpentFormatted: string; // e.g. "6h 15m" or "3h 40m (Live)"
+  sessions?: AttendanceSession[]; // Multiple in/out intervals (Break tracking)
   status: 'present' | 'completed' | 'absent' | 'late' | 'half_day';
   method?: 'manual' | 'qr' | 'biometric';
   remarks?: string;
@@ -129,11 +140,27 @@ export const attendanceService = {
       const existing = cachedMap.get(stuDisplayId) || cachedMap.get(stu._id);
 
       if (existing) {
-        // If present and no checkout, compute live time
+        // Multi-session time calculation
         let spentMins = existing.timeSpentMinutes || 0;
         let formattedSpent = existing.timeSpentFormatted || '0m';
+        const sessions = existing.sessions || [];
 
-        if (existing.inTime && (!existing.outTime || existing.status === 'present') && date === getTodayDateString()) {
+        if (sessions.length > 0) {
+          const completedMins = sessions
+            .filter((s) => s.outTime)
+            .reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
+
+          const openSession = sessions[sessions.length - 1];
+          if (openSession && !openSession.outTime && date === getTodayDateString()) {
+            const nowStr = getCurrentTimeString();
+            const liveCurrentMins = calculateMinutes(openSession.inTime, nowStr, date);
+            spentMins = completedMins + liveCurrentMins;
+            formattedSpent = `${formatMinutesToDisplay(spentMins)} (Live)`;
+          } else {
+            spentMins = completedMins;
+            formattedSpent = formatMinutesToDisplay(spentMins);
+          }
+        } else if (existing.inTime && (!existing.outTime || existing.status === 'present') && date === getTodayDateString()) {
           const nowStr = getCurrentTimeString();
           const currentMins = calculateMinutes(existing.inTime, nowStr, date);
           if (currentMins > 0) {
@@ -144,6 +171,7 @@ export const attendanceService = {
 
         return {
           ...existing,
+          sessions,
           photo: stu.photo || existing.photo || '',
           seatNumber: stu.seatNumber || existing.seatNumber || '--',
           timeShift: stu.timeShift || existing.timeShift || '8hours',
@@ -230,27 +258,59 @@ export const attendanceService = {
       const saved = localStorage.getItem(getLocalKey(targetDate));
       const list: AttendanceRecord[] = saved ? JSON.parse(saved) : [];
       const idx = list.findIndex((r) => r.studentId === data.studentId);
-      const updated: AttendanceRecord = {
-        id: `att_${data.studentId}_${targetDate}`,
-        studentId: data.studentId,
-        studentName: '',
-        seatNumber: data.seatNumber || '--',
-        timeShift: '8hours',
-        registrationType: 'library',
-        date: targetDate,
-        inTime,
-        outTime: '',
-        timeSpentMinutes: 0,
-        timeSpentFormatted: '0m (In Progress)',
-        status: 'present',
-        method: 'manual',
-        remarks: data.remarks || '',
-        hasRecord: true,
-      };
 
       if (idx >= 0) {
-        list[idx] = { ...list[idx], ...updated, studentName: list[idx].studentName };
+        const item = list[idx];
+        const existingSessions = item.sessions || [];
+        const lastSession = existingSessions[existingSessions.length - 1];
+
+        const newSessions = [...existingSessions];
+        if (!lastSession || lastSession.outTime) {
+          // Re-entry: student starts a new inside session (e.g. after lunch/tea break)
+          newSessions.push({
+            inTime,
+            inTimestamp: new Date().toISOString(),
+            outTime: '',
+            durationMinutes: 0,
+            method: 'biometric',
+          });
+        }
+
+        list[idx] = {
+          ...item,
+          inTime: item.inTime || inTime,
+          outTime: '',
+          status: 'present',
+          sessions: newSessions,
+          hasRecord: true,
+        };
       } else {
+        const updated: AttendanceRecord = {
+          id: `att_${data.studentId}_${targetDate}`,
+          studentId: data.studentId,
+          studentName: '',
+          seatNumber: data.seatNumber || '--',
+          timeShift: '8hours',
+          registrationType: 'library',
+          date: targetDate,
+          inTime,
+          outTime: '',
+          timeSpentMinutes: 0,
+          timeSpentFormatted: '0m (In Progress)',
+          sessions: [
+            {
+              inTime,
+              inTimestamp: new Date().toISOString(),
+              outTime: '',
+              durationMinutes: 0,
+              method: 'biometric',
+            },
+          ],
+          status: 'present',
+          method: 'biometric',
+          remarks: data.remarks || '',
+          hasRecord: true,
+        };
         list.push(updated);
       }
       localStorage.setItem(getLocalKey(targetDate), JSON.stringify(list));
@@ -288,14 +348,38 @@ export const attendanceService = {
 
       if (idx >= 0) {
         const item = list[idx];
-        const inTimeStr = data.inTime || item.inTime || '08:00 AM';
-        const mins = calculateMinutes(inTimeStr, outTime, targetDate);
+        const existingSessions = item.sessions || [];
+        const newSessions = [...existingSessions];
+
+        if (newSessions.length === 0) {
+          const inTimeStr = data.inTime || item.inTime || '08:00 AM';
+          const mins = calculateMinutes(inTimeStr, outTime, targetDate);
+          newSessions.push({
+            inTime: inTimeStr,
+            outTime,
+            outTimestamp: new Date().toISOString(),
+            durationMinutes: mins,
+          });
+        } else {
+          const lastIdx = newSessions.length - 1;
+          const lastSession = newSessions[lastIdx];
+          const mins = calculateMinutes(lastSession.inTime, outTime, targetDate);
+          newSessions[lastIdx] = {
+            ...lastSession,
+            outTime,
+            outTimestamp: new Date().toISOString(),
+            durationMinutes: mins,
+          };
+        }
+
+        const totalMins = newSessions.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
 
         list[idx] = {
           ...item,
           outTime,
-          timeSpentMinutes: mins,
-          timeSpentFormatted: formatMinutesToDisplay(mins),
+          timeSpentMinutes: totalMins,
+          timeSpentFormatted: formatMinutesToDisplay(totalMins),
+          sessions: newSessions,
           status: 'completed',
           remarks: data.remarks || item.remarks || '',
           hasRecord: true,

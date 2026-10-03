@@ -25,11 +25,16 @@ import {
   Radio,
   Terminal,
   Cpu,
+  History,
+  Coffee,
+  ArrowRight,
 } from 'lucide-react';
 import {
   attendanceService,
   getTodayDateString,
   getCurrentTimeString,
+  calculateMinutes,
+  formatMinutesToDisplay,
   type AttendanceRecord,
   type AttendanceSummary,
 } from '../lib/attendanceService';
@@ -98,6 +103,7 @@ export default function Attendance() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<Partial<AttendanceRecord> | null>(null);
   const [allStudents, setAllStudents] = useState<any[]>([]);
+  const [selectedSessionRecord, setSelectedSessionRecord] = useState<AttendanceRecord | null>(null);
 
   // Biometric Device State
   const [isBiometricModalOpen, setIsBiometricModalOpen] = useState(false);
@@ -936,10 +942,23 @@ export default function Attendance() {
                       {/* Time_Spent */}
                       <td className="py-3.5 px-4 font-medium text-slate-700 dark:text-slate-200">
                         {item.timeSpentFormatted && item.timeSpentFormatted !== '0m' ? (
-                          <span className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1">
-                            <Clock size={13} className="text-blue-500" />
-                            {item.timeSpentFormatted}
-                          </span>
+                          <div className="space-y-1">
+                            <span className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1">
+                              <Clock size={13} className="text-blue-500" />
+                              {item.timeSpentFormatted}
+                            </span>
+                            {item.sessions && item.sessions.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedSessionRecord(item)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 cursor-pointer transition-colors shadow-2xs"
+                                title="Click to view breaks & all in/out punches"
+                              >
+                                <History size={10} />
+                                <span>{item.sessions.length} Sessions</span>
+                              </button>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-slate-400">0m</span>
                         )}
@@ -948,7 +967,7 @@ export default function Attendance() {
                       {/* Action Buttons */}
                       <td className="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* If not checked in: Show Check In button */}
+                          {/* If not checked in today: Show Check In button */}
                           {!item.inTime && (
                             <button
                               type="button"
@@ -961,16 +980,41 @@ export default function Attendance() {
                             </button>
                           )}
 
-                          {/* If checked in & still inside: Show Check Out button */}
+                          {/* If checked in & still inside: Show Check Out button (Step Out / Leave) */}
                           {isCurrentlyInside && (
                             <button
                               type="button"
                               onClick={() => handleQuickCheckOut(item)}
-                              className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
-                              title="Mark Out"
+                              className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                              title="Step Out (Break / Exit)"
                             >
                               <LogOut size={13} />
                               <span>Out</span>
+                            </button>
+                          )}
+
+                          {/* If previously checked out: Show Re-In button for re-entry */}
+                          {item.inTime && !isCurrentlyInside && (
+                            <button
+                              type="button"
+                              onClick={() => handleQuickCheckIn(item)}
+                              className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                              title="Return from Break (Mark In Again)"
+                            >
+                              <LogIn size={13} />
+                              <span>Re-In</span>
+                            </button>
+                          )}
+
+                          {/* View Multi-session history button if sessions exist */}
+                          {item.sessions && item.sessions.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedSessionRecord(item)}
+                              className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 dark:text-slate-300 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                              title="View In/Out & Break Timeline"
+                            >
+                              <History size={13} />
                             </button>
                           )}
 
@@ -1504,6 +1548,171 @@ export default function Attendance() {
                   type="button"
                   onClick={() => setIsBiometricModalOpen(false)}
                   className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Multi-Session / Punch Timeline Breakdown Modal */}
+      <AnimatePresence>
+        {selectedSessionRecord && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-lg overflow-hidden my-8"
+            >
+              {/* Modal Header */}
+              <div className="p-5 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-white">
+                    <History size={22} />
+                  </div>
+                  <div>
+                    <h2 className="text-base sm:text-lg font-bold">
+                      {selectedSessionRecord.studentName}
+                    </h2>
+                    <p className="text-xs text-blue-100 flex items-center gap-2">
+                      <span>{selectedSessionRecord.studentId}</span>
+                      <span>•</span>
+                      <span>Seat: {selectedSessionRecord.seatNumber || '--'}</span>
+                      <span>•</span>
+                      <span>{selectedSessionRecord.date}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSessionRecord(null)}
+                  className="p-2 rounded-xl text-blue-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Summary Stats in Modal */}
+              <div className="p-5 sm:p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl">
+                    <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider block">
+                      Total Study Time
+                    </span>
+                    <span className="text-lg font-bold text-emerald-700 dark:text-emerald-200 mt-0.5 block">
+                      {selectedSessionRecord.timeSpentFormatted || '0m'}
+                    </span>
+                    <span className="text-[10px] text-emerald-600/80">Net time inside library</span>
+                  </div>
+
+                  <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl">
+                    <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider block">
+                      Total Punches / Sessions
+                    </span>
+                    <span className="text-lg font-bold text-amber-700 dark:text-amber-200 mt-0.5 block">
+                      {selectedSessionRecord.sessions?.length || 1} Sessions
+                    </span>
+                    <span className="text-[10px] text-amber-600/80">Breaks automatically deducted</span>
+                  </div>
+                </div>
+
+                {/* Timeline */}
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                    <Clock size={14} className="text-blue-600" />
+                    <span>Daily In/Out Punch Log & Break Breakdown</span>
+                  </h3>
+
+                  <div className="space-y-2.5">
+                    {selectedSessionRecord.sessions && selectedSessionRecord.sessions.length > 0 ? (
+                      selectedSessionRecord.sessions.map((session, idx) => {
+                        const nextSession = selectedSessionRecord.sessions?.[idx + 1];
+                        const breakMinutes =
+                          session.outTime && nextSession?.inTime
+                            ? calculateMinutes(session.outTime, nextSession.inTime, selectedSessionRecord.date)
+                            : 0;
+
+                        return (
+                          <div key={idx} className="space-y-2">
+                            {/* Session Card */}
+                            <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 rounded-2xl flex items-center justify-between text-xs">
+                              <div className="flex items-center gap-3">
+                                <span className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-300 font-bold flex items-center justify-center text-[11px]">
+                                  {idx + 1}
+                                </span>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-emerald-600 flex items-center gap-1 font-mono">
+                                      <LogIn size={12} /> {session.inTime}
+                                    </span>
+                                    <ArrowRight size={12} className="text-slate-400" />
+                                    {session.outTime ? (
+                                      <span className="font-bold text-blue-600 flex items-center gap-1 font-mono">
+                                        <LogOut size={12} /> {session.outTime}
+                                      </span>
+                                    ) : (
+                                      <span className="font-bold text-emerald-500 flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        Inside Now
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-[10px] text-slate-400">
+                                    Method: {session.method || 'Biometric'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="text-right">
+                                <span className="font-bold text-slate-700 dark:text-slate-200">
+                                  {session.outTime
+                                    ? formatMinutesToDisplay(session.durationMinutes)
+                                    : 'Live (Running)'}
+                                </span>
+                                <span className="block text-[10px] text-slate-400">Study duration</span>
+                              </div>
+                            </div>
+
+                            {/* Break Indicator between sessions */}
+                            {breakMinutes > 0 && (
+                              <div className="flex items-center justify-center gap-2 py-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50/60 dark:bg-amber-950/20 rounded-xl border border-dashed border-amber-200 dark:border-amber-800/60">
+                                <Coffee size={13} />
+                                <span>
+                                  ☕ Break (Outside): {formatMinutesToDisplay(breakMinutes)} ({session.outTime} ➔ {nextSession?.inTime})
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <LogIn size={14} className="text-emerald-500" />
+                          <span className="font-mono font-bold">{selectedSessionRecord.inTime}</span>
+                          <ArrowRight size={12} className="text-slate-400" />
+                          <span className="font-mono font-bold">
+                            {selectedSessionRecord.outTime || 'Inside Now'}
+                          </span>
+                        </div>
+                        <span className="font-bold text-slate-700 dark:text-slate-200">
+                          {selectedSessionRecord.timeSpentFormatted}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSessionRecord(null)}
+                  className="px-5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-bold transition-all cursor-pointer"
                 >
                   Close
                 </button>

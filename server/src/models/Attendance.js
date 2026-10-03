@@ -17,6 +17,18 @@ const attendanceSchema = new mongoose.Schema({
   outTimestamp: { type: Date },
   timeSpentMinutes: { type: Number, default: 0 },
   timeSpentFormatted: { type: String, default: '0m' },
+  // Multi-punch sessions (Break & re-entry tracking throughout the day)
+  sessions: [
+    {
+      inTime: { type: String, required: true },
+      inTimestamp: { type: Date, default: Date.now },
+      outTime: { type: String, default: '' },
+      outTimestamp: { type: Date },
+      durationMinutes: { type: Number, default: 0 },
+      method: { type: String, default: 'biometric' },
+      remarks: { type: String, default: '' },
+    },
+  ],
   status: {
     type: String,
     enum: ['present', 'completed', 'absent', 'late', 'half_day'],
