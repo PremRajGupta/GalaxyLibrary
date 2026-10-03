@@ -24,15 +24,10 @@ import {
   Fingerprint,
   Radio,
   Terminal,
+  Cpu,
   History,
   Coffee,
   ArrowRight,
-  Wifi,
-  Network,
-  Copy,
-  Check,
-  Send,
-  ExternalLink,
 } from 'lucide-react';
 import {
   attendanceService,
@@ -112,17 +107,6 @@ export default function Attendance() {
 
   // Biometric Device State
   const [isBiometricModalOpen, setIsBiometricModalOpen] = useState(false);
-  const [biometricModalTab, setBiometricModalTab] = useState<'wifi' | 'ble'>('wifi');
-  const [scannerIp, setScannerIp] = useState<string>(() => localStorage.getItem('galaxy_scanner_ip') || '');
-  const [scannerWifiMac] = useState<string>('94:54:C5:65:05:D1');
-  const [scannerBleMac] = useState<string>('94:54:C5:65:05:D2');
-  const [scannerDeviceName] = useState<string>('Petpooja_Payroll_72');
-  const [isProbingScanner, setIsProbingScanner] = useState(false);
-  const [probeResult, setProbeResult] = useState<{ ok: boolean; message: string } | null>(null);
-  const [copiedWebhook, setCopiedWebhook] = useState(false);
-  const [isPunchSyncing, setIsPunchSyncing] = useState(false);
-  const [selectedTestStudentId, setSelectedTestStudentId] = useState<string>('');
-
   const [isBiometricConnected, setIsBiometricConnected] = useState(() =>
     biometricBleService.getConnectedStatus()
   );
@@ -265,89 +249,32 @@ export default function Attendance() {
     notify(`Mapping for Finger #${fingerId} removed`);
   };
 
-  const getWebhookUrl = () => {
-    const envApi = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '');
-    if (envApi) {
-      return `${envApi}/api/v1/attendance/biometric/punch`;
+  const handleSimulatePunch = async (fingerId: number) => {
+    const mapping = fingerMappings.find((m) => m.fingerId === fingerId);
+    if (!mapping) {
+      notify(`⚠️ Finger #${fingerId} is not assigned to any student yet!`);
+      return;
     }
-    const origin = window.location.origin;
-    const baseUrl =
-      origin.includes('localhost') || origin.includes('127.0.0.1')
-        ? 'http://localhost:5000'
-        : origin;
-    return `${baseUrl}/api/v1/attendance/biometric/punch`;
-  };
-
-  const handleCopyWebhook = () => {
-    navigator.clipboard.writeText(getWebhookUrl());
-    setCopiedWebhook(true);
-    notify('📋 Webhook URL copied to clipboard!');
-    setTimeout(() => setCopiedWebhook(false), 2500);
-  };
-
-  const handleProbeScanner = async () => {
-    setIsProbingScanner(true);
-    setProbeResult(null);
-    try {
-      if (scannerIp) {
-        localStorage.setItem('galaxy_scanner_ip', scannerIp);
-      }
-      const res = await attendanceService.syncBiometricPunch({
-        mac: scannerWifiMac,
-        fingerId: 9999,
-      });
-      if (res) {
-        setProbeResult({
-          ok: true,
-          message: `Scanner endpoint & WiFi route active! Device MAC: ${scannerWifiMac}`,
-        });
-        notify('✅ Attendance Biometric endpoint is active & receiving punches!');
-      }
-    } catch (e: any) {
-      setProbeResult({
-        ok: false,
-        message: e?.message || 'Could not verify endpoint connection',
-      });
-    } finally {
-      setIsProbingScanner(false);
-    }
-  };
-
-  const handleWifiPunch = async (slotNumber: number, studentId?: string) => {
-    setIsPunchSyncing(true);
-    try {
-      const mapping = fingerMappings.find((m) => m.fingerId === slotNumber);
-      const targetStudentId = studentId || mapping?.studentId;
-
-      if (!targetStudentId) {
-        notify(`⚠️ Slot #${slotNumber} is not assigned to any student yet!`);
-        return;
-      }
-
-      setLastDetectedFinger({
-        fingerId: slotNumber,
-        studentName: mapping?.studentName || targetStudentId,
-        seatNumber: mapping?.seatNumber || '--',
-        isMapped: true,
-        timestamp: new Date().toLocaleTimeString('en-US', { hour12: true }),
-      });
-
-      const res = await attendanceService.syncBiometricPunch({
-        fingerId: slotNumber,
-        studentId: targetStudentId,
-        mac: scannerWifiMac,
+    setLastDetectedFinger({
+      fingerId,
+      studentName: mapping.studentName,
+      seatNumber: mapping.seatNumber,
+      isMapped: true,
+      timestamp: new Date().toLocaleTimeString('en-US', { hour12: true }),
+    });
+    notify(`🧪 Simulating Punch: ${mapping.studentName} (Finger #${fingerId})`);
+    const existing = records.find((r) => r.studentId === mapping.studentId);
+    if (existing && existing.inTime && !existing.outTime) {
+      await handleQuickCheckOut(existing);
+    } else if (existing) {
+      await handleQuickCheckIn(existing);
+    } else {
+      await attendanceService.markCheckIn({
+        studentId: mapping.studentId,
         date: selectedDate,
+        inTime: getCurrentTimeString(),
       });
-
-      const sName = res?.studentName || mapping?.studentName || targetStudentId;
-      const act = res?.action === 'out' ? 'Checked-Out' : 'Checked-In';
-      notify(`⚡ WiFi Punch: ${sName} (${act})`);
-      await loadAttendance();
-    } catch (err: any) {
-      console.error('Error during WiFi punch:', err);
-      notify('⚠️ Punch sync failed: ' + (err?.message || 'Error'));
-    } finally {
-      setIsPunchSyncing(false);
+      loadAttendance();
     }
   };
 
@@ -612,20 +539,32 @@ export default function Attendance() {
             <span>Live: {currentTime}</span>
           </div>
 
-          {/* Biometric Scanner (WiFi & BLE) */}
+          {/* Petpooja Biometric Device Button */}
           <button
             type="button"
             onClick={() => setIsBiometricModalOpen(true)}
-            className="px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs active:scale-95 border bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
-            title="Configure Biometric Scanner (WiFi & BLE)"
+            className={`px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs active:scale-95 border ${
+              isBiometricConnected
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'
+                : 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100'
+            }`}
+            title="Configure Petpooja Biometric Scanner"
           >
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-            </span>
-            <Wifi size={15} className="text-emerald-600" />
-            <Fingerprint size={16} />
-            <span>Biometric Setup (WiFi & BLE)</span>
+            {isBiometricConnected ? (
+              <>
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                <Fingerprint size={16} />
+                <span>Scanner Active</span>
+              </>
+            ) : (
+              <>
+                <Radio size={15} className="text-indigo-600 animate-pulse" />
+                <span>Connect Petpooja Scanner</span>
+              </>
+            )}
           </button>
 
           <button
@@ -1327,13 +1266,13 @@ export default function Attendance() {
                   </div>
                   <div>
                     <h2 className="text-base sm:text-lg font-bold flex items-center gap-2">
-                      Petpooja Biometric Scanner Setup
-                      <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200 border border-emerald-400/30">
-                        WiFi Online • {scannerDeviceName}
+                      Petpooja Biometric Puck Setup
+                      <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 border border-indigo-400/20">
+                        BLE Direct
                       </span>
                     </h2>
                     <p className="text-xs text-indigo-200/80">
-                      Sync attendance punches wirelessly via WiFi / LAN or Direct Bluetooth without subscription fees
+                      Connect Petpooja_Payroll_72 wirelessly without any software or annual renewal
                     </p>
                   </div>
                 </div>
@@ -1346,561 +1285,269 @@ export default function Attendance() {
                 </button>
               </div>
 
-              {/* Navigation Tabs: WiFi vs Bluetooth */}
-              <div className="flex border-b border-slate-200 bg-slate-100/90 px-5 pt-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setBiometricModalTab('wifi')}
-                  className={`pb-3 px-4 text-xs font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
-                    biometricModalTab === 'wifi'
-                      ? 'border-indigo-600 text-indigo-700 bg-white rounded-t-xl shadow-xs'
-                      : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  <Wifi size={15} className={biometricModalTab === 'wifi' ? 'text-indigo-600' : ''} />
-                  <span>WiFi Network / LAN (Recommended)</span>
-                  <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-700 font-semibold">
-                    Online
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBiometricModalTab('ble')}
-                  className={`pb-3 px-4 text-xs font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
-                    biometricModalTab === 'ble'
-                      ? 'border-indigo-600 text-indigo-700 bg-white rounded-t-xl shadow-xs'
-                      : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  <Radio size={14} className={biometricModalTab === 'ble' ? 'text-indigo-600' : ''} />
-                  <span>Direct Bluetooth (BLE)</span>
-                  {isBiometricConnected && (
-                    <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-700 font-semibold">
-                      Connected
-                    </span>
-                  )}
-                </button>
-              </div>
-
               <div className="p-5 sm:p-6 space-y-6 max-h-[75vh] overflow-y-auto">
-                {biometricModalTab === 'wifi' ? (
-                  <>
-                    {/* WiFi Device Status Card */}
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 text-emerald-600 border border-emerald-500/30 flex items-center justify-center">
-                            <Wifi size={22} />
-                          </div>
+                {/* 1. Device Connection Card */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div
+                      className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
+                        isBiometricConnected
+                          ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30'
+                          : 'bg-slate-200 text-slate-500'
+                      }`}
+                    >
+                      <Cpu size={22} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-sm text-slate-800">
+                          {biometricDeviceName}
+                        </h3>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            isBiometricConnected
+                              ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                              : 'bg-slate-200 text-slate-600'
+                          }`}
+                        >
+                          {isBiometricConnected ? '🟢 Connected' : '⚪ Disconnected'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        {isBiometricConnected
+                          ? 'Live GATT notifications active • ready for thumb punches'
+                          : 'Ensure device is powered (Stable Blue light) and within Bluetooth range'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    {isBiometricConnected ? (
+                      <button
+                        type="button"
+                        onClick={handleDisconnectBiometric}
+                        className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                      >
+                        Disconnect
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleConnectBiometric}
+                        disabled={isConnectingBle}
+                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
+                        <Radio size={14} className={isConnectingBle ? 'animate-spin' : ''} />
+                        <span>{isConnectingBle ? 'Connecting...' : 'Connect Scanner'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. Finger Slot Mapping Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Fingerprint Slot Assignment (Student Mapping)
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        Link hardware finger ID slot numbers (e.g. 1, 2, 3...) to registered students
+                      </p>
+                    </div>
+                    <span className="text-xs font-semibold px-2 py-0.5 bg-blue-50 text-blue-600 rounded-lg">
+                      {fingerMappings.length} Mapped
+                    </span>
+                  </div>
+
+                  {/* Live Finger Detection Indicator Banner */}
+                  <div
+                    className={`p-3.5 rounded-2xl border transition-all ${
+                      lastDetectedFinger
+                        ? lastDetectedFinger.isMapped
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                          : 'bg-amber-50 border-amber-300 text-amber-800'
+                        : 'bg-indigo-50/70 border-indigo-200/80 text-indigo-800'
+                    }`}
+                  >
+                    {lastDetectedFinger ? (
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <span
+                            className={`w-3 h-3 rounded-full shrink-0 ${
+                              lastDetectedFinger.isMapped
+                                ? 'bg-emerald-500 animate-ping'
+                                : 'bg-amber-500 animate-pulse'
+                            }`}
+                          />
                           <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-bold text-sm text-slate-800">
-                                {scannerDeviceName}
-                              </h3>
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                🟢 Online on WiFi
-                              </span>
+                            <div className="font-bold text-xs flex flex-wrap items-center gap-2">
+                              <span>Slot #{lastDetectedFinger.fingerId} Detected!</span>
+                              {lastDetectedFinger.isMapped ? (
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                  ✅ Student: {lastDetectedFinger.studentName}
+                                  {lastDetectedFinger.seatNumber ? ` (Seat ${lastDetectedFinger.seatNumber})` : ''}
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                                  ✨ Nayi Ungli / Unmapped ➔ Slot #{lastDetectedFinger.fingerId} auto-fill ho gya!
+                                </span>
+                              )}
                             </div>
-                            <p className="text-xs text-slate-500">
-                              Connected to Library WiFi network • Powered & Ready
+                            <p className="text-[11px] opacity-80 mt-0.5">
+                              {lastDetectedFinger.isMapped
+                                ? `Punch registered at ${lastDetectedFinger.timestamp} (In/Out Auto-Toggled)`
+                                : 'Neeche student choose karein aur "Assign Slot" par click karein.'}
                             </p>
                           </div>
                         </div>
-
                         <button
                           type="button"
-                          onClick={() => {
-                            notify('🔄 Syncing attendance records...');
-                            loadAttendance();
-                          }}
-                          className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                          onClick={() => setLastDetectedFinger(null)}
+                          className="text-xs opacity-60 hover:opacity-100 px-2 py-1 rounded-lg hover:bg-black/5 cursor-pointer"
                         >
-                          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                          <span>Sync Attendance</span>
+                          ✕
                         </button>
                       </div>
-
-                      {/* MAC Addresses Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200/80">
-                        <div className="p-3 bg-white rounded-xl border border-slate-200">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                              <Wifi size={13} className="text-indigo-500" />
-                              WiFi MAC Address (Image 2)
-                            </span>
-                            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
-                              Active
-                            </span>
-                          </div>
-                          <span className="font-mono text-xs font-bold text-slate-800 block">
-                            {scannerWifiMac}
-                          </span>
-                          <span className="text-[10px] text-slate-400">
-                            WiFi router & LAN communication MAC
-                          </span>
-                        </div>
-
-                        <div className="p-3 bg-white rounded-xl border border-slate-200">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                              <Radio size={13} className="text-blue-500" />
-                              Bluetooth MAC Address (Image 1)
-                            </span>
-                            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200">
-                              BLE +1
-                            </span>
-                          </div>
-                          <span className="font-mono text-xs font-bold text-slate-800 block">
-                            {scannerBleMac}
-                          </span>
-                          <span className="text-[10px] text-slate-400">
-                            Mobile App Bluetooth connection MAC
-                          </span>
+                    ) : (
+                      <div className="flex items-center gap-2.5">
+                        <Fingerprint size={20} className="text-indigo-600 shrink-0" />
+                        <div className="text-xs">
+                          <span className="font-bold text-indigo-900">
+                            🔍 Pata Kaise Karein (Live Auto-Detect):
+                          </span>{' '}
+                          Student se machine par ungli touch karne ko kahein. Machine turant uska Finger Slot # yahan detect karke neeche form me apne-aap bhar degi!
                         </div>
                       </div>
+                    )}
+                  </div>
 
-                      {/* Explanation Banner for user */}
-                      <div className="p-3 bg-indigo-50/70 border border-indigo-200/80 rounded-xl text-xs text-indigo-900 space-y-1">
-                        <p className="font-bold flex items-center gap-1.5 text-indigo-950">
-                          <span>💡 MAC Address Difference Explained (D1 vs D2):</span>
-                        </p>
-                        <p className="text-[11px] leading-relaxed text-indigo-900/90">
-                          Aapke circular biometric puck ke andar <strong>ESP32 chip</strong> lagi hai. ESP32 hardware me 2 MAC address hote hain:
-                          <strong> D1</strong> WiFi ke liye hota hai aur <strong>D2</strong> Bluetooth ke liye. Dono ek hi device ke connection doors hain! Kyunki machine WiFi se already connect ho chuki hai, isliye ab PC par Bluetooth ki koi zarurat nahi hai.
-                        </p>
-                      </div>
+                  <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                    <div className="sm:col-span-3">
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Finger Slot #
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="500"
+                        value={newFingerId}
+                        onChange={(e) => setNewFingerId(parseInt(e.target.value, 10) || 1)}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
                     </div>
 
-                    {/* Webhook & Push Endpoint Configuration */}
-                    <div className="space-y-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                            <Network size={14} className="text-blue-600" />
-                            <span>Global Biometric Punch Webhook / Push URL</span>
-                          </h3>
-                          <p className="text-xs text-slate-500">
-                            Public HTTPS endpoint accessible over any WiFi or cellular internet globally
-                          </p>
-                        </div>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
-                          🟢 Open & No-Auth Ready
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          readOnly
-                          value={getWebhookUrl()}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-700 focus:outline-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleCopyWebhook}
-                          className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-xs"
-                        >
-                          {copiedWebhook ? <Check size={14} /> : <Copy size={14} />}
-                          <span>{copiedWebhook ? 'Copied!' : 'Copy URL'}</span>
-                        </button>
-                      </div>
-
-                      {/* Global Live Remote Punch Test (For Testing in Deployment Without Physical Device) */}
-                      <div className="p-3 bg-white rounded-xl border border-indigo-200/90 shadow-xs space-y-2.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
-                            <span>🚀 Remote Live Cloud Punch Tester (Bina Device Test Karein)</span>
-                          </span>
-                          <span className="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded font-semibold">
-                            Global Webhook Simulation
-                          </span>
-                        </div>
-
-                        <p className="text-[11px] text-slate-500">
-                          Agar aapke paas abhi scanner device nahi hai, to yahan se kisi bhi student ko select karke live cloud webhook trigger karein. Student ki attendance turant In/Out mark ho jayegi:
-                        </p>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
-                          <div className="sm:col-span-6">
-                            <select
-                              value={selectedTestStudentId}
-                              onChange={(e) => setSelectedTestStudentId(e.target.value)}
-                              className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-                            >
-                              <option value="">-- Choose Student to Test --</option>
-                              {allStudents.map((s) => (
-                                <option
-                                  key={s._id || s.id || s.studentId}
-                                  value={getStudentDisplayId(s) || s.studentId}
-                                >
-                                  {s.name} ({getStudentDisplayId(s) || s.studentId})
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="sm:col-span-3">
-                            <button
-                              type="button"
-                              disabled={isPunchSyncing || !selectedTestStudentId}
-                              onClick={() => handleWifiPunch(1, selectedTestStudentId)}
-                              className="w-full py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40"
-                            >
-                              <Send size={12} className={isPunchSyncing ? 'animate-spin' : ''} />
-                              <span>{isPunchSyncing ? 'Sending...' : '⚡ Send Punch'}</span>
-                            </button>
-                          </div>
-
-                          <div className="sm:col-span-3">
-                            <a
-                              href={
-                                selectedTestStudentId
-                                  ? `${getWebhookUrl()}?studentId=${selectedTestStudentId}`
-                                  : '#'
-                              }
-                              target="_blank"
-                              rel="noreferrer"
-                              onClick={(e) => {
-                                if (!selectedTestStudentId) {
-                                  e.preventDefault();
-                                  notify('⚠️ Pehle student choose karein');
-                                }
-                              }}
-                              className="w-full py-1.5 px-2 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1 text-center"
-                              title="Browser URL se direct punch test karein"
-                            >
-                              <ExternalLink size={12} />
-                              <span>Browser Link</span>
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Scanner IP Probe Tool */}
-                      <div className="pt-1 border-t border-slate-200/80 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
-                        <div className="sm:col-span-8">
-                          <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                            Scanner Local IP Address (Optional - Local Network)
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="e.g. 192.168.1.150 (Router DHCP IP)"
-                            value={scannerIp}
-                            onChange={(e) => setScannerIp(e.target.value)}
-                            className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-                        <div className="sm:col-span-4">
-                          <button
-                            type="button"
-                            onClick={handleProbeScanner}
-                            disabled={isProbingScanner}
-                            className="w-full py-1.5 px-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-                          >
-                            <Send size={13} className={isProbingScanner ? 'animate-spin' : ''} />
-                            <span>{isProbingScanner ? 'Checking...' : 'Probe Endpoint'}</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {probeResult && (
-                        <div
-                          className={`p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
-                            probeResult.ok
-                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                              : 'bg-rose-50 text-rose-800 border border-rose-200'
-                          }`}
-                        >
-                          {probeResult.ok ? (
-                            <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                          ) : (
-                            <XCircle size={16} className="text-rose-600 shrink-0" />
-                          )}
-                          <span>{probeResult.message}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Fingerprint Slot Assignment (Student Mapping) */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                            Fingerprint Slot Assignment (Student Mapping)
-                          </h3>
-                          <p className="text-xs text-slate-500">
-                            Link hardware finger ID slot numbers (e.g. 1, 2, 3...) to registered students
-                          </p>
-                        </div>
-                        <span className="text-xs font-semibold px-2 py-0.5 bg-blue-50 text-blue-600 rounded-lg">
-                          {fingerMappings.length} Mapped
-                        </span>
-                      </div>
-
-                      {/* Detection / Status Indicator Banner */}
-                      <div
-                        className={`p-3.5 rounded-2xl border transition-all ${
-                          lastDetectedFinger
-                            ? lastDetectedFinger.isMapped
-                              ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                              : 'bg-amber-50 border-amber-300 text-amber-800'
-                            : 'bg-indigo-50/70 border-indigo-200/80 text-indigo-800'
-                        }`}
+                    <div className="sm:col-span-6">
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Select Student
+                      </label>
+                      <select
+                        value={newMappedStudentId}
+                        onChange={(e) => setNewMappedStudentId(e.target.value)}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                       >
-                        {lastDetectedFinger ? (
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2.5">
-                              <span
-                                className={`w-3 h-3 rounded-full shrink-0 ${
-                                  lastDetectedFinger.isMapped
-                                    ? 'bg-emerald-500 animate-ping'
-                                    : 'bg-amber-500 animate-pulse'
-                                }`}
-                              />
-                              <div>
-                                <div className="font-bold text-xs flex flex-wrap items-center gap-2">
-                                  <span>Slot #{lastDetectedFinger.fingerId} Detected!</span>
-                                  {lastDetectedFinger.isMapped ? (
-                                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                                      ✅ Student: {lastDetectedFinger.studentName}
-                                      {lastDetectedFinger.seatNumber
-                                        ? ` (Seat ${lastDetectedFinger.seatNumber})`
-                                        : ''}
-                                    </span>
-                                  ) : (
-                                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
-                                      ✨ Nayi Ungli / Unmapped ➔ Slot #{lastDetectedFinger.fingerId} auto-fill ho gya!
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-[11px] opacity-80 mt-0.5">
-                                  {lastDetectedFinger.isMapped
-                                    ? `Punch registered at ${lastDetectedFinger.timestamp} (In/Out Auto-Toggled)`
-                                    : 'Neeche student choose karein aur "Assign Slot" par click karein.'}
-                                </p>
-                              </div>
+                        <option value="">-- Choose Student --</option>
+                        {allStudents.map((s) => (
+                          <option key={s._id || s.id || s.studentId} value={getStudentDisplayId(s) || s.studentId}>
+                            {s.name} ({getStudentDisplayId(s) || s.studentId}) {s.seatNumber ? `• Seat ${s.seatNumber}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-3">
+                      <button
+                        type="button"
+                        onClick={handleSaveMapping}
+                        className="w-full py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                      >
+                        Assign Slot
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* List of Mappings */}
+                  {fingerMappings.length > 0 ? (
+                    <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100 max-h-48 overflow-y-auto">
+                      {fingerMappings.map((m) => (
+                        <div
+                          key={m.fingerId}
+                          className="px-3.5 py-2.5 bg-white flex items-center justify-between text-xs hover:bg-slate-50 transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-600 font-mono font-bold border border-indigo-200 text-[11px]">
+                              Slot #{m.fingerId}
+                            </span>
+                            <div>
+                              <span className="font-semibold text-slate-800">
+                                {m.studentName}
+                              </span>
+                              <span className="text-[11px] text-slate-400 ml-2">
+                                Seat: {m.seatNumber || '--'}
+                              </span>
                             </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
                             <button
                               type="button"
-                              onClick={() => setLastDetectedFinger(null)}
-                              className="text-xs opacity-60 hover:opacity-100 px-2 py-1 rounded-lg hover:bg-black/5 cursor-pointer"
+                              onClick={() => handleSimulatePunch(m.fingerId)}
+                              className="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-600 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer"
+                              title="Test Punch"
                             >
-                              ✕
+                              Test Punch
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveMapping(m.fingerId)}
+                              className="p-1 text-slate-400 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
+                              title="Delete Mapping"
+                            >
+                              <Trash2 size={14} />
                             </button>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-2.5">
-                            <Fingerprint size={20} className="text-indigo-600 shrink-0" />
-                            <div className="text-xs">
-                              <span className="font-bold text-indigo-900">
-                                🔍 Pata Kaise Karein (Student Finger Mapping):
-                              </span>{' '}
-                              Machine par student ka thumb punch record karte waqt Slot # (1, 2, 3) yaad rakhein ya neeche form me student ko slot assign karke &quot;Test Punch&quot; dabayein.
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Add Slot Form */}
-                      <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
-                        <div className="sm:col-span-3">
-                          <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                            Finger Slot #
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="500"
-                            value={newFingerId}
-                            onChange={(e) => setNewFingerId(parseInt(e.target.value, 10) || 1)}
-                            className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
                         </div>
-
-                        <div className="sm:col-span-6">
-                          <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                            Select Student
-                          </label>
-                          <select
-                            value={newMappedStudentId}
-                            onChange={(e) => setNewMappedStudentId(e.target.value)}
-                            className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                          >
-                            <option value="">-- Choose Student --</option>
-                            {allStudents.map((s) => (
-                              <option
-                                key={s._id || s.id || s.studentId}
-                                value={getStudentDisplayId(s) || s.studentId}
-                              >
-                                {s.name} ({getStudentDisplayId(s) || s.studentId}){' '}
-                                {s.seatNumber ? `• Seat ${s.seatNumber}` : ''}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="sm:col-span-3">
-                          <button
-                            type="button"
-                            onClick={handleSaveMapping}
-                            className="w-full py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
-                          >
-                            Assign Slot
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* List of Mappings */}
-                      {fingerMappings.length > 0 ? (
-                        <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100 max-h-48 overflow-y-auto">
-                          {fingerMappings.map((m) => (
-                            <div
-                              key={m.fingerId}
-                              className="px-3.5 py-2.5 bg-white flex items-center justify-between text-xs hover:bg-slate-50 transition-colors"
-                            >
-                              <div className="flex items-center gap-2.5">
-                                <span className="px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-600 font-mono font-bold border border-indigo-200 text-[11px]">
-                                  Slot #{m.fingerId}
-                                </span>
-                                <div>
-                                  <span className="font-semibold text-slate-800">
-                                    {m.studentName}
-                                  </span>
-                                  <span className="text-[11px] text-slate-400 ml-2">
-                                    Seat: {m.seatNumber || '--'}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  disabled={isPunchSyncing}
-                                  onClick={() => handleWifiPunch(m.fingerId, m.studentId)}
-                                  className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1"
-                                  title="Test Punch via WiFi"
-                                >
-                                  <Send size={11} />
-                                  <span>Test Punch</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveMapping(m.fingerId)}
-                                  className="p-1 text-slate-400 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
-                                  title="Delete Mapping"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-4 text-xs text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                          No finger slots mapped yet. Select a student and assign slot above.
-                        </div>
-                      )}
+                      ))}
                     </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Bluetooth BLE Card */}
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex items-center gap-3.5">
-                        <div
-                          className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
-                            isBiometricConnected
-                              ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30'
-                              : 'bg-slate-200 text-slate-500'
-                          }`}
-                        >
-                          <Radio size={22} />
+                  ) : (
+                    <div className="text-center py-4 text-xs text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                      No finger slots mapped yet. Select a student and assign slot above.
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Live Bluetooth Terminal Log */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Terminal size={14} className="text-indigo-500" />
+                      <span>Live Device Communication Logs</span>
+                    </h3>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      Real-time BLE Packet Feed
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-950 border border-slate-800 rounded-2xl p-3 font-mono text-[11px] text-emerald-400/90 h-32 overflow-y-auto space-y-1">
+                    {biometricLogs.length === 0 ? (
+                      <div className="text-slate-600 italic">
+                        Ready. Click &quot;Connect Scanner&quot; above to begin BLE handshake.
+                      </div>
+                    ) : (
+                      biometricLogs.map((log, idx) => (
+                        <div key={idx} className="leading-relaxed break-all">
+                          {log}
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-bold text-sm text-slate-800">
-                              {biometricDeviceName}
-                            </h3>
-                            <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                isBiometricConnected
-                                  ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                                  : 'bg-slate-200 text-slate-600'
-                              }`}
-                            >
-                              {isBiometricConnected ? '🟢 Connected' : '⚪ Disconnected'}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-500">
-                            {isBiometricConnected
-                              ? 'Live GATT notifications active • ready for thumb punches'
-                              : 'Ensure device is powered (Stable Blue light) and within Bluetooth range'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div>
-                        {isBiometricConnected ? (
-                          <button
-                            type="button"
-                            onClick={handleDisconnectBiometric}
-                            className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                          >
-                            Disconnect
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={handleConnectBiometric}
-                            disabled={isConnectingBle}
-                            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                          >
-                            <Radio size={14} className={isConnectingBle ? 'animate-spin' : ''} />
-                            <span>{isConnectingBle ? 'Connecting...' : 'Connect Scanner'}</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
-                      <strong>ℹ️ Note for PC Users:</strong> Agar aapke PC me Bluetooth card nahi hai ya browser me scanner device list nahi ho raha hai, to <strong>&quot;WiFi Network / LAN&quot;</strong> tab use karein. Aapka scanner already WiFi se connected hai!
-                    </div>
-
-                    {/* Live Bluetooth Terminal Log */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                          <Terminal size={14} className="text-indigo-500" />
-                          <span>Live Device Communication Logs</span>
-                        </h3>
-                        <span className="text-[10px] text-slate-400 font-mono">
-                          Real-time BLE Packet Feed
-                        </span>
-                      </div>
-
-                      <div className="bg-slate-950 border border-slate-800 rounded-2xl p-3 font-mono text-[11px] text-emerald-400/90 h-40 overflow-y-auto space-y-1">
-                        {biometricLogs.length === 0 ? (
-                          <div className="text-slate-600 italic">
-                            Ready. Click &quot;Connect Scanner&quot; above to begin BLE handshake.
-                          </div>
-                        ) : (
-                          biometricLogs.map((log, idx) => (
-                            <div key={idx} className="leading-relaxed break-all">
-                              {log}
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Modal Footer */}
               <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
                 <div className="text-xs text-slate-500">
-                  Galaxy Library Attendance • Real-time WiFi & BLE Biometric Sync
+                  Runs natively in browser via Web Bluetooth API
                 </div>
                 <button
                   type="button"

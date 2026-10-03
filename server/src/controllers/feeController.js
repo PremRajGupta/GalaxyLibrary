@@ -274,8 +274,91 @@ export const markAdvancePayment = async (req, res) => {
 };
 
 /**
+ * Compute payment validity details for a single student in-memory
+ */
+export const computeStudentValidity = (student, feeRecords = [], today = new Date()) => {
+  const monthlyFee = Number(student?.feeAmount) || 0;
+  const startDate = toDateOnly(student?.joiningDate || student?.admissionDate);
+  const hasHistory = feeRecords && feeRecords.length > 0;
+
+  if (!monthlyFee || monthlyFee <= 0 || !startDate) {
+    return {
+      hasPaymentHistory: hasHistory,
+      hasAdvancePayment: false,
+      isAdvancePayment: false,
+      monthsCovered: 0,
+      validUntilDate: null,
+      advanceStartDate: null,
+      advanceValidUntilDate: null,
+      daysRemaining: 0,
+      paymentStatus: 'no-payment',
+      monthlyFee,
+    };
+  }
+
+  const totalPaid = feeRecords.reduce((sum, fee) => {
+    const feeCredit = fee.feeCreditAmount !== undefined ? fee.feeCreditAmount : fee.amount;
+    return sum + (Number(feeCredit) || 0);
+  }, 0);
+  const { monthsCovered, validUntil } = calculateValidityFromAmount(startDate, totalPaid, monthlyFee);
+
+  if (monthsCovered <= 0) {
+    return {
+      hasPaymentHistory: totalPaid > 0,
+      hasAdvancePayment: false,
+      isAdvancePayment: false,
+      monthsCovered: 0,
+      validUntilDate: null,
+      advanceStartDate: null,
+      advanceValidUntilDate: null,
+      daysRemaining: 0,
+      paymentStatus: 'no-payment',
+      monthlyFee,
+      totalPaid,
+    };
+  }
+
+  const daysRemaining = Math.floor((validUntil.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  let paymentStatus = 'valid';
+  if (daysRemaining < 0) {
+    paymentStatus = 'expired';
+  } else if (daysRemaining <= EXPIRING_SOON_DAYS) {
+    paymentStatus = 'expiring-soon';
+  }
+
+  const currentPeriodCount = getBillablePeriodCount(startDate, today);
+  const advanceMonths = Math.max(0, monthsCovered - currentPeriodCount);
+  const hasComputedAdvance = advanceMonths > 0;
+  const advanceStartDate = hasComputedAdvance ? addBillingMonths(startDate, currentPeriodCount) : null;
+  const latestMarkedAdvance = feeRecords
+    .filter((fee) => fee.isAdvancePayment)
+    .sort((a, b) => new Date(b.createdAt || b.paymentDate || 0).getTime() - new Date(a.createdAt || a.paymentDate || 0).getTime())[0];
+  const latestFeeRecord = feeRecords[feeRecords.length - 1];
+
+  return {
+    hasPaymentHistory: true,
+    hasAdvancePayment: hasComputedAdvance,
+    isAdvancePayment: hasComputedAdvance,
+    monthsCovered,
+    advanceMonths,
+    validUntilDate: formatDateOnly(validUntil),
+    advanceStartDate: formatDateOnly(advanceStartDate),
+    advanceValidUntilDate: hasComputedAdvance ? formatDateOnly(validUntil) : null,
+    daysRemaining: Math.max(0, daysRemaining),
+    rawDaysRemaining: daysRemaining,
+    paymentStatus,
+    receiptNumber: latestMarkedAdvance?.receiptNumber || latestFeeRecord?.receiptNumber,
+    amount: latestFeeRecord?.amount || 0,
+    totalPaid,
+    monthlyFee,
+    paymentDate: formatDateOnly(latestFeeRecord?.paymentDate),
+  };
+};
+
+/**
  * Get student payment validity information
- * GET /api/students/:studentDisplayId/payment-validity
+ * GET /api/fees/student/:studentDisplayId/validity
  */
 export const getStudentPaymentValidity = async (req, res) => {
   try {
@@ -283,92 +366,87 @@ export const getStudentPaymentValidity = async (req, res) => {
 
     // Find the student
     const student = await Student.findOne({ studentId: studentDisplayId })
-      .select('studentId name feeAmount joiningDate admissionDate');
+      .select('studentId name feeAmount joiningDate admissionDate')
+      .lean();
 
     if (!student) {
       return res.status(404).json({ message: 'Student not found' });
     }
 
-    const monthlyFee = Number(student.feeAmount) || 0;
-    const startDate = toDateOnly(student.joiningDate || student.admissionDate);
+    const feeRecords = await Fee.find({ studentDisplayId }).sort({ paymentDate: 1, createdAt: 1 }).lean();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    if (!monthlyFee || monthlyFee <= 0 || !startDate) {
-      return res.status(200).json({
-        hasPaymentHistory: false,
-        hasAdvancePayment: false,
-        isAdvancePayment: false,
-        monthsCovered: 0,
-        validUntilDate: null,
-        advanceStartDate: null,
-        advanceValidUntilDate: null,
-        daysRemaining: 0,
-        paymentStatus: 'no-payment',
-        monthlyFee,
-      });
+    const result = computeStudentValidity(student, feeRecords, today);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching payment validity', error: error.message });
+  }
+};
+
+/**
+ * Get bulk payment validity information for all or specified students in a SINGLE fast query
+ * GET /api/fees/validity/bulk?studentIds=...
+ */
+export const getBulkPaymentValidity = async (req, res) => {
+  try {
+    const { studentIds } = req.query;
+    let studentFilter = {};
+    let feeFilter = {};
+
+    if (studentIds && typeof studentIds === 'string' && studentIds.trim()) {
+      const idsList = studentIds.split(',').map((id) => id.trim()).filter(Boolean);
+      if (idsList.length > 0) {
+        studentFilter = { studentId: { $in: idsList } };
+        feeFilter = { studentDisplayId: { $in: idsList } };
+      }
     }
 
-    const feeRecords = await Fee.find({ studentDisplayId }).sort({ paymentDate: 1, createdAt: 1 }).lean();
-    const totalPaid = feeRecords.reduce((sum, fee) => {
-      const feeCredit = fee.feeCreditAmount !== undefined ? fee.feeCreditAmount : fee.amount;
-      return sum + (Number(feeCredit) || 0);
-    }, 0);
-    const { monthsCovered, validUntil } = calculateValidityFromAmount(startDate, totalPaid, monthlyFee);
+    // Parallel fetch of students and fees (2 queries total)
+    const [students, fees] = await Promise.all([
+      Student.find(studentFilter)
+        .select('studentId name feeAmount joiningDate admissionDate')
+        .lean(),
+      Fee.find(feeFilter)
+        .sort({ paymentDate: 1, createdAt: 1 })
+        .lean()
+    ]);
 
-    if (monthsCovered <= 0) {
-      return res.status(200).json({
-        hasPaymentHistory: totalPaid > 0,
-        hasAdvancePayment: false,
-        isAdvancePayment: false,
-        monthsCovered: 0,
-        validUntilDate: null,
-        advanceStartDate: null,
-        advanceValidUntilDate: null,
-        daysRemaining: 0,
-        paymentStatus: 'no-payment',
-        monthlyFee,
-        totalPaid,
-      });
+    // Group fees by studentDisplayId
+    const feesByStudent = new Map();
+    for (const fee of fees) {
+      const sId = fee.studentDisplayId;
+      if (!sId) continue;
+      if (!feesByStudent.has(sId)) {
+        feesByStudent.set(sId, []);
+      }
+      feesByStudent.get(sId).push(fee);
     }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const daysRemaining = Math.floor((validUntil.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-    let paymentStatus = 'valid';
-    if (daysRemaining < 0) {
-      paymentStatus = 'expired';
-    } else if (daysRemaining <= EXPIRING_SOON_DAYS) {
-      paymentStatus = 'expiring-soon';
+    const validity = {};
+    for (const student of students) {
+      if (!student.studentId) continue;
+      const studentFeeRecords = feesByStudent.get(student.studentId) || [];
+      validity[student.studentId] = computeStudentValidity(student, studentFeeRecords, today);
     }
 
-    const currentPeriodCount = getBillablePeriodCount(startDate, today);
-    const advanceMonths = Math.max(0, monthsCovered - currentPeriodCount);
-    const hasComputedAdvance = advanceMonths > 0;
-    const advanceStartDate = hasComputedAdvance ? addBillingMonths(startDate, currentPeriodCount) : null;
-    const latestMarkedAdvance = feeRecords
-      .filter((fee) => fee.isAdvancePayment)
-      .sort((a, b) => new Date(b.createdAt || b.paymentDate || 0).getTime() - new Date(a.createdAt || a.paymentDate || 0).getTime())[0];
-    const latestFeeRecord = feeRecords[feeRecords.length - 1];
+    // Also include any students with fees whose student doc might have different ID or wasn't fetched
+    for (const [sId, studentFeeRecords] of feesByStudent.entries()) {
+      if (!validity[sId]) {
+        validity[sId] = computeStudentValidity(null, studentFeeRecords, today);
+      }
+    }
 
     res.status(200).json({
-      hasPaymentHistory: true,
-      hasAdvancePayment: hasComputedAdvance,
-      isAdvancePayment: hasComputedAdvance,
-      monthsCovered,
-      advanceMonths,
-      validUntilDate: formatDateOnly(validUntil),
-      advanceStartDate: formatDateOnly(advanceStartDate),
-      advanceValidUntilDate: hasComputedAdvance ? formatDateOnly(validUntil) : null,
-      daysRemaining: Math.max(0, daysRemaining),
-      rawDaysRemaining: daysRemaining,
-      paymentStatus,
-      receiptNumber: latestMarkedAdvance?.receiptNumber || latestFeeRecord?.receiptNumber,
-      amount: latestFeeRecord?.amount || 0,
-      totalPaid,
-      monthlyFee,
-      paymentDate: formatDateOnly(latestFeeRecord?.paymentDate),
+      success: true,
+      count: Object.keys(validity).length,
+      validity
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching payment validity', error: error.message });
+    console.error('Error fetching bulk payment validity:', error);
+    res.status(500).json({ message: 'Error fetching bulk payment validity', error: error.message });
   }
 };

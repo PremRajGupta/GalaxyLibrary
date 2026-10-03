@@ -134,12 +134,12 @@ export const feeApi = {
   },
   createFee: async (data: any) => {
     const response = await api.post('/fees', data);
-    invalidateCacheTags(['fees', 'dashboard', 'reports', 'student:']);
+    invalidateCacheTags(['fees', 'dashboard', 'reports', 'student:', 'validity']);
     return response.data;
   },
   updateFee: async (id: string, data: any) => {
     const response = await api.put(`/fees/${id}`, data);
-    invalidateCacheTags(['fees', 'dashboard', 'reports', 'student:']);
+    invalidateCacheTags(['fees', 'dashboard', 'reports', 'student:', 'validity']);
     return response.data;
   },
   markAdvancePayment: async (id: string, monthlyFee: number, advanceStartDate: string, isAdvance: boolean, advanceAmount?: number) => {
@@ -149,7 +149,7 @@ export const feeApi = {
       isAdvance,
       advanceAmount
     });
-    invalidateCacheTags(['fees', 'dashboard', 'reports', 'student:']);
+    invalidateCacheTags(['fees', 'dashboard', 'reports', 'student:', 'validity']);
     return response.data;
   },
   getStudentPaymentValidity: async (studentDisplayId: string) => {
@@ -157,6 +157,14 @@ export const feeApi = {
       const response = await api.get(`/fees/student/${studentDisplayId}/validity`);
       return response.data;
     }, 15000);
+  },
+  getBulkPaymentValidity: async (studentIds?: string[]) => {
+    const key = `validity:bulk:${studentIds && studentIds.length > 0 ? studentIds.slice().sort().join(',') : 'all'}`;
+    return cachedFetch(key, async () => {
+      const params = studentIds && studentIds.length > 0 ? { studentIds: studentIds.join(',') } : undefined;
+      const response = await api.get('/fees/validity/bulk', { params });
+      return response.data?.validity || response.data;
+    }, 60000);
   }
 };
 
@@ -371,16 +379,6 @@ export const attendanceApi = {
   },
   deleteRecord: async (id: string) => {
     const response = await api.delete(`/attendance/${id}`);
-    return response.data;
-  },
-  sendBiometricPunch: async (data: {
-    fingerId?: number | string;
-    studentId?: string;
-    mac?: string;
-    timestamp?: string;
-    date?: string;
-  }) => {
-    const response = await api.post('/attendance/biometric/punch', data);
     return response.data;
   },
 };

@@ -7,7 +7,7 @@ import { ReceiptDetailModal } from '../sections/fees/ReceiptDetailModal';
 import S from '../lib/strings';
 import { getStoredPayments } from '../sections/fees/collectionService';
 import { Download, Search, Eye, X, Pencil, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, RefreshCw, Zap } from 'lucide-react';
-import { feeApi, studentApi } from '../lib/apiService';
+import { feeApi, studentApi, clearApiCache } from '../lib/apiService';
 import { getStudentDisplayId } from '../lib/studentId';
 import { formatJoiningDate } from '../lib/formatDate';
 import { getInitials, getAvatarColor } from '../sections/fees/feeModels';
@@ -44,7 +44,14 @@ export default function PdfGenerator() {
   const [searchTerm, setSearchTerm] = useState('');
   const [notification, setNotification] = useState<Notification | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [validityData, setValidityData] = useState<Record<string, PaymentValidity>>({});
+  const [validityData, setValidityData] = useState<Record<string, PaymentValidity>>(() => {
+    try {
+      const cached = localStorage.getItem('galaxy_validity_cache');
+      return cached ? JSON.parse(cached) : {};
+    } catch {
+      return {};
+    }
+  });
   const [studentFees, setStudentFees] = useState<Record<string, number>>({});
   const [studentJoiningDates, setStudentJoiningDates] = useState<Record<string, string>>({});
   const [studentPhotos, setStudentPhotos] = useState<Record<string, string>>({});
@@ -55,19 +62,50 @@ export default function PdfGenerator() {
 
   const fetchValidityData = async (paymentsList: PaymentReceipt[]) => {
     try {
-      const uniqueStudents = [...new Set(paymentsList.map(p => p.studentId))];
-      const validity: Record<string, PaymentValidity> = {};
+      const uniqueStudents = [...new Set(paymentsList.map(p => p.studentId).filter(Boolean))];
+      if (uniqueStudents.length === 0) return;
 
-      for (const studentId of uniqueStudents) {
-        try {
-          const response = await feeApi.getStudentPaymentValidity(studentId);
-          validity[studentId] = response;
-        } catch (err) {
-          console.error(`Error fetching validity for ${studentId}:`, err);
-          validity[studentId] = { hasAdvancePayment: false };
+      // 1. Fast single bulk API call
+      try {
+        const bulk = await feeApi.getBulkPaymentValidity(uniqueStudents);
+        if (bulk && typeof bulk === 'object' && Object.keys(bulk).length > 0) {
+          setValidityData(prev => {
+            const next = { ...prev, ...bulk };
+            try {
+              localStorage.setItem('galaxy_validity_cache', JSON.stringify(next));
+            } catch {}
+            return next;
+          });
+          return;
         }
+      } catch (bulkErr) {
+        console.warn('Bulk validity fetch failed, falling back to parallel batch fetch:', bulkErr);
       }
-      setValidityData(validity);
+
+      // 2. Parallel batching fallback (never a sequential waterfall)
+      const validity: Record<string, PaymentValidity> = {};
+      const batchSize = 10;
+      for (let i = 0; i < uniqueStudents.length; i += batchSize) {
+        const batch = uniqueStudents.slice(i, i + batchSize);
+        await Promise.all(
+          batch.map(async (studentId) => {
+            try {
+              const response = await feeApi.getStudentPaymentValidity(studentId);
+              validity[studentId] = response;
+            } catch (err) {
+              console.error(`Error fetching validity for ${studentId}:`, err);
+              validity[studentId] = { hasAdvancePayment: false };
+            }
+          })
+        );
+      }
+      setValidityData(prev => {
+        const next = { ...prev, ...validity };
+        try {
+          localStorage.setItem('galaxy_validity_cache', JSON.stringify(next));
+        } catch {}
+        return next;
+      });
     } catch (error) {
       console.error('Error fetching validity data:', error);
     }
@@ -76,9 +114,10 @@ export default function PdfGenerator() {
   useEffect(() => {
     const fetchPayments = async () => {
       try {
-        const [data, studentsList] = await Promise.all([
+        const [data, studentsList, bulkValidity] = await Promise.all([
           getStoredPayments(),
-          studentApi.getStudents().catch(() => [])
+          studentApi.getStudents().catch(() => []),
+          feeApi.getBulkPaymentValidity().catch(() => ({}))
         ]);
         setPayments(data);
         
@@ -101,7 +140,17 @@ export default function PdfGenerator() {
         setStudentJoiningDates(joinMap);
         setStudentPhotos(photoMap);
 
-        await fetchValidityData(data);
+        if (bulkValidity && typeof bulkValidity === 'object' && Object.keys(bulkValidity).length > 0) {
+          setValidityData(prev => {
+            const next = { ...prev, ...bulkValidity };
+            try {
+              localStorage.setItem('galaxy_validity_cache', JSON.stringify(next));
+            } catch {}
+            return next;
+          });
+        } else {
+          await fetchValidityData(data);
+        }
       } catch (error) {
         console.error('Error fetching fees:', error);
       }
@@ -112,9 +161,14 @@ export default function PdfGenerator() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      const [data, studentsList] = await Promise.all([
+      clearApiCache('fees');
+      clearApiCache('students');
+      clearApiCache('validity');
+
+      const [data, studentsList, bulkValidity] = await Promise.all([
         getStoredPayments(),
-        studentApi.getStudents().catch(() => [])
+        studentApi.getStudents().catch(() => []),
+        feeApi.getBulkPaymentValidity().catch(() => ({}))
       ]);
       setPayments(data);
       
@@ -137,7 +191,17 @@ export default function PdfGenerator() {
       setStudentJoiningDates(joinMap);
       setStudentPhotos(photoMap);
 
-      await fetchValidityData(data);
+      if (bulkValidity && typeof bulkValidity === 'object' && Object.keys(bulkValidity).length > 0) {
+        setValidityData(prev => {
+          const next = { ...prev, ...bulkValidity };
+          try {
+            localStorage.setItem('galaxy_validity_cache', JSON.stringify(next));
+          } catch {}
+          return next;
+        });
+      } else {
+        await fetchValidityData(data);
+      }
       showNotification('Data refreshed successfully!', 'success');
     } catch (error) {
       console.error('Error refreshing data:', error);
