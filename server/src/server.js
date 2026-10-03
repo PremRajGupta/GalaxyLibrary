@@ -226,7 +226,9 @@ app.get('/api/public/stats', getPublicStats);
 app.post('/api/v1/public/stats/visit', recordPublicVisit);
 app.post('/api/public/stats/visit', recordPublicVisit);
 
-// Biometric Scanner Webhook (WiFi / LAN / Hardware Push - No Auth required)
+// Biometric Scanner Webhook (WiFi / LAN / Hardware Push - Global No Auth & Open CORS)
+app.use('/api/v1/attendance/biometric/punch', cors({ origin: '*' }));
+app.use('/api/attendance/biometric/punch', cors({ origin: '*' }));
 app.all('/api/v1/attendance/biometric/punch', biometricPunchWebhook);
 app.all('/api/attendance/biometric/punch', biometricPunchWebhook);
 

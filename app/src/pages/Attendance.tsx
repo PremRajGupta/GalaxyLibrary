@@ -32,6 +32,7 @@ import {
   Copy,
   Check,
   Send,
+  ExternalLink,
 } from 'lucide-react';
 import {
   attendanceService,
@@ -120,6 +121,7 @@ export default function Attendance() {
   const [probeResult, setProbeResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [copiedWebhook, setCopiedWebhook] = useState(false);
   const [isPunchSyncing, setIsPunchSyncing] = useState(false);
+  const [selectedTestStudentId, setSelectedTestStudentId] = useState<string>('');
 
   const [isBiometricConnected, setIsBiometricConnected] = useState(() =>
     biometricBleService.getConnectedStatus()
@@ -264,6 +266,10 @@ export default function Attendance() {
   };
 
   const getWebhookUrl = () => {
+    const envApi = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '');
+    if (envApi) {
+      return `${envApi}/api/v1/attendance/biometric/punch`;
+    }
     const origin = window.location.origin;
     const baseUrl =
       origin.includes('localhost') || origin.includes('127.0.0.1')
@@ -1467,17 +1473,20 @@ export default function Attendance() {
                     </div>
 
                     {/* Webhook & Push Endpoint Configuration */}
-                    <div className="space-y-3 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                    <div className="space-y-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                             <Network size={14} className="text-blue-600" />
-                            <span>Biometric Punch Webhook / Push URL</span>
+                            <span>Global Biometric Punch Webhook / Push URL</span>
                           </h3>
                           <p className="text-xs text-slate-500">
-                            Direct HTTP endpoint that records In/Out punches pushed over WiFi
+                            Public HTTPS endpoint accessible over any WiFi or cellular internet globally
                           </p>
                         </div>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
+                          🟢 Open & No-Auth Ready
+                        </span>
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -1497,11 +1506,82 @@ export default function Attendance() {
                         </button>
                       </div>
 
+                      {/* Global Live Remote Punch Test (For Testing in Deployment Without Physical Device) */}
+                      <div className="p-3 bg-white rounded-xl border border-indigo-200/90 shadow-xs space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
+                            <span>🚀 Remote Live Cloud Punch Tester (Bina Device Test Karein)</span>
+                          </span>
+                          <span className="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded font-semibold">
+                            Global Webhook Simulation
+                          </span>
+                        </div>
+
+                        <p className="text-[11px] text-slate-500">
+                          Agar aapke paas abhi scanner device nahi hai, to yahan se kisi bhi student ko select karke live cloud webhook trigger karein. Student ki attendance turant In/Out mark ho jayegi:
+                        </p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                          <div className="sm:col-span-6">
+                            <select
+                              value={selectedTestStudentId}
+                              onChange={(e) => setSelectedTestStudentId(e.target.value)}
+                              className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                            >
+                              <option value="">-- Choose Student to Test --</option>
+                              {allStudents.map((s) => (
+                                <option
+                                  key={s._id || s.id || s.studentId}
+                                  value={getStudentDisplayId(s) || s.studentId}
+                                >
+                                  {s.name} ({getStudentDisplayId(s) || s.studentId})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="sm:col-span-3">
+                            <button
+                              type="button"
+                              disabled={isPunchSyncing || !selectedTestStudentId}
+                              onClick={() => handleWifiPunch(1, selectedTestStudentId)}
+                              className="w-full py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40"
+                            >
+                              <Send size={12} className={isPunchSyncing ? 'animate-spin' : ''} />
+                              <span>{isPunchSyncing ? 'Sending...' : '⚡ Send Punch'}</span>
+                            </button>
+                          </div>
+
+                          <div className="sm:col-span-3">
+                            <a
+                              href={
+                                selectedTestStudentId
+                                  ? `${getWebhookUrl()}?studentId=${selectedTestStudentId}`
+                                  : '#'
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(e) => {
+                                if (!selectedTestStudentId) {
+                                  e.preventDefault();
+                                  notify('⚠️ Pehle student choose karein');
+                                }
+                              }}
+                              className="w-full py-1.5 px-2 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1 text-center"
+                              title="Browser URL se direct punch test karein"
+                            >
+                              <ExternalLink size={12} />
+                              <span>Browser Link</span>
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Scanner IP Probe Tool */}
-                      <div className="pt-2 border-t border-slate-200/80 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                      <div className="pt-1 border-t border-slate-200/80 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
                         <div className="sm:col-span-8">
                           <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                            Scanner Local IP Address (Optional)
+                            Scanner Local IP Address (Optional - Local Network)
                           </label>
                           <input
                             type="text"
