@@ -93,11 +93,7 @@ class BiometricBleService {
     try {
       this.log('Scanning for Petpooja Biometric Puck...');
       const device = await nav.bluetooth.requestDevice({
-        filters: [
-          { namePrefix: 'Petpooja' },
-          { namePrefix: 'Payroll' },
-          { namePrefix: 'Pet' },
-        ],
+        acceptAllDevices: true,
         optionalServices: this.candidateServices,
       });
 
