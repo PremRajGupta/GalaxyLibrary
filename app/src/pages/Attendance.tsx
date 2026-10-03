@@ -47,31 +47,31 @@ import { getInitials, getAvatarColor } from '../sections/students/students';
 const STATUS_CONFIG = {
   present: {
     label: 'Currently Inside',
-    bg: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+    bg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     dot: 'bg-emerald-500 animate-pulse',
     icon: LogIn,
   },
   completed: {
     label: 'Completed',
-    bg: 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+    bg: 'bg-blue-50 text-blue-700 border-blue-200',
     dot: 'bg-blue-500',
     icon: CheckCircle2,
   },
   late: {
     label: 'Late Arrival',
-    bg: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    bg: 'bg-amber-50 text-amber-700 border-amber-200',
     dot: 'bg-amber-500',
     icon: Clock,
   },
   half_day: {
     label: 'Half Day',
-    bg: 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+    bg: 'bg-purple-50 text-purple-700 border-purple-200',
     dot: 'bg-purple-500',
     icon: Clock,
   },
   absent: {
     label: 'Absent',
-    bg: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+    bg: 'bg-rose-50 text-rose-700 border-rose-200',
     dot: 'bg-rose-400',
     icon: XCircle,
   },
@@ -127,6 +127,11 @@ export default function Attendance() {
     isMapped: boolean;
     timestamp: string;
   } | null>(null);
+
+  // Ensure light mode on mount
+  useEffect(() => {
+    document.documentElement.classList.remove('dark');
+  }, []);
 
   // Live Clock
   const [currentTime, setCurrentTime] = useState(getCurrentTimeString());
@@ -509,17 +514,17 @@ export default function Attendance() {
       </AnimatePresence>
 
       {/* Main Page Header with Live Clock & Quick Actions */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+      <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
         <div className="space-y-1">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
               <UserCheck size={22} />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
                 Student Attendance Register
               </h1>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+              <p className="text-xs sm:text-sm text-slate-500 font-medium">
                 Real-time check-in, check-out tracking, shift logs & daily study hours
               </p>
             </div>
@@ -528,7 +533,7 @@ export default function Attendance() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Live Clock Badge */}
-          <div className="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
+          <div className="px-3.5 py-2 bg-slate-100 rounded-2xl flex items-center gap-2 text-xs font-bold text-slate-700 border border-slate-200/60">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <Clock size={14} className="text-blue-600" />
             <span>Live: {currentTime}</span>
@@ -540,8 +545,8 @@ export default function Attendance() {
             onClick={() => setIsBiometricModalOpen(true)}
             className={`px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs active:scale-95 border ${
               isBiometricConnected
-                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100'
-                : 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'
+                : 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100'
             }`}
             title="Configure Petpooja Biometric Scanner"
           >
@@ -556,7 +561,7 @@ export default function Attendance() {
               </>
             ) : (
               <>
-                <Radio size={15} className="text-indigo-600 dark:text-indigo-400 animate-pulse" />
+                <Radio size={15} className="text-indigo-600 animate-pulse" />
                 <span>Connect Petpooja Scanner</span>
               </>
             )}
@@ -574,7 +579,7 @@ export default function Attendance() {
           <button
             type="button"
             onClick={exportToCsv}
-            className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
+            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
             title="Export CSV"
           >
             <Download size={15} />
@@ -584,7 +589,7 @@ export default function Attendance() {
           <button
             type="button"
             onClick={() => loadAttendance()}
-            className="p-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs transition-all cursor-pointer shadow-xs active:scale-95"
+            className="p-2.5 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 rounded-2xl text-xs transition-all cursor-pointer shadow-xs active:scale-95"
             title="Refresh"
           >
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
@@ -593,11 +598,11 @@ export default function Attendance() {
       </div>
 
       {/* ==================== DAYS-WISE TOP FILTER SECTION ==================== */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-4">
+      <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-5 shadow-sm border border-slate-200/80 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-2">
             <Calendar size={18} className="text-blue-600" />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
               Days-Wise Date Filter
             </span>
           </div>
@@ -607,7 +612,7 @@ export default function Attendance() {
             <button
               type="button"
               onClick={() => changeDateByDays(-1)}
-              className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+              className="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 transition-colors cursor-pointer"
               title="Previous Day"
             >
               <ChevronLeft size={16} />
@@ -619,7 +624,7 @@ export default function Attendance() {
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 isToday
                   ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
               Today
@@ -635,7 +640,7 @@ export default function Attendance() {
                 const da = String(y.getDate()).padStart(2, '0');
                 setSelectedDate(`${yr}-${mo}-${da}`);
               }}
-              className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
             >
               Yesterday
             </button>
@@ -646,7 +651,7 @@ export default function Attendance() {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                className="px-3 py-1.5 bg-slate-100 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               />
             </div>
 
@@ -656,8 +661,8 @@ export default function Attendance() {
               disabled={isToday}
               className={`p-2 rounded-xl transition-colors cursor-pointer ${
                 isToday
-                  ? 'opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400'
-                  : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
+                  ? 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-400'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
               }`}
               title="Next Day"
             >
@@ -679,7 +684,7 @@ export default function Attendance() {
               placeholder="Search student, ID, or seat..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             />
           </div>
 
@@ -688,7 +693,7 @@ export default function Attendance() {
             <select
               value={shiftFilter}
               onChange={(e) => setShiftFilter(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
               <option value="all">All Study Shifts</option>
               {TIME_SHIFT_OPTIONS.map((opt) => (
@@ -704,7 +709,7 @@ export default function Attendance() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
               <option value="all">All Attendance Status</option>
               <option value="inside">🟢 Currently Inside (Studying)</option>
@@ -719,7 +724,7 @@ export default function Attendance() {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
               <option value="all">All Facilities</option>
               <option value="library">Library Students</option>
@@ -732,76 +737,76 @@ export default function Attendance() {
       {/* ==================== SUMMARY METRIC STATS CARDS ==================== */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {/* Total Enrolled */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+        <div className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-slate-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Enrolled</span>
             <Users size={16} className="text-blue-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100">
+          <div className="text-xl sm:text-2xl font-bold text-slate-800">
             {summary.totalEnrolled}
           </div>
           <p className="text-[10px] text-slate-400">Total active students</p>
         </div>
 
         {/* Present Today */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-emerald-200/80 dark:border-emerald-900/40 shadow-xs space-y-1 bg-gradient-to-b from-emerald-50/20 to-transparent">
-          <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
+        <div className="bg-white rounded-3xl p-4 border border-emerald-200/80 shadow-xs space-y-1 bg-gradient-to-b from-emerald-50/20 to-transparent">
+          <div className="flex items-center justify-between text-emerald-600">
             <span className="text-[11px] font-bold uppercase tracking-wider">Present</span>
             <CheckCircle2 size={16} />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+          <div className="text-xl sm:text-2xl font-bold text-emerald-600">
             {summary.presentCount}
           </div>
           <p className="text-[10px] text-emerald-600/70">Checked in on {selectedDate}</p>
         </div>
 
         {/* Currently Inside */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-emerald-300 dark:border-emerald-700 shadow-sm space-y-1 bg-gradient-to-b from-emerald-50/50 to-transparent relative overflow-hidden">
+        <div className="bg-white rounded-3xl p-4 border border-emerald-300 shadow-sm space-y-1 bg-gradient-to-b from-emerald-50/50 to-transparent relative overflow-hidden">
           <span className="absolute top-2 right-2 flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
           </span>
-          <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-300">
+          <div className="flex items-center justify-between text-emerald-700">
             <span className="text-[11px] font-bold uppercase tracking-wider">Inside</span>
             <LogIn size={16} className="mr-3" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+          <div className="text-xl sm:text-2xl font-bold text-emerald-700">
             {summary.currentlyInsideCount}
           </div>
           <p className="text-[10px] text-emerald-600 font-semibold">Active in Hall Now</p>
         </div>
 
         {/* Completed */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1">
+        <div className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs space-y-1">
           <div className="flex items-center justify-between text-blue-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Completed</span>
             <LogOut size={16} />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
+          <div className="text-xl sm:text-2xl font-bold text-blue-600">
             {summary.completedCount}
           </div>
           <p className="text-[10px] text-slate-400">Checked out</p>
         </div>
 
         {/* Absent */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-rose-200/80 dark:border-rose-900/40 shadow-xs space-y-1">
+        <div className="bg-white rounded-3xl p-4 border border-rose-200/80 shadow-xs space-y-1">
           <div className="flex items-center justify-between text-rose-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Absent</span>
             <XCircle size={16} />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-rose-600 dark:text-rose-400">
+          <div className="text-xl sm:text-2xl font-bold text-rose-600">
             {summary.absentCount}
           </div>
           <p className="text-[10px] text-slate-400">Not attended</p>
         </div>
 
         {/* Avg Time Spent */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1">
+        <div className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs space-y-1">
           <div className="flex items-center justify-between text-purple-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Avg Study</span>
             <Clock size={16} />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">
+          <div className="text-xl sm:text-2xl font-bold text-purple-600">
             {summary.avgHoursFormatted || '0m'}
           </div>
           <p className="text-[10px] text-slate-400">Per present student</p>
@@ -809,13 +814,13 @@ export default function Attendance() {
       </div>
 
       {/* ==================== ATTENDANCE TABLE LIST ==================== */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
+            <h2 className="text-base font-bold text-slate-800">
               Attendance Records for {selectedDate}
             </h2>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
               {filteredRecords.length} Students
             </span>
           </div>
@@ -824,7 +829,7 @@ export default function Attendance() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-200/70 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400">
+              <tr className="bg-slate-50/80 border-b border-slate-200/70 text-[11px] uppercase tracking-wider font-bold text-slate-500">
                 <th className="py-3.5 px-4 sm:px-6">Student's Name</th>
                 <th className="py-3.5 px-4">Shift / Plan</th>
                 <th className="py-3.5 px-4">In_Time</th>
@@ -834,12 +839,12 @@ export default function Attendance() {
                 <th className="py-3.5 px-4 sm:px-6 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs sm:text-sm">
+            <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
               {filteredRecords.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400">
-                    <UserCheck size={36} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
-                    <p className="font-semibold text-slate-600 dark:text-slate-300">
+                    <UserCheck size={36} className="mx-auto mb-2 text-slate-300" />
+                    <p className="font-semibold text-slate-600">
                       No attendance records found for this date & filter.
                     </p>
                     <p className="text-xs text-slate-400 mt-1">
@@ -855,7 +860,7 @@ export default function Attendance() {
                   return (
                     <tr
                       key={item.studentId}
-                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                      className="hover:bg-slate-50/80 transition-colors"
                     >
                       {/* Student's Name */}
                       <td className="py-3.5 px-4 sm:px-6">
@@ -864,7 +869,7 @@ export default function Attendance() {
                             <img
                               src={item.photo}
                               alt={item.studentName}
-                              className="w-10 h-10 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 flex-shrink-0"
+                              className="w-10 h-10 rounded-2xl object-cover border border-slate-200 flex-shrink-0"
                             />
                           ) : (
                             <div
@@ -876,13 +881,13 @@ export default function Attendance() {
                             </div>
                           )}
                           <div className="min-w-0">
-                            <div className="font-bold text-slate-800 dark:text-slate-100 truncate">
+                            <div className="font-bold text-slate-800 truncate">
                               {item.studentName}
                             </div>
-                            <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                            <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
                               <span className="font-mono">{item.studentId}</span>
                               <span>•</span>
-                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md bg-slate-100 text-[10px] font-semibold text-slate-600">
                                 <Armchair size={10} className="text-blue-500" />
                                 {item.seatNumber && item.seatNumber !== '--'
                                   ? `Seat ${item.seatNumber}`
@@ -895,7 +900,7 @@ export default function Attendance() {
 
                       {/* Shift / Plan */}
                       <td className="py-3.5 px-4">
-                        <span className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold whitespace-nowrap">
+                        <span className="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold whitespace-nowrap">
                           {getTimeShiftLabel(item.timeShift)}
                         </span>
                       </td>
@@ -903,7 +908,7 @@ export default function Attendance() {
                       {/* In_Time */}
                       <td className="py-3.5 px-4 font-mono">
                         {item.inTime ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold text-xs border border-emerald-200/70 dark:border-emerald-800/70">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 font-semibold text-xs border border-emerald-200/70">
                             <LogIn size={12} />
                             {item.inTime}
                           </span>
@@ -915,7 +920,7 @@ export default function Attendance() {
                       {/* Out_Time */}
                       <td className="py-3.5 px-4 font-mono">
                         {item.outTime ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold text-xs border border-blue-200/70 dark:border-blue-800/70">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-blue-50 text-blue-700 font-semibold text-xs border border-blue-200/70">
                             <LogOut size={12} />
                             {item.outTime}
                           </span>
@@ -940,10 +945,10 @@ export default function Attendance() {
                       </td>
 
                       {/* Time_Spent */}
-                      <td className="py-3.5 px-4 font-medium text-slate-700 dark:text-slate-200">
+                      <td className="py-3.5 px-4 font-medium text-slate-700">
                         {item.timeSpentFormatted && item.timeSpentFormatted !== '0m' ? (
                           <div className="space-y-1">
-                            <span className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1">
+                            <span className="font-semibold text-slate-800 flex items-center gap-1">
                               <Clock size={13} className="text-blue-500" />
                               {item.timeSpentFormatted}
                             </span>
@@ -951,7 +956,7 @@ export default function Attendance() {
                               <button
                                 type="button"
                                 onClick={() => setSelectedSessionRecord(item)}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 cursor-pointer transition-colors shadow-2xs"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-600 text-[10px] font-bold border border-indigo-200 hover:bg-indigo-100 cursor-pointer transition-colors shadow-2xs"
                                 title="Click to view breaks & all in/out punches"
                               >
                                 <History size={10} />
@@ -1011,7 +1016,7 @@ export default function Attendance() {
                             <button
                               type="button"
                               onClick={() => setSelectedSessionRecord(item)}
-                              className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 dark:text-slate-300 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                              className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
                               title="View In/Out & Break Timeline"
                             >
                               <History size={13} />
@@ -1022,7 +1027,7 @@ export default function Attendance() {
                           <button
                             type="button"
                             onClick={() => handleOpenEdit(item)}
-                            className="p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs transition-colors cursor-pointer"
+                            className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs transition-colors cursor-pointer"
                             title="Edit Record"
                           >
                             <Edit2 size={13} />
@@ -1058,21 +1063,21 @@ export default function Attendance() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-lg overflow-hidden"
+              className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden"
             >
-              <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                     <UserCheck size={18} />
                   </div>
-                  <h3 className="font-bold text-base text-slate-800 dark:text-slate-100">
+                  <h3 className="font-bold text-base text-slate-800">
                     {editingRecord.studentId ? 'Update Attendance' : 'Mark New Attendance'}
                   </h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
                 >
                   <X size={18} />
                 </button>
@@ -1081,13 +1086,13 @@ export default function Attendance() {
               <form onSubmit={handleSaveModal} className="p-6 space-y-4">
                 {/* Student Selection */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
                     Select Student *
                   </label>
                   {editingRecord.studentName && editingRecord.studentId ? (
-                    <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
                       <div>
-                        <div className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                        <div className="font-bold text-sm text-slate-800">
                           {editingRecord.studentName}
                         </div>
                         <div className="text-xs text-slate-500 font-mono">
@@ -1118,7 +1123,7 @@ export default function Attendance() {
                           }));
                         }
                       }}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                     >
                       <option value="">-- Choose a student --</option>
                       {allStudents.map((s) => (
@@ -1135,7 +1140,7 @@ export default function Attendance() {
 
                 {/* Date */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
                     Attendance Date
                   </label>
                   <input
@@ -1145,14 +1150,14 @@ export default function Attendance() {
                     onChange={(e) =>
                       setEditingRecord((prev) => ({ ...prev, date: e.target.value }))
                     }
-                    className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                   />
                 </div>
 
                 {/* In Time & Out Time */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
                       In Time (Entry)
                     </label>
                     <input
@@ -1162,12 +1167,12 @@ export default function Attendance() {
                       onChange={(e) =>
                         setEditingRecord((prev) => ({ ...prev, inTime: e.target.value }))
                       }
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-sm text-slate-800 dark:text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
                       Out Time (Exit)
                     </label>
                     <input
@@ -1177,14 +1182,14 @@ export default function Attendance() {
                       onChange={(e) =>
                         setEditingRecord((prev) => ({ ...prev, outTime: e.target.value }))
                       }
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-sm text-slate-800 dark:text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
 
                 {/* Status */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
                     Attendance Status
                   </label>
                   <select
@@ -1195,7 +1200,7 @@ export default function Attendance() {
                         status: e.target.value as any,
                       }))
                     }
-                    className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                   >
                     <option value="present">🟢 Present (Currently Inside)</option>
                     <option value="completed">🔵 Completed Shift</option>
@@ -1207,7 +1212,7 @@ export default function Attendance() {
 
                 {/* Remarks */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
                     Remarks / Notes (Optional)
                   </label>
                   <input
@@ -1217,16 +1222,16 @@ export default function Attendance() {
                     onChange={(e) =>
                       setEditingRecord((prev) => ({ ...prev, remarks: e.target.value }))
                     }
-                    className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 {/* Form Actions */}
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold cursor-pointer"
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -1251,7 +1256,7 @@ export default function Attendance() {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-2xl overflow-hidden my-8"
+              className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden my-8"
             >
               {/* Modal Header */}
               <div className="p-5 sm:p-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between border-b border-indigo-900/40">
@@ -1282,33 +1287,33 @@ export default function Attendance() {
 
               <div className="p-5 sm:p-6 space-y-6 max-h-[75vh] overflow-y-auto">
                 {/* 1. Device Connection Card */}
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3.5">
                     <div
                       className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
                         isBiometricConnected
                           ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30'
-                          : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                          : 'bg-slate-200 text-slate-500'
                       }`}
                     >
                       <Cpu size={22} />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                        <h3 className="font-bold text-sm text-slate-800">
                           {biometricDeviceName}
                         </h3>
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                             isBiometricConnected
-                              ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                              : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                              ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                              : 'bg-slate-200 text-slate-600'
                           }`}
                         >
                           {isBiometricConnected ? '🟢 Connected' : '⚪ Disconnected'}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                      <p className="text-xs text-slate-500">
                         {isBiometricConnected
                           ? 'Live GATT notifications active • ready for thumb punches'
                           : 'Ensure device is powered (Stable Blue light) and within Bluetooth range'}
@@ -1321,7 +1326,7 @@ export default function Attendance() {
                       <button
                         type="button"
                         onClick={handleDisconnectBiometric}
-                        className="px-4 py-2 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                        className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
                       >
                         Disconnect
                       </button>
@@ -1343,14 +1348,14 @@ export default function Attendance() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
+                      <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                         Fingerprint Slot Assignment (Student Mapping)
                       </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                      <p className="text-xs text-slate-500">
                         Link hardware finger ID slot numbers (e.g. 1, 2, 3...) to registered students
                       </p>
                     </div>
-                    <span className="text-xs font-semibold px-2 py-0.5 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-lg">
+                    <span className="text-xs font-semibold px-2 py-0.5 bg-blue-50 text-blue-600 rounded-lg">
                       {fingerMappings.length} Mapped
                     </span>
                   </div>
@@ -1360,9 +1365,9 @@ export default function Attendance() {
                     className={`p-3.5 rounded-2xl border transition-all ${
                       lastDetectedFinger
                         ? lastDetectedFinger.isMapped
-                          ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700/60 text-emerald-800 dark:text-emerald-200'
-                          : 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-200'
-                        : 'bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-200/80 dark:border-indigo-800/50 text-indigo-800 dark:text-indigo-200'
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                          : 'bg-amber-50 border-amber-300 text-amber-800'
+                        : 'bg-indigo-50/70 border-indigo-200/80 text-indigo-800'
                     }`}
                   >
                     {lastDetectedFinger ? (
@@ -1379,12 +1384,12 @@ export default function Attendance() {
                             <div className="font-bold text-xs flex flex-wrap items-center gap-2">
                               <span>Slot #{lastDetectedFinger.fingerId} Detected!</span>
                               {lastDetectedFinger.isMapped ? (
-                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 text-[10px] font-bold">
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
                                   ✅ Student: {lastDetectedFinger.studentName}
                                   {lastDetectedFinger.seatNumber ? ` (Seat ${lastDetectedFinger.seatNumber})` : ''}
                                 </span>
                               ) : (
-                                <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 text-[10px] font-bold">
+                                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
                                   ✨ Nayi Ungli / Unmapped ➔ Slot #{lastDetectedFinger.fingerId} auto-fill ho gya!
                                 </span>
                               )}
@@ -1399,16 +1404,16 @@ export default function Attendance() {
                         <button
                           type="button"
                           onClick={() => setLastDetectedFinger(null)}
-                          className="text-xs opacity-60 hover:opacity-100 px-2 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer"
+                          className="text-xs opacity-60 hover:opacity-100 px-2 py-1 rounded-lg hover:bg-black/5 cursor-pointer"
                         >
                           ✕
                         </button>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2.5">
-                        <Fingerprint size={20} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                        <Fingerprint size={20} className="text-indigo-600 shrink-0" />
                         <div className="text-xs">
-                          <span className="font-bold text-indigo-900 dark:text-indigo-100">
+                          <span className="font-bold text-indigo-900">
                             🔍 Pata Kaise Karein (Live Auto-Detect):
                           </span>{' '}
                           Student se machine par ungli touch karne ko kahein. Machine turant uska Finger Slot # yahan detect karke neeche form me apne-aap bhar degi!
@@ -1417,9 +1422,9 @@ export default function Attendance() {
                     )}
                   </div>
 
-                  <div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                  <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
                     <div className="sm:col-span-3">
-                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
                         Finger Slot #
                       </label>
                       <input
@@ -1428,18 +1433,18 @@ export default function Attendance() {
                         max="500"
                         value={newFingerId}
                         onChange={(e) => setNewFingerId(parseInt(e.target.value, 10) || 1)}
-                        className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
                     <div className="sm:col-span-6">
-                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
                         Select Student
                       </label>
                       <select
                         value={newMappedStudentId}
                         onChange={(e) => setNewMappedStudentId(e.target.value)}
-                        className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                        className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                       >
                         <option value="">-- Choose Student --</option>
                         {allStudents.map((s) => (
@@ -1463,18 +1468,18 @@ export default function Attendance() {
 
                   {/* List of Mappings */}
                   {fingerMappings.length > 0 ? (
-                    <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 max-h-48 overflow-y-auto">
+                    <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100 max-h-48 overflow-y-auto">
                       {fingerMappings.map((m) => (
                         <div
                           key={m.fingerId}
-                          className="px-3.5 py-2.5 bg-white dark:bg-slate-900 flex items-center justify-between text-xs hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                          className="px-3.5 py-2.5 bg-white flex items-center justify-between text-xs hover:bg-slate-50 transition-colors"
                         >
                           <div className="flex items-center gap-2.5">
-                            <span className="px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-mono font-bold border border-indigo-200 dark:border-indigo-800 text-[11px]">
+                            <span className="px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-600 font-mono font-bold border border-indigo-200 text-[11px]">
                               Slot #{m.fingerId}
                             </span>
                             <div>
-                              <span className="font-semibold text-slate-800 dark:text-slate-100">
+                              <span className="font-semibold text-slate-800">
                                 {m.studentName}
                               </span>
                               <span className="text-[11px] text-slate-400 ml-2">
@@ -1487,7 +1492,7 @@ export default function Attendance() {
                             <button
                               type="button"
                               onClick={() => handleSimulatePunch(m.fingerId)}
-                              className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 text-slate-600 dark:text-slate-300 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer"
+                              className="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-600 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer"
                               title="Test Punch"
                             >
                               Test Punch
@@ -1505,7 +1510,7 @@ export default function Attendance() {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-4 text-xs text-slate-400 bg-slate-50 dark:bg-slate-800/20 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                    <div className="text-center py-4 text-xs text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                       No finger slots mapped yet. Select a student and assign slot above.
                     </div>
                   )}
@@ -1514,7 +1519,7 @@ export default function Attendance() {
                 {/* 3. Live Bluetooth Terminal Log */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                       <Terminal size={14} className="text-indigo-500" />
                       <span>Live Device Communication Logs</span>
                     </h3>
@@ -1540,14 +1545,14 @@ export default function Attendance() {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                <div className="text-xs text-slate-500 dark:text-slate-400">
+              <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                <div className="text-xs text-slate-500">
                   Runs natively in browser via Web Bluetooth API
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsBiometricModalOpen(false)}
-                  className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
                 >
                   Close
                 </button>
@@ -1565,7 +1570,7 @@ export default function Attendance() {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-lg overflow-hidden my-8"
+              className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden my-8"
             >
               {/* Modal Header */}
               <div className="p-5 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white flex items-center justify-between">
@@ -1598,21 +1603,21 @@ export default function Attendance() {
               {/* Summary Stats in Modal */}
               <div className="p-5 sm:p-6 space-y-5 max-h-[70vh] overflow-y-auto">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl">
-                    <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider block">
+                  <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl">
+                    <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider block">
                       Total Study Time
                     </span>
-                    <span className="text-lg font-bold text-emerald-700 dark:text-emerald-200 mt-0.5 block">
+                    <span className="text-lg font-bold text-emerald-700 mt-0.5 block">
                       {selectedSessionRecord.timeSpentFormatted || '0m'}
                     </span>
                     <span className="text-[10px] text-emerald-600/80">Net time inside library</span>
                   </div>
 
-                  <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl">
-                    <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider block">
+                  <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl">
+                    <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider block">
                       Total Punches / Sessions
                     </span>
-                    <span className="text-lg font-bold text-amber-700 dark:text-amber-200 mt-0.5 block">
+                    <span className="text-lg font-bold text-amber-700 mt-0.5 block">
                       {selectedSessionRecord.sessions?.length || 1} Sessions
                     </span>
                     <span className="text-[10px] text-amber-600/80">Breaks automatically deducted</span>
@@ -1621,7 +1626,7 @@ export default function Attendance() {
 
                 {/* Timeline */}
                 <div className="space-y-3">
-                  <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                  <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
                     <Clock size={14} className="text-blue-600" />
                     <span>Daily In/Out Punch Log & Break Breakdown</span>
                   </h3>
@@ -1638,9 +1643,9 @@ export default function Attendance() {
                         return (
                           <div key={idx} className="space-y-2">
                             {/* Session Card */}
-                            <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 rounded-2xl flex items-center justify-between text-xs">
+                            <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between text-xs">
                               <div className="flex items-center gap-3">
-                                <span className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-300 font-bold flex items-center justify-center text-[11px]">
+                                <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 font-bold flex items-center justify-center text-[11px]">
                                   {idx + 1}
                                 </span>
                                 <div>
@@ -1667,7 +1672,7 @@ export default function Attendance() {
                               </div>
 
                               <div className="text-right">
-                                <span className="font-bold text-slate-700 dark:text-slate-200">
+                                <span className="font-bold text-slate-700">
                                   {session.outTime
                                     ? formatMinutesToDisplay(session.durationMinutes)
                                     : 'Live (Running)'}
@@ -1678,7 +1683,7 @@ export default function Attendance() {
 
                             {/* Break Indicator between sessions */}
                             {breakMinutes > 0 && (
-                              <div className="flex items-center justify-center gap-2 py-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50/60 dark:bg-amber-950/20 rounded-xl border border-dashed border-amber-200 dark:border-amber-800/60">
+                              <div className="flex items-center justify-center gap-2 py-1 text-[11px] font-semibold text-amber-600 bg-amber-50/60 rounded-xl border border-dashed border-amber-200">
                                 <Coffee size={13} />
                                 <span>
                                   ☕ Break (Outside): {formatMinutesToDisplay(breakMinutes)} ({session.outTime} ➔ {nextSession?.inTime})
@@ -1689,7 +1694,7 @@ export default function Attendance() {
                         );
                       })
                     ) : (
-                      <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs flex items-center justify-between">
+                      <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <LogIn size={14} className="text-emerald-500" />
                           <span className="font-mono font-bold">{selectedSessionRecord.inTime}</span>
@@ -1698,7 +1703,7 @@ export default function Attendance() {
                             {selectedSessionRecord.outTime || 'Inside Now'}
                           </span>
                         </div>
-                        <span className="font-bold text-slate-700 dark:text-slate-200">
+                        <span className="font-bold text-slate-700">
                           {selectedSessionRecord.timeSpentFormatted}
                         </span>
                       </div>
@@ -1708,11 +1713,11 @@ export default function Attendance() {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end">
+              <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex items-center justify-end">
                 <button
                   type="button"
                   onClick={() => setSelectedSessionRecord(null)}
-                  className="px-5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  className="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
                 >
                   Close
                 </button>

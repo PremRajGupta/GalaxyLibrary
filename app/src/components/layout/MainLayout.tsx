@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { SidebarProvider, useSidebar } from '../../context/SidebarContext';
@@ -6,6 +7,11 @@ import MobileHeader from './MobileHeader';
 
 function MainLayoutContent() {
   const { isExpanded } = useSidebar();
+
+  useEffect(() => {
+    // Ensure admin dashboard always uses the clean light theme
+    document.documentElement.classList.remove('dark');
+  }, []);
 
   return (
     <div className="flex min-h-screen mesh-bg overflow-x-hidden">

@@ -27,20 +27,13 @@ export default function LandingNavbar({
 }: LandingNavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [isDark, setIsDark] = useState(true); // Default to dark as per premium theme
+  const [isDark, setIsDark] = useState(false); // Default to light
 
   useEffect(() => {
-    // Initialize theme
+    // Initialize theme: default is light unless explicitly saved as dark
     const storedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
 
-    if (
-      storedTheme === "dark" ||
-      (!storedTheme && prefersDark) ||
-      !storedTheme
-    ) {
+    if (storedTheme === "dark") {
       document.documentElement.classList.add("dark");
       setIsDark(true);
     } else {
