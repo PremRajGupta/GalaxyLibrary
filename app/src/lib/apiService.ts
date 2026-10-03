@@ -373,6 +373,16 @@ export const attendanceApi = {
     const response = await api.delete(`/attendance/${id}`);
     return response.data;
   },
+  sendBiometricPunch: async (data: {
+    fingerId?: number | string;
+    studentId?: string;
+    mac?: string;
+    timestamp?: string;
+    date?: string;
+  }) => {
+    const response = await api.post('/attendance/biometric/punch', data);
+    return response.data;
+  },
 };
 
 

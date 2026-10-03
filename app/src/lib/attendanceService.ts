@@ -458,4 +458,32 @@ export const attendanceService = {
 
     return true;
   },
+
+  syncBiometricPunch: async (payload: {
+    fingerId?: number | string;
+    studentId?: string;
+    mac?: string;
+    timestamp?: string;
+    date?: string;
+  }) => {
+    try {
+      return await attendanceApi.sendBiometricPunch(payload);
+    } catch (e: any) {
+      console.warn('Biometric punch API failed, recording fallback:', e);
+      if (payload.studentId) {
+        const today = payload.date || getTodayDateString();
+        const saved = localStorage.getItem(getLocalKey(today));
+        const list: AttendanceRecord[] = saved ? JSON.parse(saved) : [];
+        const idx = list.findIndex((r) => r.studentId === payload.studentId);
+        if (idx >= 0 && list[idx].inTime && !list[idx].outTime) {
+          await attendanceService.markCheckOut({ studentId: payload.studentId, date: today });
+          return { success: true, action: 'out', message: 'Check-out marked (Offline fallback)' };
+        } else {
+          await attendanceService.markCheckIn({ studentId: payload.studentId, date: today });
+          return { success: true, action: 'in', message: 'Check-in marked (Offline fallback)' };
+        }
+      }
+      throw e;
+    }
+  },
 };

@@ -15,6 +15,7 @@ import reportRoutes from './routes/reportRoutes.js';
 import cashfreeRoutes from './routes/cashfreeRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
+import { biometricPunchWebhook } from './controllers/attendanceController.js';
 import { getSiteContent, updateSiteContent } from './controllers/siteContentController.js';
 import { getPublicStats, recordPublicVisit } from './controllers/publicStatsController.js';
 
@@ -224,6 +225,10 @@ app.get('/api/v1/public/stats', getPublicStats);
 app.get('/api/public/stats', getPublicStats);
 app.post('/api/v1/public/stats/visit', recordPublicVisit);
 app.post('/api/public/stats/visit', recordPublicVisit);
+
+// Biometric Scanner Webhook (WiFi / LAN / Hardware Push - No Auth required)
+app.all('/api/v1/attendance/biometric/punch', biometricPunchWebhook);
+app.all('/api/attendance/biometric/punch', biometricPunchWebhook);
 
 // ===== AUTHENTICATION MIDDLEWARE (Protects all /api routes below this) =====
 app.use('/api/v1', verifyToken);

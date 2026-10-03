@@ -5,9 +5,13 @@ import {
   markCheckOut,
   saveManualAttendance,
   deleteAttendance,
+  biometricPunchWebhook,
 } from '../controllers/attendanceController.js';
 
 const router = express.Router();
+
+// Biometric punch webhook (WiFi / LAN / Simulator)
+router.all('/biometric/punch', biometricPunchWebhook);
 
 // GET /api/v1/attendance?date=YYYY-MM-DD&shift=...&status=...&search=...
 router.get('/', getAttendance);

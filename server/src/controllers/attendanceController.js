@@ -474,3 +474,131 @@ export const deleteAttendance = async (req, res) => {
     return res.status(500).json({ message: 'Failed to delete attendance', error: error.message });
   }
 };
+
+// Biometric Webhook / Push API (Handles punches pushed over WiFi / LAN by Petpooja / IoT devices)
+export const biometricPunchWebhook = async (req, res) => {
+  try {
+    const payload = { ...req.body, ...req.query };
+    const fingerId = payload.fingerId || payload.userId || payload.user_id || payload.id || payload.slot;
+    const studentId = payload.studentId || payload.student_id;
+    const deviceMac = payload.mac || payload.deviceMac || '94:54:C5:65:05:D1';
+    const timestampStr = payload.timestamp || payload.time || getCurrentTimeString();
+    const targetDate = payload.date || getTodayDateString();
+
+    let resolvedStudent = null;
+
+    if (studentId) {
+      resolvedStudent = await Student.findOne({
+        $or: [{ studentId }, { _id: studentId }],
+      });
+    }
+
+    if (!resolvedStudent && fingerId !== undefined) {
+      // Find student by finger mapping or studentId matching fingerId
+      resolvedStudent = await Student.findOne({
+        $or: [
+          { studentId: String(fingerId) },
+          { studentId: `STU${String(fingerId).padStart(4, '0')}` },
+        ],
+      });
+    }
+
+    if (!resolvedStudent) {
+      return res.status(200).json({
+        success: true,
+        message: 'Punch received, but no student mapped yet to slot',
+        fingerId,
+        deviceMac,
+        time: timestampStr,
+      });
+    }
+
+    // Toggle check in or check out
+    let record = await Attendance.findOne({
+      studentId: resolvedStudent.studentId,
+      date: targetDate,
+    });
+
+    let action = 'in';
+    const nowTimeStr = getCurrentTimeString();
+
+    if (!record) {
+      // Mark check in
+      record = new Attendance({
+        organizationId: resolvedStudent.organizationId || 'default-org',
+        branchId: resolvedStudent.branchId || 'default-branch',
+        studentId: resolvedStudent.studentId,
+        studentRef: resolvedStudent._id,
+        studentName: resolvedStudent.name,
+        studentDisplayId: resolvedStudent.studentId,
+        seatNumber: resolvedStudent.seatNumber || '--',
+        timeShift: resolvedStudent.timeShift || '8hours',
+        registrationType: resolvedStudent.registrationType || 'library',
+        date: targetDate,
+        inTime: nowTimeStr,
+        inTimestamp: new Date(),
+        outTime: '',
+        status: 'present',
+        method: 'biometric',
+        remarks: `Punched via WiFi scanner (${deviceMac})`,
+        sessions: [
+          {
+            inTime: nowTimeStr,
+            inTimestamp: new Date(),
+            outTime: '',
+            durationMinutes: 0,
+            method: 'biometric',
+          },
+        ],
+      });
+      action = 'in';
+    } else {
+      if (!record.sessions) record.sessions = [];
+      const lastSession = record.sessions[record.sessions.length - 1];
+
+      if (lastSession && !lastSession.outTime) {
+        // Currently inside -> Mark check out
+        lastSession.outTime = nowTimeStr;
+        lastSession.outTimestamp = new Date();
+        lastSession.durationMinutes = calculateMinutesBetweenTimes(lastSession.inTime, nowTimeStr, record.date);
+
+        const totalMinutes = record.sessions.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
+        record.timeSpentMinutes = totalMinutes;
+        record.timeSpentFormatted = formatMinutesToHoursMinutes(totalMinutes);
+        record.outTime = nowTimeStr;
+        record.outTimestamp = new Date();
+        record.status = 'completed';
+        action = 'out';
+      } else {
+        // Outside -> Mark check in (re-entry)
+        record.sessions.push({
+          inTime: nowTimeStr,
+          inTimestamp: new Date(),
+          outTime: '',
+          durationMinutes: 0,
+          method: 'biometric',
+        });
+        if (!record.inTime) record.inTime = nowTimeStr;
+        record.outTime = '';
+        record.status = 'present';
+        action = 'in';
+      }
+    }
+
+    await record.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Punch ${action.toUpperCase()} recorded for ${resolvedStudent.name}`,
+      action,
+      studentName: resolvedStudent.name,
+      studentId: resolvedStudent.studentId,
+      time: nowTimeStr,
+      date: targetDate,
+      fingerId,
+    });
+  } catch (error) {
+    console.error('Error in biometric punch webhook:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
