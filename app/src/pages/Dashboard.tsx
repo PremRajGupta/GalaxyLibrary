@@ -12,7 +12,7 @@ const quickActions = [
   { label: 'Admission', icon: '✍️', path: '/admission' },
   { label: 'Collect Fees', icon: '💰', path: '/fees' },
   { label: 'Assign Seat', icon: '🗺️', path: '/seat-map' },
-  { label: 'Attendance', icon: '📅', path: '/students' },
+  { label: 'Attendance', icon: '📅', path: '/attendance' },
 ];
 
 export default function Dashboard() {

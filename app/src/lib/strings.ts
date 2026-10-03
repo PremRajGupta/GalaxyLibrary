@@ -35,6 +35,7 @@ const S = {
     seatMap: 'Seat Map',
     seatMatrix: 'Seat Matrix',
     requests: 'Requests',
+    attendance: 'Attendance',
     students: 'Students',
     reports: 'Reports',
     website: 'Website',

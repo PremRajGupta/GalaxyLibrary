@@ -8,6 +8,7 @@ import NewAdmission from './pages/NewAdmission';
 import FeeCollection from './pages/FeeCollection';
 import SeatMap from './pages/SeatMap';
 import Requests from './pages/Requests';
+import Attendance from './pages/Attendance';
 import StudentRecords from './pages/StudentRecords';
 import EditStudent from './pages/EditStudent';
 import Reports from './pages/Reports';
@@ -127,6 +128,7 @@ function AppRoutes() {
         <Route path="/pdf-generator" element={<PdfGenerator />} />
         <Route path="/seat-map" element={<SeatMap />} />
         <Route path="/requests" element={<Requests />} />
+        <Route path="/attendance" element={<Attendance />} />
         <Route path="/students" element={<StudentRecords />} />
         <Route path="/students/edit/:id" element={<EditStudent />} />
         <Route path="/reports" element={<Reports />} />

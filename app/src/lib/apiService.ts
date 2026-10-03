@@ -327,3 +327,52 @@ export const adminApi = {
   }
 };
 
+export const attendanceApi = {
+  getAttendance: async (params?: {
+    date?: string;
+    shift?: string;
+    status?: string;
+    search?: string;
+    registrationType?: string;
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.date) query.append('date', params.date);
+    if (params?.shift) query.append('shift', params.shift);
+    if (params?.status) query.append('status', params.status);
+    if (params?.search) query.append('search', params.search);
+    if (params?.registrationType) query.append('registrationType', params.registrationType);
+
+    const response = await api.get(`/attendance?${query.toString()}`);
+    return response.data;
+  },
+  markCheckIn: async (data: {
+    studentId: string;
+    date?: string;
+    inTime?: string;
+    seatNumber?: string;
+    remarks?: string;
+  }) => {
+    const response = await api.post('/attendance/check-in', data);
+    return response.data;
+  },
+  markCheckOut: async (data: {
+    id?: string;
+    studentId?: string;
+    date?: string;
+    outTime?: string;
+    remarks?: string;
+  }) => {
+    const response = await api.post('/attendance/check-out', data);
+    return response.data;
+  },
+  saveManual: async (data: Record<string, any>) => {
+    const response = await api.post('/attendance/manual', data);
+    return response.data;
+  },
+  deleteRecord: async (id: string) => {
+    const response = await api.delete(`/attendance/${id}`);
+    return response.data;
+  },
+};
+
+
