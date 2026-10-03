@@ -114,6 +114,13 @@ export default function Attendance() {
   const [newFingerId, setNewFingerId] = useState<number>(1);
   const [newMappedStudentId, setNewMappedStudentId] = useState<string>('');
   const [isConnectingBle, setIsConnectingBle] = useState(false);
+  const [lastDetectedFinger, setLastDetectedFinger] = useState<{
+    fingerId: number;
+    studentName?: string;
+    seatNumber?: string;
+    isMapped: boolean;
+    timestamp: string;
+  } | null>(null);
 
   // Live Clock
   const [currentTime, setCurrentTime] = useState(getCurrentTimeString());
@@ -139,7 +146,27 @@ export default function Attendance() {
     });
 
     const unsubPunch = biometricBleService.onPunch(async (event) => {
-      notify(`👆 Fingerprint Punch Detected (Slot #${event.fingerId ?? '?'})`);
+      const fId = event.fingerId;
+      if (fId !== undefined) {
+        const mappings = biometricBleService.getFingerMappings();
+        const mapping = mappings.find((m) => m.fingerId === fId);
+        setLastDetectedFinger({
+          fingerId: fId,
+          studentName: mapping?.studentName,
+          seatNumber: mapping?.seatNumber,
+          isMapped: !!mapping,
+          timestamp: new Date().toLocaleTimeString('en-US', { hour12: true }),
+        });
+        if (!mapping) {
+          setNewFingerId(fId);
+          notify(`👆 Unmapped Finger detected: Slot #${fId}! Select student below to assign.`);
+        } else {
+          notify(`👆 Fingerprint Punch: ${mapping.studentName} (Slot #${fId})`);
+        }
+      } else {
+        notify(`👆 Fingerprint Punch Detected`);
+      }
+
       if (event.studentId) {
         const existing = records.find((r) => r.studentId === event.studentId);
         if (existing && existing.inTime && !existing.outTime) {
@@ -217,6 +244,13 @@ export default function Attendance() {
       notify(`⚠️ Finger #${fingerId} is not assigned to any student yet!`);
       return;
     }
+    setLastDetectedFinger({
+      fingerId,
+      studentName: mapping.studentName,
+      seatNumber: mapping.seatNumber,
+      isMapped: true,
+      timestamp: new Date().toLocaleTimeString('en-US', { hour12: true }),
+    });
     notify(`🧪 Simulating Punch: ${mapping.studentName} (Finger #${fingerId})`);
     const existing = records.find((r) => r.studentId === mapping.studentId);
     if (existing && existing.inTime && !existing.outTime) {
@@ -1275,6 +1309,68 @@ export default function Attendance() {
                     <span className="text-xs font-semibold px-2 py-0.5 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-lg">
                       {fingerMappings.length} Mapped
                     </span>
+                  </div>
+
+                  {/* Live Finger Detection Indicator Banner */}
+                  <div
+                    className={`p-3.5 rounded-2xl border transition-all ${
+                      lastDetectedFinger
+                        ? lastDetectedFinger.isMapped
+                          ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700/60 text-emerald-800 dark:text-emerald-200'
+                          : 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-200'
+                        : 'bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-200/80 dark:border-indigo-800/50 text-indigo-800 dark:text-indigo-200'
+                    }`}
+                  >
+                    {lastDetectedFinger ? (
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <span
+                            className={`w-3 h-3 rounded-full shrink-0 ${
+                              lastDetectedFinger.isMapped
+                                ? 'bg-emerald-500 animate-ping'
+                                : 'bg-amber-500 animate-pulse'
+                            }`}
+                          />
+                          <div>
+                            <div className="font-bold text-xs flex flex-wrap items-center gap-2">
+                              <span>Slot #{lastDetectedFinger.fingerId} Detected!</span>
+                              {lastDetectedFinger.isMapped ? (
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 text-[10px] font-bold">
+                                  ✅ Student: {lastDetectedFinger.studentName}
+                                  {lastDetectedFinger.seatNumber ? ` (Seat ${lastDetectedFinger.seatNumber})` : ''}
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 text-[10px] font-bold">
+                                  ✨ Nayi Ungli / Unmapped ➔ Slot #{lastDetectedFinger.fingerId} auto-fill ho gya!
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] opacity-80 mt-0.5">
+                              {lastDetectedFinger.isMapped
+                                ? `Punch registered at ${lastDetectedFinger.timestamp} (In/Out Auto-Toggled)`
+                                : 'Neeche student choose karein aur "Assign Slot" par click karein.'}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setLastDetectedFinger(null)}
+                          className="text-xs opacity-60 hover:opacity-100 px-2 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2.5">
+                        <Fingerprint size={20} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                        <div className="text-xs">
+                          <span className="font-bold text-indigo-900 dark:text-indigo-100">
+                            🔍 Pata Kaise Karein (Live Auto-Detect):
+                          </span>{' '}
+                          Student se machine par ungli touch karne ko kahein. Machine turant uska Finger Slot # yahan detect karke neeche form me apne-aap bhar degi!
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
