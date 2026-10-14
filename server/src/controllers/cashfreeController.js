@@ -35,6 +35,19 @@ export const createPaymentOrder = async (req, res) => {
         order_meta: {
           return_url: `${frontendBaseUrl}/apply?order_id={order_id}`,
           payment_methods: 'upi'
+        },
+        payment_methods_filters: {
+          methods: {
+            action: 'BLOCK',
+            values: [
+              'credit_card',
+              'debit_card',
+              'prepaid_card',
+              'corporate_credit_card',
+              'credit_card_emi',
+              'debit_card_emi'
+            ]
+          }
         }
       },
       {
