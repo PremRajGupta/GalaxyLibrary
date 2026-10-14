@@ -150,10 +150,19 @@ export default function PublicAdmission() {
       setError('Kripya 10 anko ka valid mobile number enter karein (Please enter valid 10-digit mobile number)');
       return;
     }
+    if (!name || !name.trim()) {
+      setError('Kripya student ka poora naam enter karein (Please enter student full name)');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !email.trim() || !emailRegex.test(email.trim())) {
+      setError('Kripya valid email address enter karein (e.g. student@gmail.com)');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
-      const data = await requestApi.createCashfreeOrder(phone, name, totalPayableAmount);
+      const data = await requestApi.createCashfreeOrder(phone, name.trim(), totalPayableAmount, email.trim());
       const { paymentSessionId, environment } = data;
       
       const cashfreeMode = (environment === 'production' ? 'production' : 'sandbox') as 'production' | 'sandbox';
@@ -331,12 +340,33 @@ export default function PublicAdmission() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Student Name (Optional, will auto-fill from Aadhaar)</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                    Student Full Name <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your full name"
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (error) setError('');
+                    }}
+                    placeholder="Enter student's full name"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 focus:border-indigo-500 focus:bg-white outline-none transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (error) setError('');
+                    }}
+                    placeholder="e.g. student@gmail.com"
                     className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 focus:border-indigo-500 focus:bg-white outline-none transition-all"
                   />
                 </div>

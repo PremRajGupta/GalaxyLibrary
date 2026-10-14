@@ -3,7 +3,7 @@ import axios from 'axios';
 // Payment Order Generation
 export const createPaymentOrder = async (req, res) => {
   try {
-    const { customerPhone, customerName, orderAmount } = req.body;
+    const { customerPhone, customerName, customerEmail, orderAmount } = req.body;
     
     // Generate a unique order ID
     const orderId = `ADM_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
@@ -29,7 +29,8 @@ export const createPaymentOrder = async (req, res) => {
         customer_details: {
           customer_id: `cust_${safePhone}_${Date.now()}`.substring(0, 45),
           customer_phone: safePhone,
-          customer_name: (customerName && customerName.trim()) ? customerName.trim().substring(0, 50) : 'New Student'
+          customer_name: (customerName && customerName.trim()) ? customerName.trim().substring(0, 50) : 'New Student',
+          customer_email: (customerEmail && customerEmail.trim()) ? customerEmail.trim() : undefined
         },
         order_meta: {
           return_url: `${frontendBaseUrl}/apply?order_id={order_id}`,
