@@ -41,9 +41,7 @@ export default function PublicAdmission() {
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [aadhaarNumber, setAadhaarNumber] = useState('');
-  const [otp, setOtp] = useState('');
-  const [refId, setRefId] = useState('');
-  const [aadhaarData, setAadhaarData] = useState<any>(null);
+  const [aadhaarData] = useState<any>(null);
   const [livePhoto, setLivePhoto] = useState<string | null>(null);
 
   const [tenthCert, setTenthCert] = useState<string | null>(null);
@@ -182,73 +180,7 @@ export default function PublicAdmission() {
     }
   };
 
-  // Step 2: Request Aadhaar OTP
-  const handleRequestOtp = async () => {
-    if (aadhaarNumber.length !== 12) {
-      setError('Please enter valid 12-digit Aadhaar number');
-      return;
-    }
-    setError('');
-    setLoading(true);
-    try {
-      const data = await requestApi.generateAadhaarOtp(aadhaarNumber);
-      if (data.ref_id) {
-        setRefId(data.ref_id);
-      } else {
-        throw new Error('Failed to send OTP');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Error generating OTP');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // Verify Aadhaar OTP
-  const handleVerifyOtp = async () => {
-    if (otp.length !== 6) {
-      setError('Please enter valid 6-digit OTP');
-      return;
-    }
-    setError('');
-    setLoading(true);
-    try {
-      const data = await requestApi.verifyAadhaarOtp(refId, otp);
-      if (data && data.name) {
-        setAadhaarData(data);
-        // Pre-fill name if empty
-        if (!name) setName(data.name);
-        
-        // Extract father's name from care_of (usually formatted as 'C/O Name' or 'D/O Name' or 'S/O Name')
-        if (data.care_of) {
-          const careOfMatch = data.care_of.match(/(?:C\/O|D\/O|S\/O|W\/O)\s*(.*)/i);
-          setFatherName(careOfMatch ? careOfMatch[1] : data.care_of);
-        }
-        
-        // Pre-fill address
-        if (data.address) setAddress(data.address);
-        
-        setStep(3);
-      } else {
-        // Mock success if Cashfree Test API doesn't return full mock data
-        setAadhaarData({
-          name: "Test User",
-          dob: "01-01-2000",
-          gender: "M",
-          address: "123, Sample Street, Test City, 110001",
-          care_of: "C/O Test Father"
-        });
-        if (!name) setName("Test User");
-        setFatherName("Test Father");
-        setAddress("123, Sample Street, Test City, 110001");
-        setStep(3);
-      }
-    } catch (err: any) {
-      setError(err.message || 'OTP Verification failed');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Step 4: Final Submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -511,74 +443,35 @@ export default function PublicAdmission() {
               </div>
 
               <div className="space-y-6 max-w-xl mx-auto">
-                {!refId ? (
-                  <>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Aadhaar Number</label>
-                      <input
-                        type="text"
-                        maxLength={12}
-                        value={aadhaarNumber}
-                        onChange={(e) => setAadhaarNumber(e.target.value.replace(/\D/g, ''))}
-                        placeholder="XXXX XXXX XXXX"
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 text-center text-lg tracking-widest font-medium focus:border-indigo-500 focus:bg-white outline-none transition-all"
-                      />
-                    </div>
-                    <button
-                      onClick={handleRequestOtp}
-                      disabled={loading || aadhaarNumber.length !== 12}
-                      className="w-full bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg shadow-slate-200 hover:bg-slate-900 transition-all disabled:opacity-50"
-                    >
-                      {loading ? 'Sending OTP...' : 'Send OTP'}
-                    </button>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5 text-center">Aadhaar Number <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    maxLength={12}
+                    value={aadhaarNumber}
+                    onChange={(e) => setAadhaarNumber(e.target.value.replace(/\D/g, ''))}
+                    placeholder="XXXX XXXX XXXX (12 Anko Ka Aadhaar)"
+                    className="w-full px-4 py-3.5 rounded-xl border-2 border-slate-200 bg-slate-50 text-center text-lg tracking-widest font-medium focus:border-indigo-500 focus:bg-white outline-none transition-all"
+                  />
+                  <p className="text-xs text-slate-500 text-center mt-2">Agli screen par aapko Live Camera Selfie aur Aadhaar Card ka photo upload karna hoga.</p>
+                </div>
 
-                    <div className="relative flex py-1 items-center">
-                      <div className="flex-grow border-t border-slate-200"></div>
-                      <span className="flex-shrink mx-4 text-slate-400 text-xs font-semibold uppercase">Ya Phir (Or)</span>
-                      <div className="flex-grow border-t border-slate-200"></div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (aadhaarNumber.length !== 12) {
-                          setError('Kripya pehle 12 anko ka valid Aadhaar number enter karein');
-                          return;
-                        }
-                        setError('');
-                        setStep(3);
-                      }}
-                      className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3.5 rounded-xl border border-slate-200 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <span>Aadhaar Photo Upload Karke Aage Badhein</span>
-                      <span>➔</span>
-                    </button>
-                  </>
-                ) : (
-                  <div className="animate-fade-in-up">
-                    <div className="bg-green-50 text-green-700 p-4 rounded-xl mb-6 text-center text-sm font-medium border border-green-200">
-                      OTP sent to Aadhaar linked mobile number ending with XXXX
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5 text-center">Enter 6-Digit OTP</label>
-                      <input
-                        type="text"
-                        maxLength={6}
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                        placeholder="------"
-                        className="w-full px-4 py-4 rounded-xl border-2 border-slate-200 bg-slate-50 text-center text-2xl tracking-[1em] font-bold focus:border-indigo-500 focus:bg-white outline-none transition-all"
-                      />
-                    </div>
-                    <button
-                      onClick={handleVerifyOtp}
-                      disabled={loading || otp.length !== 6}
-                      className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all mt-6 disabled:opacity-50"
-                    >
-                      {loading ? 'Verifying...' : 'Verify OTP'}
-                    </button>
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (aadhaarNumber.length !== 12) {
+                      setError('Kripya 12 anko ka valid Aadhaar number enter karein');
+                      return;
+                    }
+                    setError('');
+                    setStep(3);
+                  }}
+                  disabled={aadhaarNumber.length !== 12}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all text-base flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <span>Aadhaar Verify & Live Selfie Ke Liye Aage Badhein</span>
+                  <span>➔</span>
+                </button>
               </div>
             </div>
           )}

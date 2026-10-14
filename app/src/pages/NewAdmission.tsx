@@ -102,6 +102,18 @@ export default function NewAdmission() {
         setFormData(prev => ({ ...prev, gradCert: data.gradCert }));
       }
       
+      const front = data.aadharFront || data.aadhaarFront || data.aadharCardFront;
+      if (front) {
+        setAadharFrontPreview(front);
+        setFormData(prev => ({ ...prev, aadharFront: front }));
+      }
+      
+      const back = data.aadharBack || data.aadhaarBack || data.aadharCardBack;
+      if (back) {
+        setAadharBackPreview(back);
+        setFormData(prev => ({ ...prev, aadharBack: back }));
+      }
+      
       if (data.seatNumber) {
         setSeatSearch(
           data.seatNumber === 'other'
