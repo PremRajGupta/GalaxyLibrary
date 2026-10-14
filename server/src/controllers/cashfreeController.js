@@ -6,18 +6,34 @@ export const createPaymentOrder = async (req, res) => {
     const { customerPhone, customerName, orderAmount } = req.body;
     
     // Generate a unique order ID
-    const orderId = `ADM_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const orderId = `ADM_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const isProduction = process.env.CASHFREE_ENV === 'production' || 
+      (Boolean(process.env.CASHFREE_PAY_CLIENT_ID) && !process.env.CASHFREE_PAY_CLIENT_ID.startsWith('TEST'));
+
+    const baseUrl = isProduction 
+      ? 'https://api.cashfree.com/pg/orders' 
+      : 'https://sandbox.cashfree.com/pg/orders';
+
+    const cleanPhone = customerPhone ? String(customerPhone).replace(/\D/g, '') : '';
+    const safePhone = cleanPhone.length === 10 ? cleanPhone : '9999999999';
+    const safeAmount = orderAmount ? parseFloat(Number(orderAmount).toFixed(2)) : 9.00;
+    const frontendBaseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
     const response = await axios.post(
-      'https://sandbox.cashfree.com/pg/orders',
+      baseUrl,
       {
-        order_amount: orderAmount ? parseFloat(orderAmount) : 5.00,
+        order_amount: safeAmount,
         order_currency: 'INR',
         order_id: orderId,
         customer_details: {
-          customer_id: 'cust_new',
-          customer_phone: customerPhone || '9999999999',
-          customer_name: customerName || 'New Student'
+          customer_id: `cust_${safePhone}_${Date.now()}`.substring(0, 45),
+          customer_phone: safePhone,
+          customer_name: (customerName && customerName.trim()) ? customerName.trim().substring(0, 50) : 'New Student'
+        },
+        order_meta: {
+          return_url: `${frontendBaseUrl}/apply?order_id={order_id}`,
+          payment_methods: 'upi'
         }
       },
       {
@@ -33,11 +49,39 @@ export const createPaymentOrder = async (req, res) => {
 
     res.status(200).json({
       orderId: response.data.order_id,
-      paymentSessionId: response.data.payment_session_id
+      paymentSessionId: response.data.payment_session_id,
+      environment: isProduction ? 'production' : 'sandbox'
     });
   } catch (error) {
     console.error('Error creating Cashfree order:', error.response?.data || error.message);
     res.status(500).json({ message: 'Error creating payment order', error: error.response?.data || error.message });
+  }
+};
+
+// Check Order Status
+export const getOrderStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const isProduction = process.env.CASHFREE_ENV === 'production' || 
+      (Boolean(process.env.CASHFREE_PAY_CLIENT_ID) && !process.env.CASHFREE_PAY_CLIENT_ID.startsWith('TEST'));
+
+    const baseUrl = isProduction 
+      ? `https://api.cashfree.com/pg/orders/${orderId}` 
+      : `https://sandbox.cashfree.com/pg/orders/${orderId}`;
+
+    const response = await axios.get(baseUrl, {
+      headers: {
+        'x-client-id': process.env.CASHFREE_PAY_CLIENT_ID,
+        'x-client-secret': process.env.CASHFREE_PAY_SECRET_KEY,
+        'x-api-version': '2023-08-01',
+        'Accept': 'application/json'
+      }
+    });
+
+    res.status(200).json(response.data);
+  } catch (error) {
+    console.error('Error fetching Cashfree order status:', error.response?.data || error.message);
+    res.status(500).json({ message: 'Error fetching order status', error: error.response?.data || error.message });
   }
 };
 

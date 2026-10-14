@@ -3,7 +3,7 @@ import { load } from '@cashfreepayments/cashfree-js';
 import { requestApi } from '../lib/apiService';
 import LiveSelfieCapture from '../components/camera/LiveSelfieCapture';
 import ImageCaptureField from '../components/ImageCaptureField';
-import { CreditCard, Fingerprint, Camera, FileCheck, CheckCircle, AlertTriangle } from 'lucide-react';
+import { CreditCard, Fingerprint, Camera, FileCheck, CheckCircle } from 'lucide-react';
 import AppLogo from '../components/AppLogo';
 import { TIME_SHIFT_OPTIONS, getFeeForTimeShift, isPresetTimeShift, OTHER_TIME_SHIFT } from '../lib/feeRules';
 import { COURSE_OPTIONS } from '../lib/courseOptions';
@@ -28,6 +28,13 @@ export default function PublicAdmission() {
         setComputerCenterFee(content.admissionFees.computerCenter);
       }
     }).catch(err => console.error('Failed to load admission fees', err));
+
+    // Handle return from Cashfree payment redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderId = urlParams.get('order_id');
+    if (orderId) {
+      setStep(2);
+    }
   }, []);
 
   // Form State
@@ -42,10 +49,14 @@ export default function PublicAdmission() {
   const [tenthCert, setTenthCert] = useState<string | null>(null);
   const [twelfthCert, setTwelfthCert] = useState<string | null>(null);
   const [gradCert, setGradCert] = useState<string | null>(null);
+  const [aadharFront, setAadharFront] = useState<string | null>(null);
+  const [aadharBack, setAadharBack] = useState<string | null>(null);
 
-  // Registration Type
+  // Registration Type & Detailed Fee Breakdown
   const [registrationType, setRegistrationType] = useState<'library' | 'computer_center'>('library');
-  const registrationFee = registrationType === 'library' ? libraryFee : computerCenterFee;
+  const baseRegistrationFee = registrationType === 'library' ? libraryFee : computerCenterFee;
+  const convenienceFee = 1.50; // Online payment gateway processing charge
+  const totalPayableAmount = Number((baseRegistrationFee + convenienceFee).toFixed(2));
 
   // Admission Data
   const [course, setCourse] = useState('');
@@ -137,17 +148,19 @@ export default function PublicAdmission() {
 
   // Step 1: Initialize Payment
   const handlePayment = async () => {
-    if (!phone || phone.length < 10) {
-      setError('Please enter a valid phone number');
+    if (!phone || phone.trim().length !== 10) {
+      setError('Kripya 10 anko ka valid mobile number enter karein (Please enter valid 10-digit mobile number)');
       return;
     }
     setError('');
     setLoading(true);
     try {
-      const { paymentSessionId } = await requestApi.createCashfreeOrder(phone, name, registrationFee);
+      const data = await requestApi.createCashfreeOrder(phone, name, totalPayableAmount);
+      const { paymentSessionId, environment } = data;
       
+      const cashfreeMode = (environment === 'production' ? 'production' : 'sandbox') as 'production' | 'sandbox';
       const cashfree = await load({
-        mode: "sandbox" // "production" or "sandbox"
+        mode: cashfreeMode
       });
       
       const checkoutOptions = {
@@ -159,10 +172,11 @@ export default function PublicAdmission() {
       
       // Assume successful for demonstration if modal closes without error.
       // In production, backend webhook handles success. 
-      // For now, move to next step automatically.
+      // Move to next step automatically.
       setStep(2);
     } catch (err: any) {
-      setError(err.message || 'Payment initiation failed');
+      console.error('Payment initiation error:', err);
+      setError(err.message || 'Payment initiation failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -261,9 +275,16 @@ export default function PublicAdmission() {
         email,
         joiningDate,
         seatNumber,
+        aadharFront,
+        aadharBack,
         tenthCert,
         twelfthCert,
-        gradCert
+        gradCert,
+        feeBreakdown: {
+          baseRegistrationFee,
+          convenienceFee,
+          totalPaidAmount: totalPayableAmount
+        }
       };
 
       await requestApi.submitPublicAdmission(admissionData);
@@ -277,22 +298,14 @@ export default function PublicAdmission() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-outfit pb-12">
-      {/* Top Under Progressing Red Alert Bar */}
-      <div className="bg-[#ef4444] text-white py-2.5 px-4 shadow-md sticky top-0 z-[60]">
-        <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 flex items-center justify-center gap-2.5 font-bold text-xs sm:text-sm tracking-wide text-center">
-          <AlertTriangle size={18} className="shrink-0 animate-pulse text-yellow-200" />
-          <span>Under Progressing : Yeh online admission portal abhi 100% working me nahi hai (Under Development & Testing).</span>
-        </div>
-      </div>
-
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-[41px] z-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 h-20 flex items-center justify-between">
           <AppLogo size="lg" showName={true} />
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full uppercase tracking-wider border border-red-200">
-              <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
-              Under Progressing
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full uppercase tracking-wider border border-emerald-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Online Admission Open
             </span>
             <div className="text-sm font-semibold text-slate-500 hidden sm:block">
               Online Admission Portal
@@ -335,22 +348,6 @@ export default function PublicAdmission() {
 
         {/* Content Area */}
         <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-6 sm:p-8 md:p-10 border border-slate-100 relative overflow-hidden">
-          
-          {/* Under Progress Warning Banner inside Card */}
-          <div className="mb-6 p-4 sm:p-5 bg-red-600 text-white rounded-2xl shadow-sm flex items-start sm:items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-              <AlertTriangle size={22} className="text-yellow-200 animate-pulse" />
-            </div>
-            <div>
-              <p className="font-bold text-base sm:text-lg tracking-wide flex items-center gap-2">
-                Under Progressing
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/20 uppercase tracking-wider">Not 100% Active</span>
-              </p>
-              <p className="text-xs sm:text-sm text-red-100 mt-0.5 leading-relaxed">
-                Yeh online admission process abhi testing me hai aur 100% working nahi hai. Kripya admission ke liye directly library branch ya admin desk par visit karein.
-              </p>
-            </div>
-          </div>
 
           {error && (
             <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 flex items-start gap-3">
@@ -368,15 +365,37 @@ export default function PublicAdmission() {
 
               <div className="space-y-5 max-w-xl mx-auto">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Mobile Number (For Updates)</label>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="block text-sm font-semibold text-slate-700">
+                      Mobile Number (For Updates) <span className="text-red-500">*</span>
+                    </label>
+                    <span className={`text-xs font-medium ${phone.length === 10 ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+                      {phone.length}/10 digits
+                    </span>
+                  </div>
                   <input
                     type="tel"
                     maxLength={10}
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                    onChange={(e) => {
+                      setPhone(e.target.value.replace(/\D/g, ''));
+                      if (error) setError('');
+                    }}
                     placeholder="e.g. 9876543210"
-                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 focus:border-indigo-500 focus:bg-white outline-none transition-all"
+                    className={`w-full px-4 py-3 rounded-xl border-2 bg-slate-50 focus:bg-white outline-none transition-all ${
+                      phone.length === 10 ? 'border-emerald-500 focus:border-emerald-600' : 'border-slate-200 focus:border-indigo-500'
+                    }`}
                   />
+                  {phone.length > 0 && phone.length < 10 && (
+                    <p className="text-xs text-amber-600 mt-1 font-medium">
+                      Kripya 10 anko ka mobile number dalein ({10 - phone.length} ank baki)
+                    </p>
+                  )}
+                  {phone.length === 10 && (
+                    <p className="text-xs text-emerald-600 mt-1 font-medium">
+                      ✓ Valid mobile number
+                    </p>
+                  )}
                 </div>
                 
                 <div>
@@ -420,17 +439,60 @@ export default function PublicAdmission() {
                   </div>
                 </div>
 
-                <div className="bg-indigo-50 rounded-2xl p-6 mt-6 border border-indigo-100">
-                  <div className="flex justify-between items-center mb-4 pb-4 border-b border-indigo-200/50">
-                    <span className="text-indigo-900 font-medium">Registration Fee</span>
-                    <span className="text-indigo-900 font-bold text-xl">₹{registrationFee.toFixed(2)}</span>
+                <div className="bg-indigo-50/70 rounded-2xl p-6 mt-6 border border-indigo-100">
+                  <div className="flex items-center justify-between pb-3 border-b border-indigo-200/60 mb-3">
+                    <span className="text-xs font-bold text-indigo-900 uppercase tracking-wider">Fee Details & Breakdown</span>
+                    <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">100% Secure</span>
                   </div>
+
+                  <div className="space-y-2.5 text-sm pb-4 border-b border-indigo-200/60">
+                    {/* Line 1: Registration Fee */}
+                    <div className="flex justify-between items-center">
+                      <div className="flex flex-col">
+                        <span className="text-slate-700 font-medium">Admission Registration Fee</span>
+                        <span className="text-[11px] text-slate-500">({registrationType === 'library' ? 'Galaxy Library' : 'Galaxy Computer Center'})</span>
+                      </div>
+                      <span className="font-bold text-slate-800">₹{baseRegistrationFee.toFixed(2)}</span>
+                    </div>
+
+                    {/* Line 2: Convenience Fee */}
+                    <div className="flex justify-between items-center">
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-slate-700 font-medium">Convenience Fee</span>
+                          <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-semibold">PG Processing</span>
+                        </div>
+                        <span className="text-[11px] text-slate-500">Online payment processing charge</span>
+                      </div>
+                      <span className="font-bold text-slate-800">₹{convenienceFee.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  {/* Line 4: Final Total Amount */}
+                  <div className="flex justify-between items-center py-4">
+                    <div>
+                      <span className="text-base font-bold text-indigo-950 block">Final Payable Amount</span>
+                      <span className="text-xs text-indigo-600 font-medium">Total payable amount (All inclusive)</span>
+                    </div>
+                    <span className="text-2xl font-extrabold text-indigo-700">₹{totalPayableAmount.toFixed(2)}</span>
+                  </div>
+
                   <button
                     onClick={handlePayment}
-                    disabled={loading || phone.length < 10}
-                    className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+                    disabled={loading}
+                    className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    {loading ? 'Processing...' : `Pay ₹${registrationFee} Securely`}
+                    {loading ? (
+                      <>
+                        <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        <span>Processing Payment...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard size={18} />
+                        <span>Pay ₹{totalPayableAmount.toFixed(2)} Securely</span>
+                      </>
+                    )}
                   </button>
                   <p className="text-center text-indigo-400/80 text-xs mt-3 font-medium flex items-center justify-center gap-1">
                     Powered by Cashfree Payments
@@ -468,6 +530,28 @@ export default function PublicAdmission() {
                       className="w-full bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg shadow-slate-200 hover:bg-slate-900 transition-all disabled:opacity-50"
                     >
                       {loading ? 'Sending OTP...' : 'Send OTP'}
+                    </button>
+
+                    <div className="relative flex py-1 items-center">
+                      <div className="flex-grow border-t border-slate-200"></div>
+                      <span className="flex-shrink mx-4 text-slate-400 text-xs font-semibold uppercase">Ya Phir (Or)</span>
+                      <div className="flex-grow border-t border-slate-200"></div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (aadhaarNumber.length !== 12) {
+                          setError('Kripya pehle 12 anko ka valid Aadhaar number enter karein');
+                          return;
+                        }
+                        setError('');
+                        setStep(3);
+                      }}
+                      className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3.5 rounded-xl border border-slate-200 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <span>Aadhaar Photo Upload Karke Aage Badhein</span>
+                      <span>➔</span>
                     </button>
                   </>
                 ) : (
@@ -791,14 +875,38 @@ export default function PublicAdmission() {
                 
                 {/* Aadhaar Details */}
                 <div className="pt-6 border-t-2 border-slate-100">
-                  <h4 className="font-bold text-slate-800 mb-4 text-lg">Aadhaar Card (Verified)</h4>
+                  <h4 className="font-bold text-slate-800 mb-4 text-lg">Aadhaar Card Details & Verification</h4>
                   <div className="mb-6">
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Aadhaar Number</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Aadhaar Number <span className="text-red-500">*</span></label>
                     <input
                       type="text"
-                      readOnly
+                      readOnly={!!aadhaarData?.name}
                       value={aadhaarNumber}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 text-slate-500 font-medium outline-none cursor-not-allowed"
+                      onChange={(e) => setAadhaarNumber(e.target.value.replace(/\D/g, ''))}
+                      className={`w-full px-4 py-3 rounded-xl border-2 border-slate-200 font-medium outline-none ${aadhaarData?.name ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-white focus:border-indigo-500'}`}
+                    />
+                    {aadhaarData?.name && <p className="text-xs text-green-600 mt-1 font-medium">✓ Verified from UIDAI Aadhaar</p>}
+                  </div>
+
+                  {/* Aadhaar Front & Back Photos */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <ImageCaptureField
+                      label={<span className="block text-sm font-semibold text-slate-700">Aadhaar Card (Front Photo) <span className="text-red-500">*</span></span>}
+                      previewUrl={aadharFront}
+                      onImageChange={setAadharFront}
+                      facingMode="environment"
+                      previewClassName="w-full h-36"
+                      emptyHint="Aadhaar Front photo capture ya upload karein"
+                      helperText="Front photo with student name & Aadhaar number clear hona chahiye."
+                    />
+                    <ImageCaptureField
+                      label={<span className="block text-sm font-semibold text-slate-700">Aadhaar Card (Back Photo) <span className="text-red-500">*</span></span>}
+                      previewUrl={aadharBack}
+                      onImageChange={setAadharBack}
+                      facingMode="environment"
+                      previewClassName="w-full h-36"
+                      emptyHint="Aadhaar Back photo capture ya upload karein"
+                      helperText="Back side with full address clear hona chahiye."
                     />
                   </div>
                 </div>

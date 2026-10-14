@@ -213,6 +213,7 @@ app.post(['/api/student/login', '/api/v1/student/login', '/student/login'], asyn
 
 // ===== PUBLIC ROUTES (Before auth middleware) =====
 app.use('/api/v1/cashfree', cashfreeRoutes);
+app.use('/api/cashfree', cashfreeRoutes);
 // Public Website Content (No Auth — home page must load/save for all visitors)
 app.get('/api/v1/site-content', getSiteContent);
 app.get('/api/site-content', getSiteContent);

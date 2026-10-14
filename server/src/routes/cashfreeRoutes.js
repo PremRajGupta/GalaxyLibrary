@@ -1,5 +1,5 @@
 import express from 'express';
-import { createPaymentOrder, generateAadhaarOtp, verifyAadhaarOtp } from '../controllers/cashfreeController.js';
+import { createPaymentOrder, getOrderStatus, generateAadhaarOtp, verifyAadhaarOtp } from '../controllers/cashfreeController.js';
 import { createPublicAdmissionRequest } from '../controllers/requestController.js';
 import { getAvailableSeats } from '../controllers/seatController.js';
 
@@ -7,6 +7,7 @@ const router = express.Router();
 
 // Cashfree Payment
 router.post('/create-order', createPaymentOrder);
+router.get('/order-status/:orderId', getOrderStatus);
 
 // Cashfree Secure ID (Aadhaar KYC)
 router.post('/kyc/aadhaar/otp', generateAadhaarOtp);
