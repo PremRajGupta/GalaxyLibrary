@@ -48,14 +48,19 @@ export default function PublicAdmission() {
             setVerifiedOrderId(orderId);
             setStep(2);
           } else {
-            setError('Payment complete nahi hui hai ya cancel ho gayi. Kripya naye sire se pay karein.');
+            setStep(1);
+            setVerifiedOrderId(null);
+            setError('Payment complete nahi hui hai (Aapne payment cancel kar diya ya chhod diya). Kripya naye sire se pay karein.');
           }
         })
         .catch(() => {
+          setStep(1);
           setError('Payment status verify nahi ho saka. Kripya punah prayas karein.');
         })
         .finally(() => {
           setLoading(false);
+          // Remove ?order_id=... from browser address bar so refresh stays clean on Step 1
+          window.history.replaceState({}, '', window.location.pathname);
         });
     }
   }, []);
@@ -209,10 +214,14 @@ export default function PublicAdmission() {
           setError('');
           setStep(2);
         } else {
-          setError('Payment poori nahi hui hai (Aapne payment cancel kar diya ya back press kiya). Admission form aage bharne ke liye payment complete hona anivarya hai.');
+          setStep(1);
+          setVerifiedOrderId(null);
+          setError('Payment poori nahi hui hai (Aapne payment chhod di ya cancel kar di). Admission form aage bharne ke liye payment complete hona anivarya hai.');
         }
       } catch (vErr) {
         console.error('Payment verification error:', vErr);
+        setStep(1);
+        setVerifiedOrderId(null);
         setError('Payment verify nahi ho saki. Agar aapke bank se paise kate hain toh kripya thoda wait karein.');
       } finally {
         setVerifyingPayment(false);
