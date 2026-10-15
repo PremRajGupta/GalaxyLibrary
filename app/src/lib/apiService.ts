@@ -233,12 +233,24 @@ export const requestApi = {
     invalidateCacheTags(['requests', 'seats', 'students', 'dashboard']);
     return response.data;
   },
-  createCashfreeOrder: async (phone: string, name: string, amount: number, email?: string) => {
-    const response = await api.post('/v1/cashfree/create-order', { customerPhone: phone, customerName: name, customerEmail: email, orderAmount: amount });
+  createCashfreeOrder: async (phone: string, name: string, amount: number, email?: string, returnUrl?: string, orderPrefix?: string) => {
+    const response = await api.post('/v1/cashfree/create-order', { 
+      customerPhone: phone, 
+      customerName: name, 
+      customerEmail: email, 
+      orderAmount: amount,
+      returnUrl,
+      orderPrefix
+    });
     return response.data;
   },
   getCashfreeOrderStatus: async (orderId: string) => {
     const response = await api.get(`/v1/cashfree/order-status/${orderId}`);
+    return response.data;
+  },
+  recordCashfreeFee: async (data: { orderId: string; studentId: string; amount: number }) => {
+    const response = await api.post('/v1/cashfree/record-fee', data);
+    invalidateCacheTags(['fees', 'dashboard', 'reports']);
     return response.data;
   },
   generateAadhaarOtp: async (aadhaarNumber: string) => {

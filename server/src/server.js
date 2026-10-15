@@ -4,20 +4,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import compression from 'compression';
 import jwt from 'jsonwebtoken';
-import helmet from 'helmet';
-import bcrypt from 'bcryptjs';
-
-// Security & Rate Limiting Middleware
-import { apiLimiter, loginLimiter, publicVisitLimiter } from './middleware/rateLimiter.js';
-import { sanitizeInput } from './middleware/sanitize.js';
-
-// ===== PROCESS CRASH RESILIENCE (Prevents Server Downtime) =====
-process.on('uncaughtException', (err) => {
-  console.error('🛡️ [SECURITY] Intercepted uncaught exception to prevent server downtime:', err);
-});
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('🛡️ [SECURITY] Intercepted unhandled rejection to prevent server downtime at:', promise, 'reason:', reason);
-});
 
 // Routes
 import studentRoutes from './routes/studentRoutes.js';
@@ -41,7 +27,7 @@ import Seat from './models/Seat.js';
 import { computeStudentFeeDue } from './utils/feeDues.js';
 
 // Middleware
-import { verifyToken, requireAdmin } from './middleware/auth.js';
+import { verifyToken } from './middleware/auth.js';
 
 dotenv.config();
 
@@ -81,22 +67,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
 }));
 
-// ===== HTTP Security Headers & Hardening =====
-app.disable('x-powered-by');
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false
-}));
-
-// ===== Body Parser & Sanitization =====
+// ===== Body Parser & Middleware =====
 app.use(compression());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
-app.use(sanitizeInput);
-
-// ===== Global DDoS & Rate Limiting Defense =====
-app.use('/api', apiLimiter);
-app.use('/api/v1', apiLimiter);
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // ===== Request Logging =====
 app.use((req, res, next) => {
@@ -133,37 +107,33 @@ app.head(['/', '/health', '/api/health', '/ping', '/api/ping'], (req, res) => {
   res.status(200).end();
 });
 
-// ===== Authentication Route (Admin Login with Brute-force Limiter) =====
-app.post('/login', loginLimiter, (req, res) => {
+// ===== Authentication Route =====
+app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@library.com').trim().toLowerCase();
-  const adminPassword = (process.env.ADMIN_PASSWORD || 'Password123!').trim();
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@library.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Password123!';
 
   if (!email || !password) {
     return res.status(400).json({ message: 'Email and password are required' });
   }
 
-  const inputEmail = String(email).trim().toLowerCase();
-  const inputPassword = String(password).trim();
-
-  if (inputEmail !== adminEmail || inputPassword !== adminPassword) {
+  if (email !== adminEmail || password !== adminPassword) {
     return res.status(401).json({ message: 'Invalid email or password' });
   }
 
-  const jwtSecret = process.env.JWT_SECRET || 'galaxy_library_super_secret_jwt_key_2026_qwerty_12345_secure_prod';
   const token = jwt.sign(
     {
       uid: 'admin',
-      email: adminEmail,
+      email,
       role: 'admin'
     },
-    jwtSecret,
+    process.env.JWT_SECRET || 'your-secret-key',
     { expiresIn: '8h' }
   );
 
   const user = {
     uid: 'admin',
-    email: adminEmail,
+    email,
     displayName: 'Library Admin',
     role: 'admin'
   };
@@ -171,8 +141,8 @@ app.post('/login', loginLimiter, (req, res) => {
   return res.json({ token, user });
 });
 
-// ===== Student Authentication Route (With Brute-force Limiter & Bcrypt Hashing) =====
-app.post(['/api/student/login', '/api/v1/student/login', '/student/login'], loginLimiter, async (req, res) => {
+// ===== Student Authentication Route =====
+app.post(['/api/student/login', '/api/v1/student/login', '/student/login'], async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -180,14 +150,12 @@ app.post(['/api/student/login', '/api/v1/student/login', '/student/login'], logi
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    // Find student matching email or studentId safely
-    const emailOrId = String(email).trim();
-    const inputPassword = String(password).trim();
-
+    // Find all students matching email or studentId case-insensitively
+    const emailOrId = email.trim();
     const students = await Student.find({
       $or: [
-        { email: { $regex: new RegExp("^" + emailOrId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "$", "i") } },
-        { studentId: { $regex: new RegExp("^" + emailOrId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "$", "i") } }
+        { email: { $regex: new RegExp("^" + emailOrId + "$", "i") } },
+        { studentId: { $regex: new RegExp("^" + emailOrId + "$", "i") } }
       ]
     });
 
@@ -195,28 +163,17 @@ app.post(['/api/student/login', '/api/v1/student/login', '/student/login'], logi
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // Secure password matching with progressive bcrypt migration
+    // Find the student whose password matches
     let student = null;
     for (const s of students) {
+      // If student exists but does not have a password field, migrate on the fly
       if (!s.password) {
         const randomPin = Math.floor(1000 + Math.random() * 9000);
-        s.password = await bcrypt.hash(`Galaxy@${randomPin}`, 10);
+        s.password = `Galaxy@${randomPin}`;
         await s.save();
       }
 
-      let isMatch = false;
-      if (s.password.startsWith('$2a$') || s.password.startsWith('$2b$')) {
-        isMatch = await bcrypt.compare(inputPassword, s.password);
-      } else {
-        isMatch = (inputPassword === s.password);
-        if (isMatch) {
-          // Progressively upgrade plain password to strong bcrypt hash
-          s.password = await bcrypt.hash(inputPassword, 10);
-          await s.save();
-        }
-      }
-
-      if (isMatch) {
+      if (password === s.password) {
         student = s;
         break;
       }
@@ -226,7 +183,6 @@ app.post(['/api/student/login', '/api/v1/student/login', '/student/login'], logi
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    const jwtSecret = process.env.JWT_SECRET || 'galaxy_library_super_secret_jwt_key_2026_qwerty_12345_secure_prod';
     const token = jwt.sign(
       {
         uid: student._id.toString(),
@@ -236,7 +192,7 @@ app.post(['/api/student/login', '/api/v1/student/login', '/student/login'], logi
         organizationId: student.organizationId,
         branchId: student.branchId
       },
-      jwtSecret,
+      process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '24h' }
     );
 
@@ -258,16 +214,17 @@ app.post(['/api/student/login', '/api/v1/student/login', '/student/login'], logi
 // ===== PUBLIC ROUTES (Before auth middleware) =====
 app.use('/api/v1/cashfree', cashfreeRoutes);
 app.use('/api/cashfree', cashfreeRoutes);
-
-// Public Website Content (Read-Only: Anyone can view home page)
+// Public Website Content (No Auth — home page must load/save for all visitors)
 app.get('/api/v1/site-content', getSiteContent);
 app.get('/api/site-content', getSiteContent);
+app.put('/api/v1/site-content', updateSiteContent);
+app.put('/api/site-content', updateSiteContent);
 
-// Public landing stats (With rate limiter to prevent bot flood)
+// Public landing stats (visitors + admissions for index page)
 app.get('/api/v1/public/stats', getPublicStats);
 app.get('/api/public/stats', getPublicStats);
-app.post('/api/v1/public/stats/visit', publicVisitLimiter, recordPublicVisit);
-app.post('/api/public/stats/visit', publicVisitLimiter, recordPublicVisit);
+app.post('/api/v1/public/stats/visit', recordPublicVisit);
+app.post('/api/public/stats/visit', recordPublicVisit);
 
 // ===== AUTHENTICATION MIDDLEWARE (Protects all /api routes below this) =====
 app.use('/api/v1', verifyToken);
@@ -463,26 +420,21 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Protected Website Content (Requires Admin to modify site content)
-app.put('/api/v1/site-content', requireAdmin, updateSiteContent);
-app.put('/api/site-content', requireAdmin, updateSiteContent);
-
-// ===== Error Handling Middleware (Prevents Sensitive Stack / DB Trace Leaks) =====
+// ===== Error Handling Middleware =====
 app.use((err, req, res, next) => {
-  console.error('🛡️ [Server Error Intercepted]:', err);
+  console.error('Error:', err);
   
   if (err.message === 'CORS not allowed') {
-    return res.status(403).json({ success: false, error: 'CORS origin not allowed' });
+    return res.status(403).json({ error: 'CORS not allowed' });
   }
   
   if (err.name === 'ValidationError') {
-    return res.status(400).json({ success: false, error: err.message });
+    return res.status(400).json({ error: err.message });
   }
-
-  const isProduction = process.env.NODE_ENV === 'production';
-  res.status(err.status || 500).json({ 
-    success: false,
-    error: isProduction ? 'An unexpected server error occurred. Please try again.' : err.message
+  
+  res.status(500).json({ 
+    error: 'Internal Server Error',
+    message: err.message 
   });
 });
 

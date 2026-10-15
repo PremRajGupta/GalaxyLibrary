@@ -2,7 +2,6 @@ import Student from '../models/Student.js';
 import Seat from '../models/Seat.js';
 import PublicStats from '../models/PublicStats.js';
 import imageService from '../services/imageService.js';
-import bcrypt from 'bcryptjs';
 import { getFeeForTimeShift } from '../utils/feeRules.js';
 import { parseDateInputValue } from '../utils/feeDues.js';
 import { generateUniqueStudentId } from '../utils/studentId.js';
@@ -48,14 +47,11 @@ export const createStudent = async (req, res) => {
   try {
     // Generate a secure random password for the student (Galaxy@XXXX)
     const randomPin = Math.floor(1000 + Math.random() * 9000);
-    const plainPassword = req.body.password || `Galaxy@${randomPin}`;
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
-
     const studentData = {
       organizationId: process.env.DEFAULT_ORGANIZATION_ID || 'galaxy-library',
       branchId: process.env.DEFAULT_BRANCH_ID || 'main-branch',
-      ...req.body,
-      password: hashedPassword
+      password: `Galaxy@${randomPin}`,
+      ...req.body
     };
 
     if (studentData.photo && studentData.photo.startsWith('data:image')) {
@@ -164,9 +160,7 @@ export const createStudent = async (req, res) => {
       await seat.save();
     }
 
-    const studentResponse = newStudent.toObject();
-    studentResponse.plainPassword = plainPassword;
-    res.status(201).json(studentResponse);
+    res.status(201).json(newStudent);
   } catch (error) {
     res.status(400).json({ message: 'Error creating student', error: error.message });
   }

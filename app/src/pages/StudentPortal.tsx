@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { load } from '@cashfreepayments/cashfree-js';
 import { useAuth } from '../context/AuthContext';
-import { studentPortalApi } from '../lib/apiService';
+import { studentPortalApi, requestApi } from '../lib/apiService';
 import { 
   LogOut, User, Calendar, CreditCard, Clock, Phone, MapPin, 
   CheckCircle, AlertCircle, Receipt, ShieldCheck, Mail,
@@ -20,13 +21,6 @@ import CertificateTab from '../components/students/CertificateTab';
 const RUPEE = '\u20B9';
 const formatRupee = (amount: number) => `${RUPEE}${amount.toLocaleString('en-IN')}`;
 
-const normalizePaymentAmount = (value: string | number) => {
-  const amount = Number(value);
-  return Number.isFinite(amount) && amount > 0 ? Number(amount.toFixed(2)) : 0;
-};
-
-
-
 export default function StudentPortal() {
   const { logout } = useAuth();
   const [data, setData] = useState<any>(null);
@@ -34,33 +28,64 @@ export default function StudentPortal() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'payments' | 'courses' | 'feedback' | 'admission' | 'certificate'>('overview');
   const [customPayAmount, setCustomPayAmount] = useState<string>('');
-  const [utrNumber, setUtrNumber] = useState<string>('');
+  const [payingWithCashfree, setPayingWithCashfree] = useState<boolean>(false);
+  const [paymentError, setPaymentError] = useState('');
+  const [copiedUpi, setCopiedUpi] = useState(false);
+
+  const fetchStudentData = async () => {
+    try {
+      const res = await studentPortalApi.getMyDetails();
+      setData(res);
+    } catch (err: any) {
+      console.error('Error fetching student details:', err);
+      setError(err.message || 'Failed to load details. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStudentData();
+  }, []);
+
+  // Preload Cashfree SDK for instant payment popup
+  useEffect(() => {
+    load({ mode: 'production' }).catch(() => {});
+  }, []);
+
+  // Handle redirect callback if Cashfree checkout redirected back with order_id
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get('order_id');
+    if (orderId && data?.student) {
+      (async () => {
+        try {
+          const statusRes = await requestApi.getCashfreeOrderStatus(orderId);
+          if (statusRes.order_status === 'PAID') {
+            await requestApi.recordCashfreeFee({
+              orderId,
+              studentId: data.student.studentId,
+              amount: Number(statusRes.order_amount) || 0
+            });
+            await fetchStudentData();
+            alert(`Fee payment of ₹${statusRes.order_amount} verified successfully! Your receipt has been updated.`);
+          }
+        } catch (e) {
+          console.error('Error verifying redirect fee order:', e);
+        } finally {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      })();
+    }
+  }, [data?.student?.studentId]);
 
   const handleTabClick = (tab: 'overview' | 'profile' | 'payments' | 'courses' | 'feedback' | 'admission' | 'certificate') => {
-    if (student?.status === 'inactive' && tab !== 'overview' && tab !== 'feedback') {
+    if (data?.student?.status === 'inactive' && tab !== 'overview' && tab !== 'feedback') {
       alert("Take Admission then access, okay?");
       return;
     }
     setActiveTab(tab);
   };
-  const [paymentError, setPaymentError] = useState('');
-  const [copiedUpi, setCopiedUpi] = useState(false);
-
-  useEffect(() => {
-    const fetchStudentData = async () => {
-      try {
-        const res = await studentPortalApi.getMyDetails();
-        setData(res);
-      } catch (err: any) {
-        console.error('Error fetching student details:', err);
-        setError(err.message || 'Failed to load details. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStudentData();
-  }, []);
 
   const handleLogout = async () => {
     try {
@@ -127,7 +152,64 @@ export default function StudentPortal() {
   const pendingAmount = dues?.pendingAmount ?? 0;
   const totalPaidAmount = dues?.paidAmount ?? 0;
   const fallbackPayAmount = pendingAmount > 0 ? pendingAmount : (student.feeAmount || 0);
-  const selectedPayAmount = normalizePaymentAmount(customPayAmount !== '' ? customPayAmount : fallbackPayAmount);
+
+  const handleCashfreeFeePay = async () => {
+    try {
+      setPaymentError('');
+      const payAmount = Number(customPayAmount !== '' ? customPayAmount : fallbackPayAmount);
+      if (!payAmount || payAmount < 1) {
+        setPaymentError('Please enter a valid amount of at least ₹1');
+        return;
+      }
+
+      setPayingWithCashfree(true);
+
+      const frontendUrl = window.location.origin;
+      const orderData = await requestApi.createCashfreeOrder(
+        student.mobile,
+        student.name,
+        payAmount,
+        student.email,
+        `${frontendUrl}/student?order_id={order_id}`,
+        'FEE'
+      );
+
+      if (!orderData?.paymentSessionId) {
+        throw new Error('Failed to create payment session with Cashfree.');
+      }
+
+      const cashfree = await load({
+        mode: orderData.environment === 'production' ? 'production' : 'sandbox'
+      });
+
+      await cashfree.checkout({
+        paymentSessionId: orderData.paymentSessionId,
+        redirectTarget: '_modal'
+      });
+
+      // Verify payment status when modal closes
+      const statusRes = await requestApi.getCashfreeOrderStatus(orderData.orderId);
+      if (statusRes.order_status === 'PAID') {
+        await requestApi.recordCashfreeFee({
+          orderId: orderData.orderId,
+          studentId: student.studentId,
+          amount: payAmount
+        });
+        await fetchStudentData();
+        setCustomPayAmount('');
+        alert(`Payment of ₹${payAmount} was successful! Your fee receipt and dues have been updated.`);
+      } else if (statusRes.order_status === 'ACTIVE') {
+        setPaymentError('Payment was cancelled or not completed. Please try again.');
+      } else {
+        setPaymentError(`Payment status: ${statusRes.order_status}`);
+      }
+    } catch (err: any) {
+      console.error('Error during fee payment:', err);
+      setPaymentError(err.message || 'Payment cancelled or failed.');
+    } finally {
+      setPayingWithCashfree(false);
+    }
+  };
 
   const advanceBalance = (validity && validity.monthlyFee > 0 && validity.totalPaid && pendingAmount === 0) 
     ? validity.totalPaid % validity.monthlyFee 
@@ -463,131 +545,124 @@ export default function StudentPortal() {
               </motion.div>
             </div>
 
-            {/* Payment QR Code Card */}
+            {/* Payment QR Code & Online Pay Card */}
             <motion.div 
               whileHover={{ y: -2 }}
-              className="bg-gradient-to-r from-[#673ab7] to-[#512da8] rounded-2xl sm:rounded-3xl shadow-lg border border-[#512da8] p-1.5 sm:p-2 flex flex-col lg:flex-row gap-2 relative overflow-hidden items-stretch mt-6"
+              className="bg-gradient-to-r from-[#673ab7] to-[#512da8] rounded-2xl sm:rounded-3xl shadow-lg border border-[#512da8] p-2 sm:p-4 flex flex-col lg:flex-row gap-4 relative overflow-hidden items-stretch mt-6"
             >
               {/* QR Code Left Side */}
-              <div className="bg-white/95 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-6 flex flex-col items-center justify-center w-full lg:min-w-[280px] lg:w-auto">
-                 <div className="text-center mb-3 sm:mb-4 flex items-center justify-center gap-2">
-                  <div className="w-6 h-6 sm:w-7 sm:h-7 bg-[#673ab7] rounded-full flex items-center justify-center font-bold text-white text-xs sm:text-sm">पे</div>
-                  <span className="font-black text-[#512da8] text-lg sm:text-xl tracking-wide drop-shadow-sm">Google Pay</span>
+              <div className="bg-white/95 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-6 flex flex-col items-center justify-center w-full lg:min-w-[260px] lg:w-auto">
+                <div className="text-center mb-2 flex items-center justify-center gap-2">
+                  <div className="w-6 h-6 bg-[#673ab7] rounded-full flex items-center justify-center font-bold text-white text-xs">पे</div>
+                  <span className="font-black text-[#512da8] text-lg tracking-wide drop-shadow-sm">Scan & Pay</span>
                 </div>
-                <p className="text-[10px] sm:text-[11px] font-bold text-gray-500 mb-2 uppercase tracking-widest">Scan & Pay</p>
-                <div className="bg-white p-2 sm:p-3 border-2 border-gray-100 rounded-xl sm:rounded-2xl shadow-sm mb-2 sm:mb-3">
-                  <img src="/qr-code.png" alt="Payment QR" className="w-36 h-36 sm:w-48 sm:h-48 lg:w-52 lg:h-52 object-contain" />
+                <p className="text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-widest">Any UPI App</p>
+                <div className="bg-white p-2 border-2 border-gray-100 rounded-xl shadow-sm mb-2">
+                  <img src="/qr-code.png" alt="Payment QR" className="w-36 h-36 sm:w-44 sm:h-44 object-contain" />
                 </div>
-                <p className="text-[10px] sm:text-[11px] text-gray-500 font-bold mb-1 tracking-wide">UPI ID : 7488252019@okbizaxis</p>
+                <p className="text-[11px] text-gray-600 font-bold tracking-wide">7488252019@okbizaxis</p>
                 <div className="flex justify-center items-center gap-2 my-1">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI" className="h-3 sm:h-4" />
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI" className="h-3.5" />
                 </div>
               </div>
 
-              {/* Center and Right Side Container */}
-              <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 p-4 sm:p-6 text-white">
-                
-                {/* Center Column: Form & Payment */}
-                <div className="flex flex-col justify-center">
-                  <div className="mb-4 sm:mb-6">
-                    <h3 className="text-xl sm:text-2xl font-black mb-1 sm:mb-2">Galaxy Computer</h3>
-                    <p className="text-white/80 text-xs sm:text-sm leading-relaxed">Scan the QR code or use the deep link to pay instantly using any UPI application.</p>
-                  </div>
-
-                  <div className="mb-3 sm:mb-4 w-full">
-                    <label className="text-[10px] sm:text-[11px] text-white/70 font-bold uppercase tracking-widest mb-1 sm:mb-1.5 block">Enter Amount to Pay (₹)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      placeholder={`e.g. ${pendingAmount > 0 ? pendingAmount : (student.feeAmount || 0)}`}
-                      value={customPayAmount}
-                      onChange={(e) => {
-                        setCustomPayAmount(e.target.value);
-                        setPaymentError('');
-                      }}
-                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#512da8] transition-all font-black appearance-none text-sm sm:text-base mb-4 shadow-inner"
-                    />
-                    
-                    <label className="text-[10px] sm:text-[11px] text-white/70 font-bold uppercase tracking-widest mb-1 sm:mb-1.5 block">UTR / Transaction Reference No. (12-Digit)</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 123456789012"
-                      maxLength={20}
-                      value={utrNumber}
-                      onChange={(e) => setUtrNumber(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
-                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#512da8] transition-all font-black text-sm sm:text-base mb-2 shadow-inner"
-                    />
-                    
-                    {paymentError && (
-                      <p className="mt-2 text-xs font-bold text-amber-100">{paymentError}</p>
+              {/* Right Side: Cashfree Online UPI Payment Form */}
+              <div className="flex-1 flex flex-col justify-between p-3 sm:p-5 text-white">
+                <div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                    <div>
+                      <h3 className="text-lg sm:text-2xl font-black">Fee Payment via UPI</h3>
+                      <p className="text-white/80 text-xs sm:text-sm">Pay your fee securely online using PhonePe, Google Pay, Paytm, or any UPI app.</p>
+                    </div>
+                    {pendingAmount > 0 ? (
+                      <span className="self-start sm:self-auto px-3 py-1.5 rounded-full bg-amber-300 text-amber-950 font-black text-xs sm:text-sm shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+                        Total Dues: ₹{pendingAmount.toLocaleString('en-IN')}
+                      </span>
+                    ) : (
+                      <span className="self-start sm:self-auto px-3 py-1.5 rounded-full bg-emerald-300 text-emerald-950 font-black text-xs sm:text-sm shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+                        No Dues Pending
+                      </span>
                     )}
                   </div>
 
-                  <div className="w-full space-y-3">
-                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText('7488252019@okbizaxis');
-                          setCopiedUpi(true);
-                          setTimeout(() => setCopiedUpi(false), 2000);
+                  {/* Amount Input */}
+                  <div className="mb-4">
+                    <label className="text-[11px] text-white/80 font-bold uppercase tracking-wider mb-1.5 block">
+                      Amount to Pay (₹)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 font-black text-base sm:text-lg">
+                        ₹
+                      </span>
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder={`e.g. ${fallbackPayAmount}`}
+                        value={customPayAmount !== '' ? customPayAmount : (fallbackPayAmount > 0 ? String(fallbackPayAmount) : '')}
+                        onChange={(e) => {
+                          setCustomPayAmount(e.target.value);
+                          setPaymentError('');
                         }}
-                        className="flex-1 py-3 sm:py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all"
-                      >
-                        {copiedUpi ? (
-                          <><CheckCircle size={16} /> Copied!</>
-                        ) : (
-                          <>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                            Copy UPI ID
-                          </>
-                        )}
-                      </button>
-
-
+                        className="w-full pl-8 pr-4 py-3 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 font-black text-base sm:text-lg shadow-inner"
+                      />
                     </div>
-
-                    <p className="text-[10px] sm:text-[11px] text-white/70 font-semibold text-center mt-1">
-                      Agar app nahi khulta hai, QR scan karein ya UPI ID copy karke pay karein.
+                    <p className="text-[11px] text-white/70 mt-1.5 font-medium">
+                      {pendingAmount > 0 
+                        ? `Pre-filled with total dues (₹${pendingAmount}). You can change the amount to pay less.`
+                        : `Enter the amount you wish to pay.`}
                     </p>
+                    {paymentError && (
+                      <p className="mt-2 text-xs font-bold text-amber-200 bg-amber-950/50 px-3 py-2 rounded-lg border border-amber-400/30">
+                        {paymentError}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {/* Right Column: WhatsApp Verification */}
-                <div className="flex flex-col justify-center border-t lg:border-t-0 lg:border-l border-white/10 pt-5 lg:pt-0 lg:pl-6">
-                  <div className="bg-white/10 border border-white/20 p-3 sm:p-4 rounded-lg sm:rounded-xl text-[10px] sm:text-[11px] text-[#4ade80] leading-relaxed font-bold mb-4 text-center shadow-sm">
-                    "UTR / Transaction Reference No." Paste karne ke baad hi WhatsApp par message kar sakte hain. Agar aap QR/UPI ID se payment karte hain to UTR number paste karein aur WhatsApp par send karein.
-                  </div>
+                {/* Action Buttons: Cashfree Pay & Copy UPI ID */}
+                <div className="space-y-3 mt-4">
+                  <button
+                    type="button"
+                    onClick={handleCashfreeFeePay}
+                    disabled={payingWithCashfree}
+                    className="w-full py-3.5 sm:py-4 px-6 bg-emerald-500 hover:bg-emerald-600 active:scale-[0.99] text-white font-black rounded-xl text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-950/30 transition-all disabled:opacity-60 cursor-pointer"
+                  >
+                    {payingWithCashfree ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Opening Cashfree UPI Payment...
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck size={20} />
+                        Pay ₹{Number(customPayAmount !== '' ? customPayAmount : fallbackPayAmount) || 0} via Cashfree UPI
+                      </>
+                    )}
+                  </button>
 
                   <button
                     type="button"
                     onClick={() => {
-                      if (utrNumber.length < 12) {
-                        alert('Please enter the 12-digit UTR / Transaction Reference No. first.');
-                      } else {
-                        window.open(`https://wa.me/917488252019?text=${encodeURIComponent(`Hi, I have paid ₹${selectedPayAmount} for Student ID: ${student.studentId}.\nName: ${student.name}\nUTR No: ${utrNumber}\n\n*Please find the screenshot attached.*`)}`, '_blank');
-                      }
+                      navigator.clipboard.writeText('7488252019@okbizaxis');
+                      setCopiedUpi(true);
+                      setTimeout(() => setCopiedUpi(false), 2000);
                     }}
-                    className={`w-full py-3 sm:py-3.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all mb-4 border ${utrNumber.length >= 12 ? 'bg-[#25d366] text-white border-[#1da851] hover:shadow-[0_5px_20px_rgba(37,211,102,0.4)] hover:-translate-y-0.5' : 'bg-white/10 text-[#4ade80] border-white/20 hover:bg-white/20'}`}
+                    className="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
                   >
-                    <MessageCircle size={18} /> WhatsApp Screenshot & UTR
+                    {copiedUpi ? (
+                      <><CheckCircle size={16} className="text-emerald-300" /> Copied! (7488252019@okbizaxis)</>
+                    ) : (
+                      <>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        Copy UPI ID (7488252019@okbizaxis)
+                      </>
+                    )}
                   </button>
-
-                  <div className="bg-white/10 border border-white/20 rounded-lg sm:rounded-xl p-3 sm:p-4 text-xs sm:text-sm leading-relaxed text-white/90 shadow-sm mt-auto">
-                    <div className="flex gap-2 sm:gap-3 items-start">
-                      <AlertCircle size={18} className="sm:w-5 sm:h-5 text-[#facc15] flex-shrink-0 mt-0.5" />
-                      <div>
-                        <strong className="block mb-2 text-[#facc15] text-xs sm:text-sm font-black">Important Note:</strong> 
-                        <p className="mb-3 text-xs sm:text-[13px] leading-relaxed">
-                          Payment ke baad apna <strong>Screenshot</strong> aur <strong>Student ID 7488252019 par Whatsapps bhejein</strong> taaki payment successful ho sake.
-                        </p>
-                        <p className="text-[#fecdd3] font-bold text-[11px] sm:text-[12px]">
-                          Without sharing the Payment Screenshot, the payment is not valid.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  
+                  <p className="text-[10px] sm:text-[11px] text-white/60 text-center font-medium">
+                    ⚡ Instant automated verification & receipt. No manual screenshot needed when paid via Cashfree.
+                  </p>
                 </div>
               </div>
             </motion.div>
