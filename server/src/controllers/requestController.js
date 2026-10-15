@@ -1,5 +1,6 @@
 import Request from '../models/Request.js';
 import Student from '../models/Student.js';
+import axios from 'axios';
 
 export const createRequest = async (req, res) => {
   try {
@@ -67,6 +68,42 @@ export const deleteRequest = async (req, res) => {
 export const createPublicAdmissionRequest = async (req, res) => {
   try {
     const { details, admissionData } = req.body;
+    
+    // Server-side payment validation to prevent unpaid admissions
+    const orderId = admissionData?.orderId;
+    if (orderId && process.env.CASHFREE_PAY_CLIENT_ID) {
+      const isProduction = process.env.CASHFREE_ENV === 'production' || 
+        (!process.env.CASHFREE_PAY_CLIENT_ID.startsWith('TEST'));
+      const baseUrl = isProduction 
+        ? `https://api.cashfree.com/pg/orders/${orderId}` 
+        : `https://sandbox.cashfree.com/pg/orders/${orderId}`;
+
+      try {
+        const orderRes = await axios.get(baseUrl, {
+          headers: {
+            'x-client-id': process.env.CASHFREE_PAY_CLIENT_ID,
+            'x-client-secret': process.env.CASHFREE_PAY_SECRET_KEY,
+            'x-api-version': '2023-08-01',
+            'Accept': 'application/json'
+          }
+        });
+        if (orderRes.data.order_status !== 'PAID') {
+          return res.status(400).json({ 
+            message: 'Payment has not been completed. Admission request cannot be processed without successful payment.' 
+          });
+        }
+      } catch (err) {
+        console.error('Error verifying Cashfree order in admission submit:', err.response?.data || err.message);
+        return res.status(400).json({ 
+          message: 'Unable to verify payment status. Please ensure payment is completed.' 
+        });
+      }
+    } else if (!orderId) {
+      return res.status(400).json({ 
+        message: 'Payment Order ID is missing. Admission request cannot be submitted without payment.' 
+      });
+    }
+
     const newRequest = new Request({
       organizationId: 'default',
       branchId: 'default',

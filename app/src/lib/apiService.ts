@@ -237,6 +237,10 @@ export const requestApi = {
     const response = await api.post('/v1/cashfree/create-order', { customerPhone: phone, customerName: name, customerEmail: email, orderAmount: amount });
     return response.data;
   },
+  getCashfreeOrderStatus: async (orderId: string) => {
+    const response = await api.get(`/v1/cashfree/order-status/${orderId}`);
+    return response.data;
+  },
   generateAadhaarOtp: async (aadhaarNumber: string) => {
     const response = await api.post('/v1/cashfree/kyc/aadhaar/otp', { aadhaarNumber });
     return response.data;

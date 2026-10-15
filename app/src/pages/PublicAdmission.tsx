@@ -3,7 +3,7 @@ import { load } from '@cashfreepayments/cashfree-js';
 import { requestApi } from '../lib/apiService';
 import LiveSelfieCapture from '../components/camera/LiveSelfieCapture';
 import ImageCaptureField from '../components/ImageCaptureField';
-import { CreditCard, Fingerprint, Camera, FileCheck, CheckCircle } from 'lucide-react';
+import { CreditCard, ShieldCheck, Fingerprint, Camera, FileCheck, CheckCircle } from 'lucide-react';
 import AppLogo from '../components/AppLogo';
 import { TIME_SHIFT_OPTIONS, getFeeForTimeShift, isPresetTimeShift, OTHER_TIME_SHIFT } from '../lib/feeRules';
 import { COURSE_OPTIONS } from '../lib/courseOptions';
@@ -15,6 +15,9 @@ import { loadSiteContent } from '../lib/siteContentService';
 export default function PublicAdmission() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const [verifiedOrderId, setVerifiedOrderId] = useState<string | null>(null);
+  const [cashfreeInstance, setCashfreeInstance] = useState<any>(null);
   const [error, setError] = useState('');
   
   // Dynamic Fees from Backend
@@ -29,11 +32,31 @@ export default function PublicAdmission() {
       }
     }).catch(err => console.error('Failed to load admission fees', err));
 
-    // Handle return from Cashfree payment redirect
+    // Preload Cashfree SDK to eliminate button click delay
+    load({ mode: 'production' })
+      .then(cf => setCashfreeInstance(cf))
+      .catch(err => console.warn('Cashfree preload error:', err));
+
+    // Handle return from Cashfree payment redirect with server verification
     const urlParams = new URLSearchParams(window.location.search);
     const orderId = urlParams.get('order_id');
     if (orderId) {
-      setStep(2);
+      setLoading(true);
+      requestApi.getCashfreeOrderStatus(orderId)
+        .then(res => {
+          if (res.order_status === 'PAID') {
+            setVerifiedOrderId(orderId);
+            setStep(2);
+          } else {
+            setError('Payment complete nahi hui hai ya cancel ho gayi. Kripya naye sire se pay karein.');
+          }
+        })
+        .catch(() => {
+          setError('Payment status verify nahi ho saka. Kripya punah prayas karein.');
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
   }, []);
 
@@ -163,10 +186,10 @@ export default function PublicAdmission() {
     setLoading(true);
     try {
       const data = await requestApi.createCashfreeOrder(phone, name.trim(), totalPayableAmount, email.trim());
-      const { paymentSessionId, environment } = data;
+      const { orderId, paymentSessionId, environment } = data;
       
       const cashfreeMode = (environment === 'production' ? 'production' : 'sandbox') as 'production' | 'sandbox';
-      const cashfree = await load({
+      const cashfree = cashfreeInstance || await load({
         mode: cashfreeMode
       });
       
@@ -177,10 +200,23 @@ export default function PublicAdmission() {
 
       await cashfree.checkout(checkoutOptions);
       
-      // Assume successful for demonstration if modal closes without error.
-      // In production, backend webhook handles success. 
-      // Move to next step automatically.
-      setStep(2);
+      // Modal closed or user finished payment — Verify actual payment status with server!
+      setVerifyingPayment(true);
+      try {
+        const statusRes = await requestApi.getCashfreeOrderStatus(orderId);
+        if (statusRes.order_status === 'PAID') {
+          setVerifiedOrderId(orderId);
+          setError('');
+          setStep(2);
+        } else {
+          setError('Payment poori nahi hui hai (Aapne payment cancel kar diya ya back press kiya). Admission form aage bharne ke liye payment complete hona anivarya hai.');
+        }
+      } catch (vErr) {
+        console.error('Payment verification error:', vErr);
+        setError('Payment verify nahi ho saki. Agar aapke bank se paise kate hain toh kripya thoda wait karein.');
+      } finally {
+        setVerifyingPayment(false);
+      }
     } catch (err: any) {
       console.error('Payment initiation error:', err);
       setError(err.message || 'Payment initiation failed. Please try again.');
@@ -194,10 +230,16 @@ export default function PublicAdmission() {
   // Step 4: Final Submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!verifiedOrderId) {
+      setError('Bina payment kiye admission form jama nahi kiya ja sakta. Kripya pehle payment karein.');
+      setStep(1);
+      return;
+    }
     setError('');
     setLoading(true);
     try {
       const admissionData = {
+        orderId: verifiedOrderId,
         name: aadhaarData?.name || name,
         mobile: phone,
         registrationType,
@@ -441,17 +483,22 @@ export default function PublicAdmission() {
 
                   <button
                     onClick={handlePayment}
-                    disabled={loading}
+                    disabled={loading || verifyingPayment}
                     className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {loading ? (
                       <>
                         <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                        <span>Processing Payment...</span>
+                        <span>Connecting to Cashfree UPI...</span>
+                      </>
+                    ) : verifyingPayment ? (
+                      <>
+                        <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        <span>Verifying Payment Status...</span>
                       </>
                     ) : (
                       <>
-                        <CreditCard size={18} />
+                        <ShieldCheck size={18} />
                         <span>Pay ₹{totalPayableAmount.toFixed(2)} Securely</span>
                       </>
                     )}
