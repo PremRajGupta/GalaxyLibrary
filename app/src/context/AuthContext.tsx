@@ -76,14 +76,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if we have a student session in localStorage first
+    // Check if we have an existing session in localStorage first
     const storedUserStr = localStorage.getItem('galaxylibrary_user');
     const storedToken = localStorage.getItem('galaxylibrary_token');
     
     if (storedUserStr && storedToken) {
       try {
         const storedUser = JSON.parse(storedUserStr);
-        if (storedUser.role === 'student') {
+        if (storedUser) {
           setUser(storedUser);
           setLoading(false);
         }
@@ -111,11 +111,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const appUser = mapFirebaseUser(firebaseUser);
         setUser(appUser);
         saveAppUser(appUser);
+        setLoading(false);
 
-        // Fetch remote admin profile from MongoDB to ensure consistency
+        // Fetch remote admin profile from MongoDB in background to ensure consistency
         axios.get(apiUrl('/api/admin/profile'), {
           headers: { Authorization: `Bearer ${token}` },
-          timeout: 15000
+          timeout: 10000
         }).then((res) => {
           const p = res.data?.profile || res.data;
           if (p) {
@@ -136,11 +137,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }).catch(() => {});
       } else {
+        // If logged out from firebase, only clear if not a student
+        const stored = localStorage.getItem('galaxylibrary_user');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (parsed.role === 'student') {
+              setLoading(false);
+              return;
+            }
+          } catch (e) {}
+        }
         setUser(null);
         localStorage.removeItem('galaxylibrary_user');
         localStorage.removeItem('galaxylibrary_token');
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -155,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('galaxylibrary_token', token);
       saveAppUser(appUser);
       setUser(appUser);
+      setLoading(false);
     } catch (error) {
       throw new Error(getErrorMessage(error));
     }
@@ -169,6 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('galaxylibrary_token', token);
       saveAppUser(appUser);
       setUser(appUser);
+      setLoading(false);
     } catch (error: any) {
       const msg = error.response?.data?.message || error.message || 'Invalid email or password';
       throw new Error(msg);
@@ -190,7 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('galaxylibrary_token');
   };
 
-  // Auto-logout after 3 minutes of inactivity
+  // Auto-logout after 1 minute of inactivity
   useEffect(() => {
     if (!user) return;
 
@@ -198,10 +212,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const resetTimer = () => {
       window.clearTimeout(inactivityTimer);
-      // 3 minutes = 180000 milliseconds
+      // 1 minute = 60000 milliseconds
       inactivityTimer = window.setTimeout(() => {
         logout();
-      }, 180000);
+      }, 60000);
     };
 
     resetTimer();

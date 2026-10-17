@@ -7,6 +7,7 @@ import { reportApi } from '../lib/apiService';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ExcelJS from 'exceljs';
+import { getTimeShiftLabel } from '../lib/feeRules';
 
 const colorMap = {
   blue: { bg: 'bg-[#dbeafe]', icon: 'text-[#3b82f6]' },
@@ -137,6 +138,7 @@ export default function Reports() {
   const [expiredStudents, setExpiredStudents] = useState<ExpiredStudentRecord[]>(() => reportApi.getCachedReportsData?.('thisMonth')?.expiredStudents || []);
   const [admissionData, setAdmissionData] = useState<{ name: string; value: number; color: string }[]>(() => reportApi.getCachedReportsData?.('thisMonth')?.admissionData || []);
   const [admissionDetails, setAdmissionDetails] = useState<AdmissionDetail[]>(() => reportApi.getCachedReportsData?.('thisMonth')?.admissionDetails || []);
+  const [fullStudentsReport, setFullStudentsReport] = useState<any[]>(() => reportApi.getCachedReportsData?.('thisMonth')?.fullStudentsReport || []);
   const [reportCards, setReportCards] = useState<any[]>(() => reportApi.getCachedReportsData?.('thisMonth')?.reportCards || []);
   const [summary, setSummary] = useState<ReportSummary>(() => reportApi.getCachedReportsData?.('thisMonth')?.summary || defaultSummary);
   const [loading, setLoading] = useState(() => !reportApi.getCachedReportsData?.('thisMonth'));
@@ -158,6 +160,7 @@ export default function Reports() {
       setExpiredStudents(data.expiredStudents || []);
       setAdmissionData(data.admissionData || []);
       setAdmissionDetails(data.admissionDetails || []);
+      setFullStudentsReport(data.fullStudentsReport || []);
       setReportCards(data.reportCards || []);
       setSummary(data.summary || defaultSummary);
     } catch (error) {
@@ -191,7 +194,7 @@ export default function Reports() {
     return rows;
   };
 
-  const getReportData = (title: string) => {
+  const getReportData = (title: string, format: 'excel' | 'pdf' = 'excel') => {
     if (title === 'Fee Collection Report') {
       const isWeek = dateRange === 'thisWeek';
       const isYear = dateRange === 'thisYear';
@@ -303,11 +306,148 @@ export default function Reports() {
       };
     }
 
-    if (title === 'Admission Report') {
-      const rows = getAdmissionExportRows();
+    if (title === 'Full Reports' || title === 'Full Student Report' || title === 'Admission Report') {
+      if (format === 'excel') {
+        const columns = [
+          'S.No.',
+          'Student ID',
+          'Student Name',
+          "Father's Name",
+          "Mother's Name",
+          'Mobile Number',
+          'Parent Mobile',
+          'Email',
+          'Aadhaar Number',
+          'Address',
+          'Section',
+          'Course',
+          'Seat Number',
+          'Time Shift',
+          'Joining Date',
+          'Monthly Fee (₹)',
+          'Total Paid (₹)',
+          'Total Due (₹)',
+          'Fee Status',
+          'Account Status',
+        ];
+
+        if (!fullStudentsReport || fullStudentsReport.length === 0) {
+          const rows = getAdmissionExportRows();
+          if (rows.length > 0) {
+            return {
+              columns: ['Student Name', 'Student ID', 'Course', 'Joining Date', 'Contact'],
+              rows,
+            };
+          }
+          return {
+            columns,
+            rows: [[1, '-', 'No student records found', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 0, 0, 0, '-', '-']],
+          };
+        }
+
+        const rows: (string | number)[][] = fullStudentsReport.map((s, idx) => [
+          idx + 1,
+          s.studentDisplayId || '-',
+          s.name || '-',
+          s.fatherName || '-',
+          s.motherName || '-',
+          s.mobile || '-',
+          s.parentMobile || '-',
+          s.email || '-',
+          s.aadharNumber || '-',
+          s.address || '-',
+          s.registrationType || 'Library',
+          s.course || 'Library',
+          s.seatNumber || '--',
+          getTimeShiftLabel(s.timeShift, s.customShiftHours),
+          formatReportDate(s.joiningDate),
+          Number(s.monthlyFee) || 0,
+          Number(s.totalPaid) || 0,
+          Number(s.totalDue) || 0,
+          s.feeStatus || 'No Dues',
+          s.status || 'ACTIVE',
+        ]);
+
+        const sumMonthly = fullStudentsReport.reduce((acc, s) => acc + (Number(s.monthlyFee) || 0), 0);
+        const sumPaid = fullStudentsReport.reduce((acc, s) => acc + (Number(s.totalPaid) || 0), 0);
+        const sumDue = fullStudentsReport.reduce((acc, s) => acc + (Number(s.totalDue) || 0), 0);
+
+        rows.push([
+          'TOTAL',
+          '-',
+          `Total Students: ${fullStudentsReport.length}`,
+          '-',
+          '-',
+          '-',
+          '-',
+          '-',
+          '-',
+          '-',
+          '-',
+          '-',
+          '-',
+          '-',
+          '-',
+          sumMonthly,
+          sumPaid,
+          sumDue,
+          '-',
+          '-',
+        ]);
+
+        return {
+          columns,
+          rows,
+        };
+      }
+
+      // PDF format
+      const columns = [
+        'Student ID',
+        'Student Name',
+        "Father's Name",
+        'Mobile',
+        'Course',
+        'Seat',
+        'Shift',
+        'Joining Date',
+        'Monthly (₹)',
+        'Paid (₹)',
+        'Due (₹)',
+        'Status',
+      ];
+
+      if (!fullStudentsReport || fullStudentsReport.length === 0) {
+        return {
+          columns,
+          rows: [['-', 'No student records found', '-', '-', '-', '-', '-', '-', 0, 0, 0, '-']],
+        };
+      }
+
+      const rows: (string | number)[][] = fullStudentsReport.map((s) => [
+        s.studentDisplayId || '-',
+        s.name || '-',
+        s.fatherName || '-',
+        s.mobile || '-',
+        s.course || 'Library',
+        s.seatNumber || '--',
+        getTimeShiftLabel(s.timeShift, s.customShiftHours),
+        formatReportDate(s.joiningDate),
+        Number(s.monthlyFee) || 0,
+        Number(s.totalPaid) || 0,
+        Number(s.totalDue) || 0,
+        s.status || 'ACTIVE',
+      ]);
+
+      const sumMonthly = fullStudentsReport.reduce((acc, s) => acc + (Number(s.monthlyFee) || 0), 0);
+      const sumPaid = fullStudentsReport.reduce((acc, s) => acc + (Number(s.totalPaid) || 0), 0);
+      const sumDue = fullStudentsReport.reduce((acc, s) => acc + (Number(s.totalDue) || 0), 0);
+
+      rows.push(['TOTAL', `Total: ${fullStudentsReport.length}`, '-', '-', '-', '-', '-', '-', sumMonthly, sumPaid, sumDue, '-']);
+
       return {
-        columns: ['Student Name', 'Student ID', 'Course', 'Joining Date', 'Contact'],
-        rows: rows.length > 0 ? rows : [['No admissions in this period', '-', '-', '-', '-']],
+        columns,
+        rows,
       };
     }
 
@@ -341,7 +481,7 @@ export default function Reports() {
   const handlePDF = (title: string) => {
     showNotification(`Generating PDF: ${title}...`);
     try {
-      const data = getReportData(title);
+      const data = getReportData(title, 'pdf');
       const isWide = data.columns.length > 5;
       const doc = new jsPDF(isWide ? 'landscape' : 'portrait');
       doc.text(title, 14, 15);
@@ -352,6 +492,7 @@ export default function Reports() {
       }
 
       const discountColIndex = data.columns.findIndex((c) => c.toLowerCase().includes('discount'));
+      const dueColIndex = data.columns.findIndex((c) => c.toLowerCase().includes('due'));
 
       autoTable(doc, {
         startY: summary.dateRange ? 34 : 28,
@@ -376,6 +517,15 @@ export default function Reports() {
             hookData.cell.styles.textColor = [234, 88, 12]; // Orange (#ea580c)
             hookData.cell.styles.fontStyle = 'bold';
           }
+
+          // If this is the Due column
+          if (dueColIndex !== -1 && hookData.column.index === dueColIndex && hookData.section === 'body') {
+            const rawVal = Number(hookData.cell.text?.[0]) || 0;
+            if (rawVal > 0) {
+              hookData.cell.styles.textColor = [220, 38, 38]; // Red (#dc2626)
+              hookData.cell.styles.fontStyle = 'bold';
+            }
+          }
         },
       });
 
@@ -389,7 +539,7 @@ export default function Reports() {
   const handleExcel = async (title: string) => {
     showNotification(`Generating Excel: ${title}...`);
     try {
-      const data = getReportData(title);
+      const data = getReportData(title, 'excel');
       const workbook = new ExcelJS.Workbook();
       const safeSheetName = title.slice(0, 31).replace(/[\\/?*\[\]]/g, '');
       const worksheet = workbook.addWorksheet(safeSheetName);
@@ -406,6 +556,8 @@ export default function Reports() {
       headerRow.height = 24;
 
       const discountColIdx = data.columns.findIndex((c) => c.toLowerCase().includes('discount')) + 1;
+      const dueColIdx = data.columns.findIndex((c) => c.toLowerCase().includes('due')) + 1;
+      const paidColIdx = data.columns.findIndex((c) => c.toLowerCase().includes('paid')) + 1;
 
       // Data rows
       data.rows.forEach((rowValues) => {
@@ -430,6 +582,27 @@ export default function Reports() {
             color: { argb: 'FFEA580C' }, // Orange (#ea580c)
           };
         }
+
+        // Red color for Due column if > 0
+        if (dueColIdx > 0 && !isTotalRow) {
+          const dueCell = row.getCell(dueColIdx);
+          if (Number(dueCell.value) > 0) {
+            dueCell.font = {
+              bold: true,
+              color: { argb: 'FFDC2626' }, // Red (#dc2626)
+            };
+          }
+        }
+
+        // Green color for Paid column if > 0
+        if (paidColIdx > 0 && !isTotalRow) {
+          const paidCell = row.getCell(paidColIdx);
+          if (Number(paidCell.value) > 0) {
+            paidCell.font = {
+              color: { argb: 'FF16A34A' }, // Green (#16a34a)
+            };
+          }
+        }
       });
 
       // Auto-fit column widths
@@ -439,7 +612,7 @@ export default function Reports() {
           const val = cell.value ? String(cell.value) : '';
           if (val.length > maxLen) maxLen = val.length;
         });
-        column.width = Math.min(maxLen + 4, 32);
+        column.width = Math.min(maxLen + 4, 35);
       });
 
       const buffer = await workbook.xlsx.writeBuffer();

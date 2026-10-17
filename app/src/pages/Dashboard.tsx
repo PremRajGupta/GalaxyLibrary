@@ -59,23 +59,13 @@ export default function Dashboard() {
     navigate('/fees', { state: { openPayForStudentId: studentId } });
   };
 
-  if (loading && !statsData) {
-    return (
-      <div>
-        <TopHeader />
-        <div className="p-12 text-center text-[#64748b]">
-          <div className="inline-block animate-spin w-8 h-8 border-4 border-[#3b82f6] border-t-transparent rounded-full mb-3"></div>
-          <p className="font-medium text-sm">Loading Dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+  const isInitialLoading = loading && !statsData;
 
   const stats = [
-    { label: 'Total Students', value: String(statsData?.totalStudents || 0), icon: Users, color: 'blue' as const },
-    { label: 'Seats Occupied', value: String(statsData?.occupiedSeats || 0), icon: Armchair, color: 'green' as const },
-    { label: 'Fees (This Month)', value: `₹${(statsData?.monthlyRevenue || 0).toLocaleString()}`, icon: IndianRupee, color: 'yellow' as const },
-    { label: 'Available Seats', value: String(statsData?.availableSeats || 0), icon: AlertTriangle, color: 'red' as const },
+    { label: 'Total Students', value: statsData ? String(statsData.totalStudents || 0) : '—', icon: Users, color: 'blue' as const },
+    { label: 'Seats Occupied', value: statsData ? String(statsData.occupiedSeats || 0) : '—', icon: Armchair, color: 'green' as const },
+    { label: 'Fees (This Month)', value: statsData ? `₹${(statsData.monthlyRevenue || 0).toLocaleString()}` : '—', icon: IndianRupee, color: 'yellow' as const },
+    { label: 'Available Seats', value: statsData ? String(statsData.availableSeats || 0) : '—', icon: AlertTriangle, color: 'red' as const },
   ];
   const pendingFees = statsData?.pendingFees || [];
 
@@ -147,9 +137,13 @@ export default function Dashboard() {
                   } size={24} />
                 </div>
                 <div>
-                  <p className="text-2xl sm:text-[32px] font-bold text-[#1e293b] leading-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    {stat.value}
-                  </p>
+                  {isInitialLoading ? (
+                    <div className="h-8 w-20 bg-slate-400/20 rounded-lg animate-pulse my-1" />
+                  ) : (
+                    <p className="text-2xl sm:text-[32px] font-bold text-[#1e293b] leading-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {stat.value}
+                    </p>
+                  )}
                   <p className="text-sm text-[#64748b]">{stat.label}</p>
                 </div>
               </div>
@@ -178,14 +172,31 @@ export default function Dashboard() {
             <h2 className="text-lg font-semibold text-[#1e293b]">Pending Fee</h2>
             <div className="text-left sm:text-right">
               <p className="text-xs text-[#64748b]">Total Pending</p>
-              <p className="text-xl font-bold text-[#dc2626]">
-                Rs. {(statsData?.pendingFeeTotal || 0).toLocaleString()}
-              </p>
+              {isInitialLoading ? (
+                <div className="h-6 w-24 bg-slate-200 rounded animate-pulse mt-1 ml-auto" />
+              ) : (
+                <p className="text-xl font-bold text-[#dc2626]">
+                  Rs. {(statsData?.pendingFeeTotal || 0).toLocaleString()}
+                </p>
+              )}
             </div>
           </div>
 
           <div className="bg-[#f8f9fa] rounded-3xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] overflow-hidden p-3 border border-[#e2e8f0]">
-            {pendingFees.length > 0 ? (
+            {isInitialLoading ? (
+              <div className="space-y-3 p-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex flex-col md:flex-row md:items-center gap-4 px-5 py-4 bg-white rounded-2xl shadow-sm border border-slate-100 animate-pulse">
+                    <div className="w-12 h-12 bg-slate-100 rounded-full flex-shrink-0" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="h-4 bg-slate-200 rounded w-1/3" />
+                      <div className="h-3 bg-slate-100 rounded w-1/2" />
+                    </div>
+                    <div className="h-8 bg-slate-100 rounded w-28 hidden sm:block" />
+                  </div>
+                ))}
+              </div>
+            ) : pendingFees.length > 0 ? (
               <div className="space-y-3">
                 {pendingFees.map((student: any) => (
                   <div key={student.studentId} className="flex flex-col md:flex-row md:items-center gap-4 px-5 py-4 bg-white rounded-2xl shadow-sm border border-slate-100 transition-all hover:shadow-md">

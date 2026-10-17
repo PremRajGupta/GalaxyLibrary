@@ -254,7 +254,12 @@ export const recordStudentFee = async (req, res) => {
       return res.status(404).json({ message: 'Student record not found for this payment.' });
     }
 
-    const paidAmount = Number(orderRes.data.order_amount) || Number(amount) || 0;
+    const orderTotal = Number(orderRes.data.order_amount) || 0;
+    // Base tuition fee: if amount is explicitly sent, use it; else if orderTotal > 2.3, subtract the 2.30 gateway fee
+    const tuitionAmount = (amount && Number(amount) > 0)
+      ? Number(amount)
+      : (orderTotal > 2.3 ? parseFloat((orderTotal - 2.3).toFixed(2)) : orderTotal);
+
     const receiptNumber = await generateReceiptNumber();
     const paymentMonth = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
@@ -265,12 +270,12 @@ export const recordStudentFee = async (req, res) => {
       studentDisplayId: student.studentId,
       studentName: student.name,
       receiptNumber,
-      amount: paidAmount,
+      amount: tuitionAmount,
       discountAmount: 0,
-      feeCreditAmount: paidAmount,
+      feeCreditAmount: tuitionAmount,
       month: paymentMonth,
       paymentMode: 'upi',
-      notes: `Online Fee Payment via Cashfree UPI (Order ID: ${orderId})`,
+      notes: `Online Fee Payment via Cashfree UPI (Order ID: ${orderId}, Total Paid: ₹${orderTotal.toFixed(2)}, Gateway Fee: ₹2.30)`,
       paymentDate: new Date()
     });
 

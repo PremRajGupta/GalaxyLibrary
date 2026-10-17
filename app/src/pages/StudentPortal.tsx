@@ -62,10 +62,12 @@ export default function StudentPortal() {
         try {
           const statusRes = await requestApi.getCashfreeOrderStatus(orderId);
           if (statusRes.order_status === 'PAID') {
+            const rawOrderAmount = Number(statusRes.order_amount) || 0;
+            const baseTuitionAmount = rawOrderAmount > 2.3 ? parseFloat((rawOrderAmount - 2.3).toFixed(2)) : rawOrderAmount;
             await requestApi.recordCashfreeFee({
               orderId,
               studentId: data.student.studentId,
-              amount: Number(statusRes.order_amount) || 0
+              amount: baseTuitionAmount
             });
             await fetchStudentData();
             alert(`Fee payment of ₹${statusRes.order_amount} verified successfully! Your receipt has been updated.`);
@@ -152,15 +154,20 @@ export default function StudentPortal() {
   const pendingAmount = dues?.pendingAmount ?? 0;
   const totalPaidAmount = dues?.paidAmount ?? 0;
   const fallbackPayAmount = pendingAmount > 0 ? pendingAmount : (student.feeAmount || 0);
+  const CONVENIENCE_FEE = 2.30;
+  const currentBaseAmount = Number(customPayAmount !== '' ? customPayAmount : fallbackPayAmount) || 0;
+  const currentFinalAmount = currentBaseAmount > 0 ? parseFloat((currentBaseAmount + CONVENIENCE_FEE).toFixed(2)) : 0;
 
   const handleCashfreeFeePay = async () => {
     try {
       setPaymentError('');
-      const payAmount = Number(customPayAmount !== '' ? customPayAmount : fallbackPayAmount);
-      if (!payAmount || payAmount < 1) {
+      const baseAmount = Number(customPayAmount !== '' ? customPayAmount : fallbackPayAmount);
+      if (!baseAmount || baseAmount < 1) {
         setPaymentError('Please enter a valid amount of at least ₹1');
         return;
       }
+
+      const totalAmountToPay = parseFloat((baseAmount + CONVENIENCE_FEE).toFixed(2));
 
       setPayingWithCashfree(true);
 
@@ -168,9 +175,9 @@ export default function StudentPortal() {
       const orderData = await requestApi.createCashfreeOrder(
         student.mobile,
         student.name,
-        payAmount,
+        totalAmountToPay,
         student.email,
-        `${frontendUrl}/student?order_id={order_id}`,
+        `${frontendUrl}/student-portal?order_id={order_id}`,
         'FEE'
       );
 
@@ -193,11 +200,11 @@ export default function StudentPortal() {
         await requestApi.recordCashfreeFee({
           orderId: orderData.orderId,
           studentId: student.studentId,
-          amount: payAmount
+          amount: baseAmount
         });
         await fetchStudentData();
         setCustomPayAmount('');
-        alert(`Payment of ₹${payAmount} was successful! Your fee receipt and dues have been updated.`);
+        alert(`Payment of ₹${totalAmountToPay} (Tuition Fee: ₹${baseAmount} + Convenience Fee: ₹1.50) was successful! Your fee receipt and dues have been updated.`);
       } else if (statusRes.order_status === 'ACTIVE') {
         setPaymentError('Payment was cancelled or not completed. Please try again.');
       } else {
@@ -588,7 +595,7 @@ export default function StudentPortal() {
                   {/* Amount Input */}
                   <div className="mb-4">
                     <label className="text-[11px] text-white/80 font-bold uppercase tracking-wider mb-1.5 block">
-                      Amount to Pay (₹)
+                      Fee Amount to Pay (₹)
                     </label>
                     <div className="relative">
                       <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 font-black text-base sm:text-lg">
@@ -618,14 +625,77 @@ export default function StudentPortal() {
                       </p>
                     )}
                   </div>
+
+                  {/* Transparent Fee & Study Charges Breakdown */}
+                  {currentBaseAmount > 0 && (
+                    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-white/20 mb-4 text-white shadow-inner">
+                      <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-white/15">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
+                          <Receipt size={14} /> Fee Breakdown & Study Charges
+                        </span>
+                        <span className="text-[10px] bg-emerald-400/20 text-emerald-200 px-2 py-0.5 rounded-full font-bold">
+                          100% Transparent
+                        </span>
+                      </div>
+
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between items-center text-white/95">
+                          <span>Monthly Study & Library Tuition Fee</span>
+                          <span className="font-bold">₹{currentBaseAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+
+                        <div className="flex justify-between items-center text-white/75 text-[11px]">
+                          <span>Library Seat & Reading Space Access</span>
+                          <span className="font-semibold text-emerald-300">₹0.00 (Included)</span>
+                        </div>
+
+                        <div className="flex justify-between items-center text-white/75 text-[11px]">
+                          <span>High-Speed Study Wi-Fi & Digital Resources</span>
+                          <span className="font-semibold text-emerald-300">₹0.00 (Free)</span>
+                        </div>
+
+                        <div className="flex justify-between items-center text-white/75 text-[11px]">
+                          <span>Power Backup & Reading Room Maintenance</span>
+                          <span className="font-semibold text-emerald-300">₹0.00 (Included)</span>
+                        </div>
+
+                        <div className="border-t border-white/10 my-1.5 pt-1.5 space-y-1">
+                          <div className="flex justify-between items-center text-white/80 text-[11px]">
+                            <span>GST</span>
+                            <span className="font-medium text-white/90">₹0.00</span>
+                          </div>
+
+                          <div className="flex justify-between items-center text-white/80 text-[11px]">
+                            <span>SGST</span>
+                            <span className="font-medium text-white/90">₹0.00</span>
+                          </div>
+
+                          <div className="flex justify-between items-center text-white/95">
+                            <span className="flex items-center gap-1">
+                              Payment Gateway Convenience Fee
+                              <span className="text-[9px] bg-white/20 px-1.5 py-0.2 rounded font-semibold text-white/90">Online</span>
+                            </span>
+                            <span className="font-bold text-amber-300">+ ₹2.30</span>
+                          </div>
+                        </div>
+
+                        <div className="border-t-2 border-white/20 pt-2 mt-2 flex justify-between items-center text-xs sm:text-sm font-black text-white">
+                          <span>Final Total Amount to Pay</span>
+                          <span className="text-base sm:text-lg text-emerald-300 font-black">
+                            ₹{currentFinalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons: Cashfree Pay & Copy UPI ID */}
-                <div className="space-y-3 mt-4">
+                <div className="space-y-3 mt-2">
                   <button
                     type="button"
                     onClick={handleCashfreeFeePay}
-                    disabled={payingWithCashfree}
+                    disabled={payingWithCashfree || currentFinalAmount <= 0}
                     className="w-full py-3.5 sm:py-4 px-6 bg-emerald-500 hover:bg-emerald-600 active:scale-[0.99] text-white font-black rounded-xl text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-950/30 transition-all disabled:opacity-60 cursor-pointer"
                   >
                     {payingWithCashfree ? (
@@ -636,7 +706,7 @@ export default function StudentPortal() {
                     ) : (
                       <>
                         <ShieldCheck size={20} />
-                        Pay ₹{Number(customPayAmount !== '' ? customPayAmount : fallbackPayAmount) || 0} via Cashfree UPI
+                        Pay ₹{currentFinalAmount > 0 ? currentFinalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} via Cashfree UPI
                       </>
                     )}
                   </button>

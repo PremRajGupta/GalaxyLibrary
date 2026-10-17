@@ -106,13 +106,22 @@ export const getReportsData = async (req, res) => {
     ]);
 
     const paymentsByStudent = allFees.reduce((acc, fee) => {
-      const key = fee.studentDisplayId;
-      if (!acc[key]) acc[key] = [];
-      acc[key].push({
+      const p = {
         month: fee.month,
         amount: fee.amount,
         paymentDate: fee.paymentDate,
-      });
+      };
+      if (fee.studentDisplayId) {
+        if (!acc[fee.studentDisplayId]) acc[fee.studentDisplayId] = [];
+        acc[fee.studentDisplayId].push(p);
+      }
+      if (fee.studentId) {
+        const sid = fee.studentId.toString();
+        if (sid !== fee.studentDisplayId) {
+          if (!acc[sid]) acc[sid] = [];
+          acc[sid].push(p);
+        }
+      }
       return acc;
     }, {});
 
@@ -312,6 +321,45 @@ export const getReportsData = async (req, res) => {
 
     const expiredCount = allStudents.filter((student) => student.status === 'expired').length;
 
+    const fullStudentsReport = allStudents.map((student, idx) => {
+      const monthlyFee = Number(student.feeAmount) || getFeeForTimeShift(student.timeShift) || 0;
+      const payments = (student.studentId && paymentsByStudent[student.studentId]) || (student._id && paymentsByStudent[student._id.toString()]) || [];
+      const due = computeStudentFeeDue({
+        monthlyFee,
+        joiningDate: student.joiningDate || student.admissionDate,
+        payments,
+        asOf: asOfDate,
+        inactiveDate: student.status !== 'active' ? (student.inactiveDate || student.updatedAt) : undefined,
+      });
+
+      const totalPaidAmount = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+      return {
+        sNo: idx + 1,
+        studentDisplayId: student.studentId || '-',
+        name: student.name || '-',
+        fatherName: student.fatherName || '-',
+        motherName: student.motherName || '-',
+        mobile: student.mobile || '-',
+        parentMobile: student.parentMobile || '-',
+        email: student.email || '-',
+        aadharNumber: student.aadharNumber || '-',
+        address: student.address || '-',
+        registrationType: student.registrationType === 'computer_center' ? 'Computer Center' : 'Library',
+        course: getCourseLabel(student.course) || 'Library',
+        seatNumber: student.seatNumber || '--',
+        timeShift: student.timeShift || '--',
+        customShiftHours: student.customShiftHours,
+        joiningDate: student.joiningDate || student.admissionDate,
+        monthlyFee,
+        totalPaid: totalPaidAmount,
+        totalDue: due.pendingAmount,
+        overdueMonths: due.overdueMonths,
+        feeStatus: due.pendingAmount <= 0 ? (totalPaidAmount > 0 ? 'Fully Paid' : 'No Dues') : (totalPaidAmount > 0 ? 'Partially Paid' : 'Unpaid'),
+        status: (student.status || 'active').toUpperCase(),
+      };
+    });
+
     const reportCards = [
       {
         title: 'Fee Collection Report',
@@ -330,12 +378,12 @@ export const getReportsData = async (req, res) => {
         trend: `${partial + unpaid} student${partial + unpaid === 1 ? '' : 's'} due`,
       },
       {
-        title: 'Admission Report',
+        title: 'Full Reports',
         iconName: 'Users',
         color: 'green',
-        stat: admissions.length.toString(),
-        subtitle: `New admissions in ${periodLabel.toLowerCase()}`,
-        trend: admissions.length > 0 ? `${Object.keys(courseMap).length} course${Object.keys(courseMap).length === 1 ? '' : 's'}` : 'No admissions',
+        stat: allStudents.length.toString(),
+        subtitle: 'Master Student Backup Report',
+        trend: `${activeStudents.length} active · ${allStudents.length} total`,
       },
       {
         title: 'Student Status Report',
@@ -355,6 +403,7 @@ export const getReportsData = async (req, res) => {
       reportCards,
       studentPayments,
       expiredStudents,
+      fullStudentsReport,
       summary: {
         periodLabel,
         dateRange: formatDateRange(startDate, endDate),

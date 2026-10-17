@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import AppLogo from '../components/AppLogo';
 import S from '../lib/strings';
+import { apiUrl } from '../lib/apiConfig';
 
 export default function Login() {
   const [loginType, setLoginType] = useState<'student' | 'admin'>('student');
@@ -16,6 +17,13 @@ export default function Login() {
   const { login, studentLogin } = useAuth();
   const navigate = useNavigate();
 
+  // Pre-warm backend as soon as user opens login screen to eliminate cold-start delay
+  useEffect(() => {
+    try {
+      fetch(apiUrl('/health'), { method: 'GET', keepalive: true }).catch(() => {});
+    } catch {}
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -24,10 +32,10 @@ export default function Login() {
     try {
       if (loginType === 'student') {
         await studentLogin(email.trim(), password);
-        navigate('/student-portal');
+        navigate('/student-portal', { replace: true });
       } else {
         await login(email.trim(), password);
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       }
     } catch (err) {
       const message = (err as Error).message || 'An error occurred. Please try again.';
