@@ -51,11 +51,13 @@ export const computeStudentFeeDue = ({
   joiningDate,
   payments,
   asOf = new Date(),
+  inactiveDate,
 }: {
   monthlyFee: number;
   joiningDate?: string | Date | null;
   payments: FeePaymentLike[];
   asOf?: Date;
+  inactiveDate?: string | Date | null;
 }): FeeDueBreakdown => {
   const empty: FeeDueBreakdown = {
     pendingAmount: 0,
@@ -70,7 +72,16 @@ export const computeStudentFeeDue = ({
   const joinDate = parseDateInputValue(joiningDate) || asOf;
   // Advance billing: the first 30-day period starts immediately from joiningDate.
   const billingStart = joinDate;
-  const periodCount = getBillablePeriodCount(billingStart, asOf);
+
+  let effectiveAsOf = asOf;
+  if (inactiveDate) {
+    const parsedInactiveDate = parseDateInputValue(inactiveDate);
+    if (parsedInactiveDate && parsedInactiveDate < effectiveAsOf) {
+      effectiveAsOf = parsedInactiveDate;
+    }
+  }
+
+  const periodCount = getBillablePeriodCount(billingStart, effectiveAsOf);
   if (periodCount <= 0) return empty;
 
   const paidAmount = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
@@ -112,10 +123,20 @@ export const getUnpaidMonthOptions = (
   joiningDate: string | Date | null | undefined,
   payments: FeePaymentLike[],
   asOf: Date = new Date(),
+  inactiveDate?: string | Date | null,
 ): string[] => {
   const joinDate = parseDateInputValue(joiningDate) || asOf;
   const billingStart = joinDate;
-  const periodCount = getBillablePeriodCount(billingStart, asOf);
+
+  let effectiveAsOf = asOf;
+  if (inactiveDate) {
+    const parsedInactiveDate = parseDateInputValue(inactiveDate);
+    if (parsedInactiveDate && parsedInactiveDate < effectiveAsOf) {
+      effectiveAsOf = parsedInactiveDate;
+    }
+  }
+
+  const periodCount = getBillablePeriodCount(billingStart, effectiveAsOf);
   if (!monthlyFee || monthlyFee <= 0 || periodCount <= 0) return [];
 
   const paidAmount = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
@@ -140,10 +161,20 @@ export const getOldestUnpaidMonthDate = (
   joiningDate: string | Date | null | undefined,
   payments: FeePaymentLike[],
   asOf: Date = new Date(),
+  inactiveDate?: string | Date | null,
 ): Date | null => {
   const joinDate = parseDateInputValue(joiningDate) || asOf;
   const billingStart = joinDate;
-  const periodCount = getBillablePeriodCount(billingStart, asOf);
+
+  let effectiveAsOf = asOf;
+  if (inactiveDate) {
+    const parsedInactiveDate = parseDateInputValue(inactiveDate);
+    if (parsedInactiveDate && parsedInactiveDate < effectiveAsOf) {
+      effectiveAsOf = parsedInactiveDate;
+    }
+  }
+
+  const periodCount = getBillablePeriodCount(billingStart, effectiveAsOf);
   if (!monthlyFee || monthlyFee <= 0 || periodCount <= 0) return null;
 
   const paidAmount = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
@@ -168,10 +199,20 @@ export const getCoveredMonthsLabel = (
   payments: FeePaymentLike[],
   creditAmount: number,
   asOf: Date = new Date(),
+  inactiveDate?: string | Date | null,
 ): string | null => {
   const joinDate = parseDateInputValue(joiningDate) || asOf;
   const billingStart = joinDate;
-  const periodCount = getBillablePeriodCount(billingStart, asOf);
+
+  let effectiveAsOf = asOf;
+  if (inactiveDate) {
+    const parsedInactiveDate = parseDateInputValue(inactiveDate);
+    if (parsedInactiveDate && parsedInactiveDate < effectiveAsOf) {
+      effectiveAsOf = parsedInactiveDate;
+    }
+  }
+
+  const periodCount = getBillablePeriodCount(billingStart, effectiveAsOf);
   if (!monthlyFee || monthlyFee <= 0 || creditAmount <= 0) return null;
 
   const paidAmount = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);

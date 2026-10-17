@@ -111,6 +111,7 @@ export const mapStudentToFeeRow = (student: any): StudentFee => ({
   status: student.status || 'active',
   joiningDate: student.joiningDate || student.admissionDate,
   registrationType: student.registrationType,
+  inactiveDate: student.inactiveDate || (student.status !== 'active' ? student.updatedAt : undefined),
 });
 
 export const getStoredPayments = async (): Promise<PaymentReceipt[]> => {

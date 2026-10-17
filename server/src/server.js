@@ -252,7 +252,8 @@ app.get(['/api/v1/student/me', '/api/student/me'], async (req, res) => {
     const dues = computeStudentFeeDue({
       monthlyFee: student.feeAmount,
       joiningDate: student.joiningDate || student.admissionDate,
-      payments: fees
+      payments: fees,
+      inactiveDate: student.status !== 'active' ? (student.inactiveDate || student.updatedAt) : undefined,
     });
 
     // Fetch seat details if available

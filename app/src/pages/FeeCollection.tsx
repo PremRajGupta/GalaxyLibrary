@@ -116,10 +116,13 @@ const processFeeData = (studentData: any[], paymentData: PaymentReceipt[]) => {
     const displayId = getStudentDisplayId(s);
     const monthlyFee = Number(s.feeAmount) || getFeeForTimeShift(String(s.timeShift || ''));
     const studentPayments = paymentsByStudent[displayId] || [];
+    const isInactive = s.status === 'inactive' || s.status === 'expired';
+    const inactiveDate = isInactive ? (s.inactiveDate || s.updatedAt || row.inactiveDate) : undefined;
     const due = computeStudentFeeDue({
       monthlyFee,
       joiningDate: row.joiningDate,
       payments: studentPayments,
+      inactiveDate: inactiveDate as string | Date | undefined,
     });
 
     return {
@@ -313,16 +316,22 @@ export function FeeCollection() {
         amount: payment.feeCreditAmount ?? payment.amount,
         paymentDate: payment.date,
       }));
+    const isInactive = student.status === 'inactive' || student.status === 'expired';
+    const inactiveDate = isInactive ? (student.inactiveDate as string | Date | undefined) : undefined;
     const monthOptions = getUnpaidMonthOptions(
       student.monthlyFee,
       student.joiningDate,
       studentPayments,
+      new Date(),
+      inactiveDate
     );
 
     const oldestUnpaidDate = getOldestUnpaidMonthDate(
       student.monthlyFee,
       student.joiningDate,
       studentPayments,
+      new Date(),
+      inactiveDate
     );
 
     setSelectedStudent(student);
@@ -427,11 +436,15 @@ export function FeeCollection() {
         paymentDate: payment.date,
       }));
         
+    const isInactive = selectedStudent.status === 'inactive' || selectedStudent.status === 'expired';
+    const inactiveDate = isInactive ? (selectedStudent.inactiveDate as string | Date | undefined) : undefined;
     const coveredMonths = getCoveredMonthsLabel(
       selectedStudent.monthlyFee,
       selectedStudent.joiningDate,
       studentPayments,
-      creditAmount
+      creditAmount,
+      new Date(),
+      inactiveDate
     );
     
     // Fallback to the date picker's label if for some reason coveredMonths is null

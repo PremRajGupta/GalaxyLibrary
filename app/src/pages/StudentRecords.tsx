@@ -30,7 +30,8 @@ const mapRawStudents = (data: any[]) => {
     fatherName: s.fatherName || s.father || 'N/A',
     rawJoiningDate: s.joiningDate || s.admissionDate,
     joiningDate: formatJoiningDate(s.joiningDate || s.admissionDate),
-    inactiveDate: s.inactiveDate ? formatJoiningDate(s.inactiveDate) : null,
+    rawInactiveDate: s.inactiveDate || (s.status !== 'active' ? s.updatedAt : null),
+    inactiveDate: s.inactiveDate ? formatJoiningDate(s.inactiveDate) : (s.status !== 'active' && s.updatedAt ? formatJoiningDate(s.updatedAt) : null),
   }));
   mapped.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
   return mapped;
@@ -90,10 +91,14 @@ export default function StudentRecords({ defaultRegistrationType, hideRegistrati
           const studentPayments = payments.filter((p: any) => p.studentId === reactivateStudent.studentId);
           const monthlyFee = Number(reactivateStudent.feeAmount) || getFeeForTimeShift(String(reactivateStudent.timeShift || ''));
           
+          const isInactive = reactivateStudent.status === 'inactive' || reactivateStudent.status === 'expired';
+          const inactiveDate = isInactive ? (reactivateStudent.rawInactiveDate || reactivateStudent.rawUpdatedAt) : undefined;
+
           const dueResult = computeStudentFeeDue({
             monthlyFee,
             joiningDate: reactivateStudent.rawJoiningDate,
-            payments: studentPayments
+            payments: studentPayments,
+            inactiveDate: inactiveDate
           });
           
           setReactivateDue(dueResult.pendingAmount);

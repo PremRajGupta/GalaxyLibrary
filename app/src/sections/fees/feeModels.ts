@@ -16,6 +16,7 @@ export interface StudentFee {
   overdueMonths?: number;
   lastPaid: string;
   status: 'active' | 'expired' | 'inactive';
+  inactiveDate?: string | Date | null;
 }
 
 export const getInitials = (name: string) => {
